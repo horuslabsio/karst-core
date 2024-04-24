@@ -7,11 +7,11 @@ trait IKarstProfile<TState> {
 #[starknet::contract]
 mod KarstProfile {
     use starknet::ContractAddress;
+
     #[storage]
     struct Storage {
         profile_id: LegacyMap<ContractAddress, u256>
     }
-
 
     #[abi(embed_v0)]
     impl KarstProfileImpl of super::IKarstProfile<ContractState> {
