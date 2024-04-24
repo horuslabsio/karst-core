@@ -11,7 +11,7 @@ openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", ta
 token_bound_accounts = { git = "https://github.com/Starknet-Africa-Edu/TBA.git"}
 
 [dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.20.1" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.22.0" }
 
 
 [[target.starknet-contract]]
