@@ -1,1 +1,1 @@
-mod profile;
+pub mod profile;

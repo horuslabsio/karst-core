@@ -1,1 +1,2 @@
-mod Ikarst;
+pub mod Ikarst;
+pub mod IERC721;

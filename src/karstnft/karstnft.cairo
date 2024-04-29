@@ -1,13 +1,14 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait IKarst<TState> {
+pub trait IKarst<TState> {
     fn mint_karstnft(ref self: TState);
 }
 
 
+
 #[starknet::contract]
-mod KarstNFT {
+pub mod KarstNFT {
     use starknet::{ContractAddress, get_caller_address};
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
@@ -23,6 +24,7 @@ mod KarstNFT {
     // allow to check what interface is supported
     #[abi(embed_v0)]
     impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
 
 
     // make it a NFT
@@ -82,5 +84,7 @@ mod KarstNFT {
             self.erc721._mint(caller, current_token_id);
             current_token_id += 1;
         }
+
+        
     }
 }

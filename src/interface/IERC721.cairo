@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait IERC721<TContractState> {
+pub trait IERC721<TContractState> {
     fn balance_of(self: @TContractState, account: ContractAddress) -> u256;
     fn owner_of(self: @TContractState, token_id: u256) -> ContractAddress;
     fn ownerOf(self: @TContractState, token_id: u256) -> ContractAddress;
