@@ -2,16 +2,31 @@
 
 Karst is a web3 social graph on Starknet. it aims to build a social infrastructure for the starknet ecosystem.
 
-## TODO
+## TODOS
 
-- [x] Implement `create profiles` functionality using `erc6551`
+- [x] Implement `create profiles contract` functionality using `erc6551`
+  - [ ] Implement `create profile` functionality
+  - [ ] Implement `setProfileMetadataURI` functionality
 - [ ] implement `Publications` contract
 - [ ] Make contract upgradable, preferably uups.
   - [ ] implement `post` functionality
-  - [ ] Implement `like` parameter
-  - [ ] Implement `comment` parameter
-  - [ ] Implement `mirror` parameter
-  - [ ] Implement `quote` parameter
+  - [ ] Implement `like` functionality
+  - [ ] Implement `comment` functionality
+  - [ ] Implement `mirror` functionality
+  - [ ] Implement `quote` functionality
+- [ ] Implement `FollowNFT` contract
+  - [ ] implement `unwrap` functionality
+  - [ ] Implement `approveFollow` functionality
+  - [ ] Implement `removeFollower` functionality
+  - [ ] Implement `wrap` functionality
+  - [ ] Implement `follow` functionality
+  - [ ] Implement `unfollow` functionality
+  - [ ] Implement `getOriginalFollowTimestamp` functionality
+  - [ ] Implement `getFollowTimestamp` functionality
+  - [ ] Implement `getProfileIdAllowedToRecover` functionality
+  - [ ] Implement `getFollowData` functionality
+  - [ ] Implement `getFollowApproved` functionality
+  - [ ] Implement `getFollowerCount` functionality
 - [ ] Implement indexing of publish contract
   - [ ] indexing shall be done with [arweave](https://www.arweave.org/)
   - [ ] index all events emitted by the publications contract
