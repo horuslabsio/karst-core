@@ -20,6 +20,7 @@ mod KarstProfile {
     use karst::interface::Ikarst::{IKarstDispatcher, IKarstDispatcherTrait};
     use karst::interface::Iregistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
     use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+    use starknet::ContractAddress;
 
     #[storage]
     struct Storage {
