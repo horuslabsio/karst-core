@@ -4,8 +4,8 @@ Karst is a web3 social graph on Starknet. it aims to build a social infrastructu
 
 ## TODOS
 
-- [x] Implement `create profiles contract` functionality using `erc6551`
-  - [ ] Implement `create profile` functionality
+- [ ] Implement `create profiles contract` functionality using `erc6551`
+  - [x] Implement `create profile` functionality
   - [ ] Implement `setProfileMetadataURI` functionality
 - [ ] implement `Publications` contract
 - [ ] Make contract upgradable, preferably uups.
@@ -14,6 +14,8 @@ Karst is a web3 social graph on Starknet. it aims to build a social infrastructu
   - [ ] Implement `comment` functionality
   - [ ] Implement `mirror` functionality
   - [ ] Implement `quote` functionality
+  - [ ] implement `tipPost` functionality
+  - [ ] implement `follow` functionality from followNFT
 - [ ] Implement `FollowNFT` contract
   - [ ] implement `unwrap` functionality
   - [ ] Implement `approveFollow` functionality
@@ -27,12 +29,18 @@ Karst is a web3 social graph on Starknet. it aims to build a social infrastructu
   - [ ] Implement `getFollowData` functionality
   - [ ] Implement `getFollowApproved` functionality
   - [ ] Implement `getFollowerCount` functionality
+- Implement `addDelegate` functionality
 - [ ] Implement indexing of publish contract
   - [ ] indexing shall be done with [arweave](https://www.arweave.org/)
   - [ ] index all events emitted by the publications contract
 - [ ] set up api endpoints to query the indexer
 - [ ] not important at the moment
   - [ ] create a custom explorer for querying the content layer
+
+## Remarks
+
+our implementation may defer from lens by they both achieve the same goal
+link to [Lens protocol](https://polygonscan.com/address/0x176c2a1c54e8b028eeec14bf0a059e354408ff47#code) contracts
 
 ## Architecture
 
