@@ -2,9 +2,9 @@ use core::traits::TryInto;
 use core::traits::Into;
 use starknet::ContractAddress;
 use snforge_std::{declare, ContractClassTrait};
-use karst::karstnft::karstnft::IKarstDispatcher;
+use karst::interface::Ikarst::{IKarstDispatcher, IKarstDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
-use openzeppelin::token::erc721::interface::IERC721MetadataDispatcher;
+use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 
 
 fn deploy_contract(name: ByteArray) -> ContractAddress {
@@ -23,12 +23,23 @@ fn deploy_contract(name: ByteArray) -> ContractAddress {
 }
 #[test]
 fn test_constructor_func() {
-    let contract_address:ContractAddress = deploy_contract("KarstNFT");
-    let dispatcher = IERC721MetadataDispatcher{ contract_address };
-    let karstnft_name = dispatcher.name();
-    assert(karstnft_name == 'KarstNFT', 'invalid');
-    
+    let contract_address: ContractAddress = deploy_contract("KarstNFT");
+    let dispatcher = IERC721Dispatcher { contract_address };
+    let nft_name = dispatcher.name();
+    let nft_symbol = dispatcher.symbol();
+    assert(nft_name == "KarstNFT", 'error');
+    assert(nft_symbol == "KNFT", 'error');
 }
 
-
+#[test]
+fn test_token_uri() {
+    let contract_address: ContractAddress = deploy_contract("KarstNFT");
+    let karstDispatcher = IKarstDispatcher { contract_address };
+    let dispatcher = IERC721Dispatcher { contract_address };
+    karstDispatcher.mint_karstnft();
+    let token_id = karstDispatcher.token_id();
+    let base_uri = dispatcher.token_uri(token_id);
+    assert(token_id == 0, 'error');
+    assert(base_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/0", 'error');
+}
 

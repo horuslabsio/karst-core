@@ -1,15 +1,37 @@
 use starknet::ContractAddress;
+use openzeppelin::{
+    token::erc721::{ERC721Component::{ERC721Metadata, HasComponent}},
+    introspection::src5::SRC5Component,
+};
 
 #[starknet::interface]
-pub trait IKarst<TState> {
-    fn mint_karstnft(ref self: TState);
+trait IERC721Metadata<TState> {
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
 }
 
+#[starknet::embeddable]
+impl IERC721MetadataImpl<
+    TContractState,
+    +HasComponent<TContractState>,
+    +SRC5Component::HasComponent<TContractState>,
+    +Drop<TContractState>
+> of IERC721Metadata<TContractState> {
+    fn name(self: @TContractState) -> ByteArray {
+        let component = HasComponent::get_component(self);
+        ERC721Metadata::name(component)
+    }
 
+    fn symbol(self: @TContractState) -> ByteArray {
+        let component = HasComponent::get_component(self);
+        ERC721Metadata::symbol(component)
+    }
+}
 
 #[starknet::contract]
 pub mod KarstNFT {
     use starknet::{ContractAddress, get_caller_address};
+    use karst::interface::Ikarst::IKarst;
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -77,14 +99,15 @@ pub mod KarstNFT {
         self.erc721.initializer(name, symbol, base_uri);
     }
     #[abi(embed_v0)]
-    impl KarstImpl of super::IKarst<ContractState> {
+    impl KarstImpl of IKarst<ContractState> {
         fn mint_karstnft(ref self: ContractState) {
             let caller = get_caller_address();
             let mut current_token_id = self.tokenId.read();
             self.erc721._mint(caller, current_token_id);
             current_token_id += 1;
         }
-
-        
+        fn token_id(self: @ContractState) -> u256 {
+            self.tokenId.read()
+        }
     }
 }
