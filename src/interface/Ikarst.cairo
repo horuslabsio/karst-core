@@ -1,5 +1,6 @@
 use starknet::ContractAddress;
 #[starknet::interface]
-trait IKarst<TState> {
-    fn create_token(ref self: TState, addresses: Array<ContractAddress>);
+pub trait IKarst<TState> {
+    fn mint_karstnft(ref self: TState);
+    fn token_id(self: @TState) -> u256;
 }

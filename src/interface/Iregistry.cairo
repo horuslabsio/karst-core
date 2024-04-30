@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait IRegistry<TContractState> {
+pub trait IRegistry<TContractState> {
     fn create_account(
         ref self: TContractState,
         implementation_hash: felt252,
