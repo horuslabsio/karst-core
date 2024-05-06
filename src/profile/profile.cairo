@@ -5,7 +5,7 @@ trait IKarstProfile<TState> {
     fn create_karstnft(
         ref self: TState,
         karstnft_contract_address: ContractAddress,
-        tokenbound_contract_address: ContractAddress,
+        registry_contract_address: ContractAddress,
         implementation_hash: felt252,
         salt: felt252
     );
@@ -46,7 +46,7 @@ mod KarstProfile {
         #[key]
         karstnft_contract_address: ContractAddress,
         #[key]
-        tokenbound_contract_address: ContractAddress,
+        registry_contract_address: ContractAddress,
         #[key]
         token_id: u256,
         #[key]
@@ -58,7 +58,7 @@ mod KarstProfile {
         fn create_karstnft(
             ref self: ContractState,
             karstnft_contract_address: ContractAddress,
-            tokenbound_contract_address: ContractAddress,
+            registry_contract_address: ContractAddress,
             implementation_hash: felt252,
             salt: felt252
         ) {
@@ -71,14 +71,14 @@ mod KarstProfile {
             let current_total_id = self.total_profile_id.read();
             if own_karstnft == 0 {
                 IKarstDispatcher { contract_address: karstnft_contract_address }.mint_karstnft();
-                IRegistryDispatcher { contract_address: tokenbound_contract_address }
+                IRegistryDispatcher { contract_address: registry_contract_address }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // assign profile id 
                 self.profile_id.write(caller, current_total_id + 1);
                 let profile_id = self.profile_id.read(caller);
                 self.profile_owner.write(profile_id, caller);
             } else {
-                IRegistryDispatcher { contract_address: tokenbound_contract_address }
+                IRegistryDispatcher { contract_address: registry_contract_address }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // execute create_account on token bound registry via dispatcher
                 self.profile_id.write(caller, current_total_id + 1);
@@ -91,7 +91,7 @@ mod KarstProfile {
                     CreateKarstProfile {
                         user: caller,
                         karstnft_contract_address,
-                        tokenbound_contract_address,
+                        registry_contract_address,
                         token_id,
                         owner: caller
                     }
