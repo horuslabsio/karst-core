@@ -9,8 +9,11 @@ trait IKarstProfile<TState> {
         implementation_hash: felt252,
         salt: felt252
     );
-    fn get_user_profile_id(self:@TState, user:ContractAddress) -> u256;
-    fn get_total_id(self:@TState) -> u256;
+    fn get_user_profile_id(self: @TState, user: ContractAddress) -> u256;
+    fn get_total_id(self: @TState) -> u256;
+    fn get_profile(self: @TState, profile_id: u256) -> ByteArray;
+    fn set_profile_metadata(ref self: TState, metadata_uri: ByteArray);
+    fn get_profile_owner_by_id(self: @TState, profile_id: u256) -> ContractAddress;
 }
 
 
@@ -20,11 +23,14 @@ mod KarstProfile {
     use karst::interface::Ikarst::{IKarstDispatcher, IKarstDispatcherTrait};
     use karst::interface::Iregistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
     use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+    use karst::errors::error::Errors::{NOT_PROFILE_OWNER};
 
     #[storage]
     struct Storage {
         profile_id: LegacyMap<ContractAddress, u256>,
-        total_profile_id: u256
+        total_profile_id: u256,
+        profile_metadata: LegacyMap<u256, ByteArray>,
+        profile_owner: LegacyMap<u256, ContractAddress>
     }
 
     #[event]
@@ -43,6 +49,8 @@ mod KarstProfile {
         tokenbound_contract_address: ContractAddress,
         #[key]
         token_id: u256,
+        #[key]
+        owner: ContractAddress
     }
 
     #[abi(embed_v0)]
@@ -67,11 +75,15 @@ mod KarstProfile {
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // assign profile id 
                 self.profile_id.write(caller, current_total_id + 1);
+                let profile_id = self.profile_id.read(caller);
+                self.profile_owner.write(profile_id, caller);
             } else {
                 IRegistryDispatcher { contract_address: tokenbound_contract_address }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // execute create_account on token bound registry via dispatcher
                 self.profile_id.write(caller, current_total_id + 1);
+                let profile_id = self.profile_id.read(caller);
+                self.profile_owner.write(profile_id, caller);
             }
             // emit event
             self
@@ -80,18 +92,35 @@ mod KarstProfile {
                         user: caller,
                         karstnft_contract_address,
                         tokenbound_contract_address,
-                        token_id
+                        token_id,
+                        owner: caller
                     }
                 )
         }
 
-        fn get_user_profile_id(self:@ContractState, user:ContractAddress) -> u256{
+        fn get_user_profile_id(self: @ContractState, user: ContractAddress) -> u256 {
             self.profile_id.read(user)
         }
 
-        fn get_total_id(self:@ContractState) -> u256{
+        fn get_total_id(self: @ContractState) -> u256 {
             self.total_profile_id.read()
         }
 
+        fn get_profile(self: @ContractState, profile_id: u256) -> ByteArray {
+            self.profile_metadata.read(profile_id)
+        }
+
+        fn set_profile_metadata(ref self: ContractState, metadata_uri: ByteArray) {
+            let caller = get_caller_address();
+            let profile_id = self.profile_id.read(caller);
+            let profile_owner = self.profile_owner.read(profile_id);
+            // assert that caller is the owner of the profile to be updated.
+            assert(caller == profile_owner, NOT_PROFILE_OWNER);
+            self.profile_metadata.write(profile_id, metadata_uri);
+        }
+
+        fn get_profile_owner_by_id(self: @ContractState, profile_id: u256) -> ContractAddress {
+            self.profile_owner.read(profile_id)
+        }
     }
 }
