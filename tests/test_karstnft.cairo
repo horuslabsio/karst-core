@@ -6,7 +6,6 @@ use karst::interface::Ikarst::{IKarstDispatcher, IKarstDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
 use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 
-
 fn deploy_contract(name: ByteArray) -> ContractAddress {
     let contract = declare(name).unwrap();
     let admin: ContractAddress = 123.try_into().unwrap();
