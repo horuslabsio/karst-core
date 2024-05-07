@@ -15,12 +15,12 @@ trait IKARSTPUBLICATIONS<T> { // similar to interface IERC20 in Solidity
 // *************************************************************************
     fn post(ref self:T, post: felt252 );
     fn postWithSig(ref self:T, post: felt252, sig:felt252 );
-    fn comment(ref self:T, post: felt252 );
-    fn commentWithSig(ref self:T, post: felt252, sig:felt252 );
+    fn comment(ref self:T, comment: felt252 );
+    fn commentWithSig(ref self:T, comment: felt252, sig:felt252 );
     fn mirror(ref self:T, post: felt252 );
     fn mirrorWithSig(ref self:T, post: felt252, sig:felt252 );
-    fn quote(ref self:T, post: felt252 );
-    fn quoteWithSig(ref self:T, post: felt252, sig:felt252 );
+    fn quote(ref self:T, quote: felt252 );
+    fn quoteWithSig(ref self:T, quote: felt252, sig:felt252 );
     fn tip(ref self:T, post: felt252 );
 
 // *************************************************************************
@@ -70,8 +70,6 @@ mod Publications {
         Mirror : Mirror,
         Quote : Quote,
         Tip : Tip,
-        Follow : Follow,
-        Unfollow : Unfollow,
     }
 
     // *************************************************************************
@@ -81,40 +79,41 @@ mod Publications {
     #[derive(Drop, starknet::Event)]
     struct Post {
         post: felt252,
+        publication_id: u256,
+        transaction_executor: ContractAddress,
+        block_timestamp: u256,
     }
 
     #[derive(Drop, starknet::Event)]
     struct Comment {
-        post: felt252,
+        comment: felt252,
+        publication_id: u256,
+        transaction_executor: ContractAddress,
+        block_timestamp: u256,
     }
 
     #[derive(Drop, starknet::Event)]
     struct Mirror {
         post: felt252,
+        publication_id: u256,
+        transaction_executor: ContractAddress,
+        block_timestamp: u256,
     }
 
     #[derive(Drop, starknet::Event)]
     struct Quote {
-        post: felt252,
+        quote: felt252,
+        publication_id: u256,
+        transaction_executor: ContractAddress,
+        block_timestamp: u256,
     }
 
     #[derive(Drop, starknet::Event)]
     struct Tip {
         post: felt252,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct Follow {
-        profile_id: felt252,
-    }
-
-    #[derive(Drop, starknet::Event)]
-    struct Unfollow {
-        profile_id: felt252,
-    }
-
-    struct Tip {
-        post: felt252,
+        publication_id: u256,
+        transaction_executor: ContractAddress,
+        block_timestamp: u256,
     }
 
     // *************************************************************************
