@@ -8,7 +8,7 @@ use starknet::ContractAddress;
 //                              INTERFACE of KARST PUBLICATIONS
 // *************************************************************************
 #[starknet::interface]
-trait IKARSTPUBLICATIONS<T> { // similar to interface IERC20 in Solidity
+trait IKARSTPUBLICATIONS<T> { 
 
 // *************************************************************************
 //                              PUBLISHING FUNCTIONS  
