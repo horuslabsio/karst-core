@@ -1,7 +1,6 @@
 use starknet::ContractAddress;
 
 
-
 #[starknet::contract]
 mod KarstProfile {
     use starknet::{ContractAddress, get_caller_address};
@@ -53,7 +52,7 @@ mod KarstProfile {
             let own_karstnft = IERC721Dispatcher { contract_address: karstnft_contract_address }
                 .balance_of(caller);
             let token_id = IKarstDispatcher { contract_address: karstnft_contract_address }
-                .token_id();
+                .get_user_token_id(caller);
             let current_total_id = self.total_profile_id.read();
             if own_karstnft == 0 {
                 IKarstDispatcher { contract_address: karstnft_contract_address }.mint_karstnft();
@@ -110,6 +109,5 @@ mod KarstProfile {
         fn get_profile_owner_by_id(self: @ContractState, profile_id: u256) -> ContractAddress {
             self.profile_owner.read(profile_id)
         }
-        
     }
 }

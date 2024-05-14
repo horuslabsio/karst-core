@@ -72,7 +72,8 @@ pub mod KarstNFT {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         admin: ContractAddress,
-        tokenId: u256
+        token_id: u256,
+        user_token_id: LegacyMap<ContractAddress, u256>
     }
 
     #[event]
@@ -102,12 +103,19 @@ pub mod KarstNFT {
     impl KarstImpl of IKarst<ContractState> {
         fn mint_karstnft(ref self: ContractState) {
             let caller = get_caller_address();
-            let mut current_token_id = self.tokenId.read();
+            let mut current_token_id = self.token_id.read();
             self.erc721._mint(caller, current_token_id);
+            self.user_token_id.write(caller, current_token_id);
             current_token_id += 1;
+            self.token_id.write(current_token_id);
         }
-        fn token_id(self: @ContractState) -> u256 {
-            self.tokenId.read()
+
+
+        fn get_user_token_id(self: @ContractState, caller: ContractAddress) -> u256 {
+            self.user_token_id.read(caller)
+        }
+        fn get_token_id(self: @ContractState) -> u256 {
+            self.token_id.read()
         }
     }
 }
