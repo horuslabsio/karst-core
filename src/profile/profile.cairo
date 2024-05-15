@@ -1,12 +1,11 @@
 use starknet::ContractAddress;
 
-
-
 #[starknet::contract]
 mod KarstProfile {
+    use core::traits::TryInto;
     use starknet::{ContractAddress, get_caller_address};
     use karst::interface::Ikarst::{IKarstDispatcher, IKarstDispatcherTrait};
-    use karst::interface::Iregistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
+    use karst::interface::Iregistry::{IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher};
     use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::errors::error::Errors::{NOT_PROFILE_OWNER};
     use karst::interface::Iprofile::IKarstProfile;
@@ -45,6 +44,7 @@ mod KarstProfile {
             ref self: ContractState,
             karstnft_contract_address: ContractAddress,
             registry_contract_address: ContractAddress,
+            registry_hash: felt252,
             implementation_hash: felt252,
             salt: felt252
         ) {
@@ -53,11 +53,11 @@ mod KarstProfile {
             let own_karstnft = IERC721Dispatcher { contract_address: karstnft_contract_address }
                 .balance_of(caller);
             let token_id = IKarstDispatcher { contract_address: karstnft_contract_address }
-                .token_id();
+                .get_user_token_id(caller);
             let current_total_id = self.total_profile_id.read();
             if own_karstnft == 0 {
                 IKarstDispatcher { contract_address: karstnft_contract_address }.mint_karstnft();
-                IRegistryDispatcher { contract_address: registry_contract_address }
+                IRegistryLibraryDispatcher { class_hash: registry_hash.try_into().unwrap() }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // assign profile id 
                 self.profile_id.write(caller, current_total_id + 1);
@@ -65,7 +65,7 @@ mod KarstProfile {
                 let profile_id = self.profile_id.read(caller);
                 self.profile_owner.write(profile_id, caller);
             } else {
-                IRegistryDispatcher { contract_address: registry_contract_address }
+                IRegistryLibraryDispatcher { class_hash: registry_hash.try_into().unwrap() }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // execute create_account on token bound registry via dispatcher
                 self.profile_id.write(caller, current_total_id + 1);
@@ -110,6 +110,5 @@ mod KarstProfile {
         fn get_profile_owner_by_id(self: @ContractState, profile_id: u256) -> ContractAddress {
             self.profile_owner.read(profile_id)
         }
-        
     }
 }

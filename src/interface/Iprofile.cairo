@@ -5,6 +5,7 @@ pub trait IKarstProfile<TState> {
         ref self: TState,
         karstnft_contract_address: ContractAddress,
         registry_contract_address: ContractAddress,
+        registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252
     );
