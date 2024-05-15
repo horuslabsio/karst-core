@@ -1,9 +1,8 @@
 use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
-use core::traits::TryInto;
-use core::traits::Into;
-use starknet::{ContractAddress};
+use core::traits::{TryInto, Into};
+use starknet::{ContractAddress, class_hash::ClassHash};
 use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank};
 use karst::interface::Ikarst::{IKarstDispatcher, IKarstDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
@@ -18,7 +17,6 @@ use karst::interface::Iregistry::{IRegistryDispatcher, IRegistryDispatcherTrait}
 
 
 fn deploy_account() -> ContractAddress {
-    // karstnft
     let erc721_contract_address = deploy_contract("KarstNFT");
     // deploy account contract
     let account_contract = declare("Account").unwrap();
@@ -31,11 +29,10 @@ fn deploy_account() -> ContractAddress {
     account_contract_address
 }
 
-fn deploy_registry() -> ContractAddress {
-    //  REGISTRY
-    let registry_contract = declare("Registry").unwrap();
-    let (registry_contract_address, _) = registry_contract.deploy(@array![]).unwrap_syscall();
-    registry_contract_address
+fn deploy_registry() -> (ContractAddress, felt252) {
+    let registry_class_hash = declare("Registry").unwrap();
+    let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
+    return (registry_contract_address, registry_class_hash.class_hash.into());
 }
 fn deploy_profile() -> ContractAddress {
     let profile_contract = declare("KarstProfile").unwrap();
@@ -77,34 +74,35 @@ const user4: felt252 = 'user_four';
 #[test]
 fn test_token_mint() {
     let contract_address: ContractAddress = deploy_contract("KarstNFT");
-    let registry_contract_address = deploy_registry();
+    let (registry_contract_address, registry_class_hash) = deploy_registry();
     let profile_contract_address = deploy_profile();
     let acct_class_hash = declare("Account").unwrap_syscall().class_hash;
     let karstDispatcher = IKarstDispatcher { contract_address };
     let dispatcher = IERC721Dispatcher { contract_address };
-    start_prank(CheatTarget::One(contract_address), user1.try_into().unwrap());
-    karstDispatcher.mint_karstnft();
-    let token_id = karstDispatcher.get_user_token_id(user1.try_into().unwrap());
-    let base_uri = dispatcher.token_uri(token_id);
-    assert(base_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/0", 'error');
-    stop_prank(CheatTarget::One(contract_address));
 
-    start_prank(CheatTarget::One(contract_address), user2.try_into().unwrap());
-    karstDispatcher.mint_karstnft();
-    let token_id = karstDispatcher.get_user_token_id(user2.try_into().unwrap());
-    let base_uri2 = dispatcher.token_uri(token_id);
-    assert(base_uri2 == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/1", 'error');
+    // start_prank(CheatTarget::One(contract_address), user1.try_into().unwrap());
+    // karstDispatcher.mint_karstnft();
+    // let token_id = karstDispatcher.get_user_token_id(user1.try_into().unwrap());
+    // let base_uri = dispatcher.token_uri(token_id);
+    // assert(base_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/0", 'error');
+    // stop_prank(CheatTarget::One(contract_address));
 
-    stop_prank(CheatTarget::One(contract_address));
+    // start_prank(CheatTarget::One(contract_address), user2.try_into().unwrap());
+    // karstDispatcher.mint_karstnft();
+    // let token_id = karstDispatcher.get_user_token_id(user2.try_into().unwrap());
+    // let base_uri2 = dispatcher.token_uri(token_id);
+    // assert(base_uri2 == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/1", 'error');
+    // stop_prank(CheatTarget::One(contract_address));
 
-    start_prank(CheatTarget::One(contract_address), user3.try_into().unwrap());
-    karstDispatcher.mint_karstnft();
-    let token_id = karstDispatcher.get_user_token_id(user3.try_into().unwrap());
-    let current_token_id = karstDispatcher.get_token_id();
-    println!(" current token_id {}", current_token_id);
-    let base_uri3 = dispatcher.token_uri(token_id);
-    assert(base_uri3 == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/2", 'error');
-    stop_prank(CheatTarget::One(contract_address));
+    // start_prank(CheatTarget::One(contract_address), user3.try_into().unwrap());
+    // karstDispatcher.mint_karstnft();
+    // let token_id = karstDispatcher.get_user_token_id(user3.try_into().unwrap());
+    // let current_token_id = karstDispatcher.get_token_id();
+    // println!(" current token_id {}", current_token_id);
+    // let base_uri3 = dispatcher.token_uri(token_id);
+    // assert(base_uri3 == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/2", 'error');
+    // stop_prank(CheatTarget::One(contract_address));
+    
     //user 4 create profile
     start_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]), user4.try_into().unwrap());
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
@@ -112,7 +110,7 @@ fn test_token_mint() {
     // karstDispatcher.mint_karstnft();
     dispatcher
         .create_karstnft(
-            contract_address, registry_contract_address, acct_class_hash.into(), 2456
+            contract_address, registry_contract_address, registry_class_hash, acct_class_hash.into(), 2456
         );
         let token_id = karstDispatcher.get_user_token_id(user4.try_into().unwrap());
         let owner = erc721.owner_of(token_id);

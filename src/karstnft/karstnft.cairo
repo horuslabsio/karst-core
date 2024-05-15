@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use openzeppelin::{
-    token::erc721::{ERC721Component::{ERC721Metadata, HasComponent}},
+    token::erc721::{ ERC721Component::{ ERC721Metadata, HasComponent } },
     introspection::src5::SRC5Component,
 };
 
@@ -48,7 +48,6 @@ pub mod KarstNFT {
     impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
     impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
 
-
     // make it a NFT
     #[abi(embed_v0)]
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
@@ -87,7 +86,6 @@ pub mod KarstNFT {
         OwnableEvent: OwnableComponent::Event,
     }
 
-
     #[constructor]
     fn constructor(
         ref self: ContractState,
@@ -99,6 +97,7 @@ pub mod KarstNFT {
         self.admin.write(admin);
         self.erc721.initializer(name, symbol, base_uri);
     }
+
     #[abi(embed_v0)]
     impl KarstImpl of IKarst<ContractState> {
         fn mint_karstnft(ref self: ContractState) {
@@ -109,8 +108,6 @@ pub mod KarstNFT {
             current_token_id += 1;
             self.token_id.write(current_token_id);
         }
-
-
         fn get_user_token_id(self: @ContractState, caller: ContractAddress) -> u256 {
             self.user_token_id.read(caller)
         }
