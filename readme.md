@@ -7,7 +7,7 @@ Karst is a web3 social graph on Starknet. it aims to build a social infrastructu
 - [ ] Implement `create profiles contract` functionality using `erc6551`
   - [x] Implement `create profile` functionality
   - [x] Implement `setProfileMetadataURI` functionality
-  - [ ] Write test for `createProfile` and related `profile` functions
+  - [x] Write test for `createProfile` and related `profile` functions
 - [ ] implement `Publications` contract
 - [ ] Make contract upgradable, preferably uups.
   - [ ] implement `post` functionality

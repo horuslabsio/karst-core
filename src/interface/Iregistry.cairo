@@ -1,5 +1,8 @@
 use starknet::ContractAddress;
 
+// *************************************************************************
+//                              INTERFACE of REGISTRY
+// *************************************************************************
 #[starknet::interface]
 pub trait IRegistry<TContractState> {
     fn create_account(
