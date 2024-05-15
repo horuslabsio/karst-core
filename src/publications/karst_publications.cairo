@@ -27,13 +27,13 @@ trait IKARSTPUBLICATIONS<T> {
 //                              PROFILE INTERACTION FUNCTIONS  
 // *************************************************************************
     
-    fn follow(ref self:T, profile_id: felt252 );
-    fn followWithSig(ref self:T, profile_id: felt252, sig:felt252 );
-    fn unfollow(ref self:T, profile_id: felt252 );
-    fn unfollowWithSig(ref self:T, profile_id: felt252, sig:felt252 );
-    fn is_following(self: @T, profile_id: felt252) -> bool;
-    fn postWithSig(ref self:T, post: felt252, sig:felt252 );
-    fn isDelegatedExecutorApproved(self: @T, profile_id: felt252, executor: ContractAddress) -> bool;
+    // fn follow(ref self:T, profile_id: felt252 );
+    // fn followWithSig(ref self:T, profile_id: felt252, sig:felt252 );
+    // fn unfollow(ref self:T, profile_id: felt252 );
+    // fn unfollowWithSig(ref self:T, profile_id: felt252, sig:felt252 );
+    // fn is_following(self: @T, profile_id: felt252) -> bool;
+    // fn postWithSig(ref self:T, post: felt252, sig:felt252 );
+    // fn isDelegatedExecutorApproved(self: @T, profile_id: felt252, executor: ContractAddress) -> bool;
 }
 
 
@@ -132,6 +132,114 @@ mod Publications {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
-        // fn post(ref self: &mut)
+        fn post(ref self: ContractState, post: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Post(Post {
+                post,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn postWithSig(ref self: ContractState, post: felt252, sig: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Post(Post {
+                post,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn comment(ref self: ContractState, comment: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Comment(Comment {
+                comment,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn commentWithSig(ref self: ContractState, comment: felt252, sig: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Comment(Comment {
+                comment,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn mirror(ref self: ContractState, post: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Mirror(Mirror {
+                post,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn mirrorWithSig(ref self: ContractState, post: felt252, sig: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Mirror(Mirror {
+                post,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn quote(ref self: ContractState, quote: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Quote(Quote {
+                quote,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn quoteWithSig(ref self: ContractState, quote: felt252, sig: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Quote(Quote {
+                quote,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        fn tip(ref self: ContractState, post: felt252) {
+            let publication_id = 0;
+            let transaction_executor = get_caller_address();
+            let block_timestamp = 0;
+            Event::Tip(Tip {
+                post,
+                publication_id,
+                transaction_executor,
+                block_timestamp,
+            });
+        }
+
+        // *************************************************************************
     }
 }
