@@ -1,10 +1,12 @@
 use starknet::ContractAddress;
+// *************************************************************************
+//                              INTERFACE of KARST PROFILE
+// *************************************************************************
 #[starknet::interface]
 pub trait IKarstProfile<TState> {
-    fn create_karstnft(
+    fn create_karstprofile(
         ref self: TState,
         karstnft_contract_address: ContractAddress,
-        registry_contract_address: ContractAddress,
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252

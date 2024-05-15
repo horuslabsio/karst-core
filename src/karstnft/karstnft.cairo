@@ -1,6 +1,10 @@
 use starknet::ContractAddress;
+
+// *************************************************************************
+//                             OZ IMPORTS
+// *************************************************************************
 use openzeppelin::{
-    token::erc721::{ ERC721Component::{ ERC721Metadata, HasComponent } },
+    token::erc721::{ERC721Component::{ERC721Metadata, HasComponent}},
     introspection::src5::SRC5Component,
 };
 
@@ -30,8 +34,11 @@ impl IERC721MetadataImpl<
 
 #[starknet::contract]
 pub mod KarstNFT {
+    // *************************************************************************
+    //                             IMPORTS
+    // *************************************************************************
     use starknet::{ContractAddress, get_caller_address};
-    use karst::interface::Ikarst::IKarst;
+    use karst::interface::IkarstNFT;
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -62,6 +69,10 @@ pub mod KarstNFT {
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
+
+    // *************************************************************************
+    //                              STORAGE
+    // *************************************************************************
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -86,10 +97,13 @@ pub mod KarstNFT {
         OwnableEvent: OwnableComponent::Event,
     }
 
+    // *************************************************************************
+    //                              CONSTRUCTOR
+    // *************************************************************************
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        admin: ContractAddress,
+        admin: ContractAddress, // to perform upgrade
         name: ByteArray,
         symbol: ByteArray,
         base_uri: ByteArray
@@ -99,7 +113,8 @@ pub mod KarstNFT {
     }
 
     #[abi(embed_v0)]
-    impl KarstImpl of IKarst<ContractState> {
+    impl KarstImpl of IkarstNFT::IKarstNFT<ContractState> {
+        /// @notice mints kartsnft
         fn mint_karstnft(ref self: ContractState) {
             let caller = get_caller_address();
             let mut current_token_id = self.token_id.read();
@@ -108,10 +123,13 @@ pub mod KarstNFT {
             current_token_id += 1;
             self.token_id.write(current_token_id);
         }
-        fn get_user_token_id(self: @ContractState, caller: ContractAddress) -> u256 {
-            self.user_token_id.read(caller)
+        /// @notice returns karstnft token_id
+        /// @param user the address of user to query its token_id
+        fn get_user_token_id(self: @ContractState, user: ContractAddress) -> u256 {
+            self.user_token_id.read(user)
         }
-        fn get_token_id(self: @ContractState) -> u256 {
+        /// @notice returns current token_id
+        fn get_current_token_id(self: @ContractState) -> u256 {
             self.token_id.read()
         }
     }
