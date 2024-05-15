@@ -1,14 +1,11 @@
 //! Contract for Karst Publications
-// *************************************************************************
-//                              IMPORTS
-// *************************************************************************
 
 use starknet::ContractAddress;
 // *************************************************************************
 //                              INTERFACE of KARST PUBLICATIONS
 // *************************************************************************
 #[starknet::interface]
-trait IKARSTPUBLICATIONS<T> { 
+trait IKarstPublications<T> { 
 
 // *************************************************************************
 //                              PUBLISHING FUNCTIONS  
@@ -36,17 +33,16 @@ trait IKARSTPUBLICATIONS<T> {
     // fn isDelegatedExecutorApproved(self: @T, profile_id: felt252, executor: ContractAddress) -> bool;
 }
 
-
 #[starknet::contract]
 mod Publications {
     // *************************************************************************
     //                              IMPORTS
     // *************************************************************************
     use starknet::{ContractAddress, get_contract_address, get_caller_address};
-    use zeroable::Zeroable;
-    use super::IKARSTPUBLICATIONS;
-    use openzeppelin::token::erc20::{ERC20ABIDispatcher};
-    use openzeppelin::token::erc20::interface::ERC20ABIDispatcherTrait;
+    
+    use super::IKarstPublications;
+    // use openzeppelin::token::erc20::{ERC20ABIDispatcher};
+    // use openzeppelin::token::erc20::interface::ERC20ABIDispatcherTrait;
    
 
     // *************************************************************************
@@ -66,7 +62,7 @@ mod Publications {
     #[derive(Drop, starknet::Event)]
     enum Event {
         Post: Post,
-        comment : Comment,
+        Comment : Comment,
         Mirror : Mirror,
         Quote : Quote,
         Tip : Tip,
@@ -120,7 +116,9 @@ mod Publications {
     //                              CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor() {
+    fn constructor(
+        ref self: ContractState,
+    ) {
     }
 
     // *************************************************************************
@@ -128,7 +126,7 @@ mod Publications {
     // *************************************************************************
 
     #[external(v0)]
-    impl PublicationsImpl of super::IKARSTPUBLICATIONS<ContractState> {
+    impl PublicationsImpl of IKarstPublications<ContractState> {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
