@@ -4,7 +4,7 @@ mod FollowNFT {
     //                            IMPORT
     // *************************************************************************
     use starknet::{ ContractAddress, get_caller_address, get_block_timestamp };
-    use core::zeroable::Zeroable;
+    use core::num::traits::zero::Zero;
     use karst::interface::IFollowNFT::IFollowNFT;
     use karst::base::{
         errors::Errors,
@@ -64,7 +64,10 @@ mod FollowNFT {
             ref self: ContractState,
             unfollower_profile_id: u256,
         ) {
-
+            hub_only(self.karst_hub.read());
+            let follow_token_id = self.follow_token_id_by_follower_profile_id.read(unfollower_profile_id);
+            assert(follow_token_id.is_non_zero(), Errors::NOT_FOLLOWING);
+            self._unfollow(unfollower_profile_id, follow_token_id);
         }
     }
 
@@ -78,13 +81,20 @@ mod FollowNFT {
             let new_follower_count = self.follower_count.read() + 1;
             let follow_timestamp: u64 = get_block_timestamp();
             let follow_data = FollowData { 
-                follower_profile_id: follower_profile_id, follow_timestamp: follow_timestamp 
+                follower_profile_id: follower_profile_id, 
+                follow_timestamp: follow_timestamp 
             };
 
             self.follow_token_id_by_follower_profile_id.write(follower_profile_id, assigned_follow_token_id);
             self.follow_data_by_follow_token_id.write(assigned_follow_token_id, follow_data);
             self.follower_count.write(new_follower_count);
             return (assigned_follow_token_id);
+        }
+
+        fn _unfollow(ref self: ContractState, unfollower: u256, follow_token_id: u256) {
+            self.follow_token_id_by_follower_profile_id.write(unfollower, 0);
+            self.follow_data_by_follow_token_id.write(unfollower, FollowData { follower_profile_id: 0, follow_timestamp: 0} );
+            self.follower_count.write(self.follower_count.read() - 1);
         }
     }
 }
