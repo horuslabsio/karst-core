@@ -12,7 +12,7 @@ mod KarstProfile {
         IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
     };
     use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::errors::error::Errors::{NOT_PROFILE_OWNER};
+    use karst::base::errors::Errors::{NOT_PROFILE_OWNER};
     use karst::interface::Iprofile::IKarstProfile;
 
     // *************************************************************************
@@ -47,6 +47,9 @@ mod KarstProfile {
         owner: ContractAddress
     }
 
+    // *************************************************************************
+    //                            EXTERNAL FUNCTIONS
+    // *************************************************************************
     #[abi(embed_v0)]
     impl KarstProfileImpl of IKarstProfile<ContractState> {
         /// @notice creates karst
