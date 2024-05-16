@@ -106,24 +106,25 @@ fn test_token_mint() {
     assert(base_uri3 == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/2", 'error');
     stop_prank(CheatTarget::One(contract_address));
     //user 4 create profile
-    start_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]), user4.try_into().unwrap());
+    start_prank(
+        CheatTarget::Multiple(array![profile_contract_address, contract_address]),
+        user4.try_into().unwrap()
+    );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    let erc721 = IERC721Dispatcher{contract_address};
+    let erc721 = IERC721Dispatcher { contract_address };
     // karstDispatcher.mint_karstnft();
     dispatcher
-        .create_karstnft(
-            contract_address, registry_contract_address, acct_class_hash.into(), 2456
-        );
-        let token_id = karstDispatcher.get_user_token_id(user4.try_into().unwrap());
-        let owner = erc721.owner_of(token_id);
-        let current_token_id = karstDispatcher.get_token_id();
-        let fmtuser4 = to_name(user4);
-        println!("user token_id {}", token_id);
-        println!(" current token_id {}", current_token_id);
-        println!("owner of token_id {:?}", owner);
-        println!("user4 {:?}", fmtuser4);
-        // assert(current_token_id == 4, 'invalid');
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address,contract_address]));
+        .create_karstnft(contract_address, registry_contract_address, acct_class_hash.into(), 2456);
+    let token_id = karstDispatcher.get_user_token_id(user4.try_into().unwrap());
+    let owner = erc721.owner_of(token_id);
+    let current_token_id = karstDispatcher.get_token_id();
+    let fmtuser4 = to_name(user4);
+    println!("user token_id {}", token_id);
+    println!(" current token_id {}", current_token_id);
+    println!("owner of token_id {:?}", owner);
+    println!("user4 {:?}", fmtuser4);
+    // assert(current_token_id == 4, 'invalid');
+    stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
 }
 
 // #[test]
