@@ -49,6 +49,7 @@ fn test_post() {
                 )
             ]
         );
+    assert(spy.events.len() == 0, 'There should be no events');
     println!("deployed address: {:?}", contract_address);
     stop_prank(CheatTarget::One(contract_address));
 }

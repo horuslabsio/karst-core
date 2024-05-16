@@ -126,21 +126,21 @@ pub mod Publications {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Post(Post { post, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Post { post, publication_id, transaction_executor, block_timestamp, });
         }
 
         fn postWithSig(ref self: ContractState, post: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Post(Post { post, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Post { post, publication_id, transaction_executor, block_timestamp, });
         }
 
         fn comment(ref self: ContractState, comment: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Comment(
+            self.emit(
                 Comment { comment, publication_id, transaction_executor, block_timestamp, }
             );
         }
@@ -149,7 +149,7 @@ pub mod Publications {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Comment(
+            self.emit(
                 Comment { comment, publication_id, transaction_executor, block_timestamp, }
             );
         }
@@ -158,35 +158,35 @@ pub mod Publications {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Mirror(Mirror { post, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Mirror { post, publication_id, transaction_executor, block_timestamp, });
         }
 
         fn mirrorWithSig(ref self: ContractState, post: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Mirror(Mirror { post, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Mirror { post, publication_id, transaction_executor, block_timestamp, });
         }
 
         fn quote(ref self: ContractState, quote: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Quote(Quote { quote, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Quote { quote, publication_id, transaction_executor, block_timestamp, });
         }
 
         fn quoteWithSig(ref self: ContractState, quote: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Quote(Quote { quote, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Quote { quote, publication_id, transaction_executor, block_timestamp, });
         }
 
         fn tip(ref self: ContractState, post: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
-            Event::Tip(Tip { post, publication_id, transaction_executor, block_timestamp, });
+            self.emit(Tip { post, publication_id, transaction_executor, block_timestamp, });
         }
     // *************************************************************************
     }
