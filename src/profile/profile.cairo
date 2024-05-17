@@ -15,7 +15,10 @@ mod KarstProfile {
         profile_id: LegacyMap<ContractAddress, u256>,
         total_profile_id: u256,
         profile_metadata_uri: LegacyMap<u256, ByteArray>,
-        profile_owner: LegacyMap<u256, ContractAddress>
+        profile_owner: LegacyMap<u256, ContractAddress>,
+        contract_token_balances: LegacyMap<ContractAddress, u256>, // token address -> token balance
+        is_token_allowed: LegacyMap<ContractAddress, bool>, // token address -> bool
+        owner: ContractAddress
     }
 
     #[event]

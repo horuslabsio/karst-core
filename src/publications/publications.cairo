@@ -47,7 +47,12 @@ pub mod Publications {
     // *************************************************************************
 
     #[storage]
-    struct Storage {}
+    struct Storage {
+        // // profile_id -> profile
+        // profiles: HashMap<felt252, Profile>,
+        // // profile_id -> profile_id -> bool
+        // delegated_executors: HashMap<felt252, HashMap<ContractAddress, bool>>,
+    }
 
     // *************************************************************************
     //                              EVENTS
@@ -122,6 +127,8 @@ pub mod Publications {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
+
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn post(ref self: ContractState, post: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -129,6 +136,7 @@ pub mod Publications {
             self.emit(Post { post, publication_id, transaction_executor, block_timestamp, });
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn postWithSig(ref self: ContractState, post: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -136,6 +144,7 @@ pub mod Publications {
             self.emit(Post { post, publication_id, transaction_executor, block_timestamp, });
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn comment(ref self: ContractState, comment: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -145,6 +154,7 @@ pub mod Publications {
             );
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn commentWithSig(ref self: ContractState, comment: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -154,6 +164,7 @@ pub mod Publications {
             );
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn mirror(ref self: ContractState, post: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -161,6 +172,7 @@ pub mod Publications {
             self.emit(Mirror { post, publication_id, transaction_executor, block_timestamp, });
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn mirrorWithSig(ref self: ContractState, post: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -168,6 +180,7 @@ pub mod Publications {
             self.emit(Mirror { post, publication_id, transaction_executor, block_timestamp, });
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn quote(ref self: ContractState, quote: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -175,6 +188,7 @@ pub mod Publications {
             self.emit(Quote { quote, publication_id, transaction_executor, block_timestamp, });
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn quoteWithSig(ref self: ContractState, quote: felt252, sig: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
@@ -182,6 +196,7 @@ pub mod Publications {
             self.emit(Quote { quote, publication_id, transaction_executor, block_timestamp, });
         }
 
+        //onlyProfileOwnerOrDelegatedExecutor can post
         fn tip(ref self: ContractState, post: felt252) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
