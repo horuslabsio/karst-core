@@ -18,7 +18,16 @@ pub trait IFollowNFT<TState> {
     // *************************************************************************
     //                            GETTERS
     // *************************************************************************
-    fn get_follower_profile_id(ref self: TState, follow_token_id: u256) -> u256;
-    fn get_follow_timestamp(ref self: TState, follow_token_id: u256) -> u64;
-    fn get_follow_data(ref self: TState, follow_token_id: u256) -> FollowData;
+    fn get_follower_profile_address(self: @TState, follow_token_id: u256) -> ContractAddress;
+    fn get_follow_timestamp(self: @TState, follow_token_id: u256) -> u64;
+    fn get_follow_data(self: @TState, follow_token_id: u256) -> FollowData;
+    fn is_following(self: @TState, follower_profile_address: ContractAddress) -> bool;
+    fn get_follow_token_id(self: @TState, follower_profile_address: ContractAddress) -> u256;
+    fn get_follower_count(self: @TState) -> u256;
+    // *************************************************************************
+    //                              METADATA 
+    // *************************************************************************
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+    fn token_uri(self: @TState, follow_token_id: u256) -> ByteArray;
 }

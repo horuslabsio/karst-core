@@ -88,6 +88,53 @@ mod FollowNFT {
             self._unfollow(follower_profile_address, follow_token_id);
             return true;
         }
+
+        // *************************************************************************
+        //                            GETTERS
+        // *************************************************************************
+        fn get_follower_profile_address(
+            self: @ContractState, follow_token_id: u256
+        ) -> ContractAddress {
+            let follow_data = self.follow_data_by_follow_token_id.read(follow_token_id);
+            follow_data.follower_profile_address
+        }
+
+        fn get_follow_timestamp(self: @ContractState, follow_token_id: u256) -> u64 {
+            let follow_data = self.follow_data_by_follow_token_id.read(follow_token_id);
+            follow_data.follow_timestamp
+        }
+
+        fn get_follow_data(self: @ContractState, follow_token_id: u256) -> FollowData {
+            self.follow_data_by_follow_token_id.read(follow_token_id)
+        }
+
+        fn is_following(self: @ContractState, follower_profile_address: ContractAddress) -> bool {
+            self.follow_token_id_by_follower_profile_address.read(follower_profile_address) != 0
+        }
+
+        fn get_follow_token_id(
+            self: @ContractState, follower_profile_address: ContractAddress
+        ) -> u256 {
+            self.follow_token_id_by_follower_profile_address.read(follower_profile_address)
+        }
+
+        fn get_follower_count(self: @ContractState) -> u256 {
+            self.follower_count.read()
+        }
+
+        // *************************************************************************
+        //                            METADATA
+        // *************************************************************************
+        fn name(self: @ContractState) -> ByteArray {
+            return "KARST:FOLLOWER";
+        }
+        fn symbol(self: @ContractState) -> ByteArray {
+            return "KFL";
+        }
+        fn token_uri(self: @ContractState, follow_token_id: u256) -> ByteArray {
+            // TODO: return token uri for follower contract
+            return "TODO";
+        }
     }
 
     // *************************************************************************
