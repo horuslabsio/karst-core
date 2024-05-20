@@ -20,10 +20,9 @@ mod KarstProfile {
     // *************************************************************************
     #[storage]
     struct Storage {
-        profile_id: LegacyMap<ContractAddress, u256>, // mapping of user => profile_id
-        total_profile_id: u256, //count of total profile created
-        profile_metadata_uri: LegacyMap<u256, ByteArray>, //mapping of profile_id => metadata_uri
-        profile_owner: LegacyMap<u256, ContractAddress> // mapping of profile_id => user
+        profile_id: LegacyMap<ContractAddress, ContractAddress>, // mapping of user => profile_address
+        profile_metadata_uri: LegacyMap<ContractAddress, ByteArray>, //mapping of profile_id => metadata_uri
+        profile_owner: LegacyMap<ContractAddress, ContractAddress> // mapping of profile_address => user
     }
 
     // *************************************************************************
@@ -67,22 +66,19 @@ mod KarstProfile {
                 .balance_of(caller);
             let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
                 .get_user_token_id(caller);
-            let current_total_id = self.total_profile_id.read();
             if own_karstnft == 0 {
                 IKarstNFTDispatcher { contract_address: karstnft_contract_address }.mint_karstnft();
-                IRegistryLibraryDispatcher { class_hash: registry_hash.try_into().unwrap() }
+             let profile_address =   IRegistryLibraryDispatcher { class_hash: registry_hash.try_into().unwrap() }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // assign profile id 
-                self.profile_id.write(caller, current_total_id + 1);
-                self.total_profile_id.write(current_total_id + 1);
+                self.profile_id.write(caller, profile_address);
                 let profile_id = self.profile_id.read(caller);
                 self.profile_owner.write(profile_id, caller);
             } else {
-                IRegistryLibraryDispatcher { class_hash: registry_hash.try_into().unwrap() }
+             let profile_address =   IRegistryLibraryDispatcher { class_hash: registry_hash.try_into().unwrap() }
                     .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
                 // execute create_account on token bound registry via dispatcher
-                self.profile_id.write(caller, current_total_id + 1);
-                self.total_profile_id.write(current_total_id + 1);
+                self.profile_id.write(caller, profile_address);
                 let profile_id = self.profile_id.read(caller);
                 self.profile_owner.write(profile_id, caller);
             }
@@ -90,23 +86,23 @@ mod KarstProfile {
             self
                 .emit(
                     CreateKarstProfile {
-                        user: caller, karstnft_contract_address, token_id, owner: caller
+                        user: caller, karstnft_contract_address, token_id, owner: caller,
                     }
                 )
         }
 
         /// @notice returns user profile_id
         /// @params user ContractAddress of user 
-        fn get_user_profile_id(self: @ContractState, user: ContractAddress) -> u256 {
+        fn get_user_profile_address(self: @ContractState, user: ContractAddress) -> ContractAddress {
             self.profile_id.read(user)
         }
-        /// @notice returns total_profile_id created
-        fn get_total_id(self: @ContractState) -> u256 {
-            self.total_profile_id.read()
-        }
+        // /// @notice returns total_profile_id created
+        // fn get_total_id(self: @ContractState) -> u256 {
+        //     self.total_profile_id.read()
+        // }
         /// @notice returns user metadata
         /// @params profile_id profile_id of user
-        fn get_profile(self: @ContractState, profile_id: u256) -> ByteArray {
+        fn get_profile(self: @ContractState, profile_id: ContractAddress) -> ByteArray {
             self.profile_metadata_uri.read(profile_id)
         }
         /// @notice set profile metadata_uri (`banner_image, discription, profile_image` to be uploaded to arweave or ipfs)
@@ -120,8 +116,8 @@ mod KarstProfile {
             self.profile_metadata_uri.write(profile_id, metadata_uri);
         }
         /// @notice returns owner of a profile
-        /// @params profile_id the profile_id to query for.
-        fn get_profile_owner_by_id(self: @ContractState, profile_id: u256) -> ContractAddress {
+        /// @params profile_id the profile_id_address to query for.
+        fn get_profile_owner_by_id(self: @ContractState, profile_id: ContractAddress) -> ContractAddress {
             self.profile_owner.read(profile_id)
         }
     }
