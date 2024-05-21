@@ -108,7 +108,7 @@ mod KarstProfile {
         fn get_profile(self: @ContractState, profile_id: ContractAddress) -> ByteArray {
             self.profile_metadata_uri.read(profile_id)
         }
-        /// @notice set profile metadata_uri (`banner_image, discription, profile_image` to be uploaded to arweave or ipfs)
+        /// @notice set profile metadata_uri (`banner_image, description, profile_image` to be uploaded to arweave or ipfs)
         /// @params metadata_uri the profile CID
         fn set_profile_metadata_uri(ref self: ContractState, metadata_uri: ByteArray) {
             let caller = get_caller_address();
