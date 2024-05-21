@@ -93,7 +93,7 @@ fn test_token_mint() {
     let current_token_id = karstDispatcher.get_current_token_id();
     let _token_user1_uri = erc721Dispatcher.token_uri(token_id);
     dispatcher.set_profile_metadata_uri("ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
-    let user1_profile_id = dispatcher.get_user_profile_id(user1.try_into().unwrap());
+    let user1_profile_id = dispatcher.get_user_profile_address(user1.try_into().unwrap());
     let user1_profile_uri = dispatcher.get_profile(user1_profile_id);
     assert(
         user1_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid'
