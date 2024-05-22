@@ -2,6 +2,11 @@
 name = "karst"
 version = "0.1.0"
 edition = "2023_10"
+authors = ["Horus Labs <horuslabsio@gmail.com>"]
+description = "Decentralized Social Graph on Starknet"
+repository = "https://github.com/Starknet-Africa-Edu/TBA/blob/main/Scarb.toml"
+license-file = "LICENSE"
+keywords = ["Karst", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
 
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
