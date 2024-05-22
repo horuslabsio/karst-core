@@ -5,7 +5,7 @@ use karst::base::types::FollowData;
 //                              INTERFACE of FollowNFT 
 // *************************************************************************
 #[starknet::interface]
-pub trait IFollow<TState> {
+pub trait IFollowNFT<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************

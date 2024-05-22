@@ -6,7 +6,7 @@ mod Follow {
     use core::traits::TryInto;
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use core::num::traits::zero::Zero;
-    use karst::interfaces::{IFollow::IFollow};
+    use karst::interfaces::{IFollowNFT::IFollowNFT};
     use karst::base::{errors::Errors, hubrestricted::HubRestricted::hub_only};
     use karst::base::types::FollowData;
 
@@ -62,7 +62,7 @@ mod Follow {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(ref self: ContractState, hub: ContractAddress, follow_nft: ContractAddress) {
+    fn constructor(ref self: ContractState, hub: ContractAddress) {
         self.karst_hub.write(hub);
     }
 
@@ -70,7 +70,7 @@ mod Follow {
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
     #[abi(embed_v0)]
-    impl FollowImpl of IFollow<ContractState> {
+    impl FollowImpl of IFollowNFT<ContractState> {
         fn initialize(ref self: ContractState, profile_address: ContractAddress) {
             assert(!self.initialized.read(), Errors::INITIALIZED);
             self.initialized.write(true);
@@ -98,6 +98,7 @@ mod Follow {
         fn process_block(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
+            hub_only(self.karst_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);
