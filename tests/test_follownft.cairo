@@ -2,10 +2,12 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ ContractAddress };
-use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp};
+use starknet::{ContractAddress};
+use snforge_std::{
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp
+};
 
-use karst::interfaces::IFollowNFT::{ IFollowNFTDispatcher, IFollowNFTDispatcherTrait };
+use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
 use karst::follownft::follownft::Follow;
 use karst::base::types::FollowData;
 
@@ -19,7 +21,9 @@ const FOLLOWER4: felt252 = 24262;
 fn __setup__() -> ContractAddress {
     let follow_nft_contract = declare("Follow").unwrap();
     let mut follow_nft_constructor_calldata = array![HUB_ADDRESS];
-    let (follow_nft_contract_address, _) = follow_nft_contract.deploy(@follow_nft_constructor_calldata).unwrap();
+    let (follow_nft_contract_address, _) = follow_nft_contract
+        .deploy(@follow_nft_constructor_calldata)
+        .unwrap();
     return (follow_nft_contract_address);
 }
 
@@ -113,10 +117,12 @@ fn test_follow_data() {
     let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
     let follow_data = dispatcher.get_follow_data(follow_id);
     let data = FollowData {
-        follower_profile_address: FOLLOWER1.try_into().unwrap(),
-        follow_timestamp: 100
+        follower_profile_address: FOLLOWER1.try_into().unwrap(), follow_timestamp: 100
     };
-    assert(follow_data.follower_profile_address == data.follower_profile_address, 'invalid follower profile');
+    assert(
+        follow_data.follower_profile_address == data.follower_profile_address,
+        'invalid follower profile'
+    );
     assert(follow_data.follow_timestamp == data.follow_timestamp, 'invalid follow timestamp');
     stop_prank(CheatTarget::One(follow_nft_contract_address));
     stop_warp(CheatTarget::One(follow_nft_contract_address));
@@ -169,5 +175,5 @@ fn test_metadata() {
     assert(nft_symbol == "KFL", 'invalid symbol');
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
-
 // TODO: test for emitted events
+
