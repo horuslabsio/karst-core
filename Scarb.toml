@@ -1,7 +1,11 @@
 [package]
 name = "karst"
 version = "0.1.0"
-edition = "2023_11"
+edition = "2023_10"
+authors = ["Horus Labs <horuslabsio@gmail.com>"]
+description = "Decentralized Social Graph on Starknet"
+repository = "https://github.com/horuslabsio/karst-core"
+keywords = ["Karst", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
 
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
@@ -9,9 +13,9 @@ edition = "2023_11"
 starknet = "2.6.3"
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.11.0" }
 token_bound_accounts= { git = "https://github.com/Starknet-Africa-Edu/TBA", tag = "v0.3.0" }
+
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.22.0" }
-
 
 [[target.starknet-contract]]
 casm = true

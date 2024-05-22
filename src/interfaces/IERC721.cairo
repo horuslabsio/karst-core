@@ -23,10 +23,14 @@ pub trait IERC721<TState> {
         self: @TState, owner: ContractAddress, operator: ContractAddress
     ) -> bool;
 
-    // ISRC5
+    // *************************************************************************
+    //                              ISRC5
+    // *************************************************************************
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
 
-    // IERC721Metadata
+    // *************************************************************************
+    //                              ERC721 METADATA 
+    // *************************************************************************
     fn name(self: @TState) -> ByteArray;
     fn symbol(self: @TState) -> ByteArray;
     fn token_uri(self: @TState, token_id: u256) -> ByteArray;

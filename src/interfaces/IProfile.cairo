@@ -4,16 +4,21 @@ use starknet::ContractAddress;
 // *************************************************************************
 #[starknet::interface]
 pub trait IKarstProfile<TState> {
-    fn create_karstprofile(
+    // *************************************************************************
+    //                              EXTERNALS
+    // *************************************************************************
+    fn create_profile(
         ref self: TState,
         karstnft_contract_address: ContractAddress,
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252
     );
-    fn get_user_profile_address(self: @TState, user: ContractAddress) -> ContractAddress;
-    // fn get_total_id(self: @TState) -> u256;
-    fn get_profile(self: @TState, profile_id: ContractAddress) -> ByteArray;
     fn set_profile_metadata_uri(ref self: TState, metadata_uri: ByteArray);
+    // *************************************************************************
+    //                              GETTERS
+    // *************************************************************************
+    fn get_user_profile_address(self: @TState, user: ContractAddress) -> ContractAddress;
+    fn get_profile(self: @TState, profile_id: ContractAddress) -> ByteArray;
     fn get_profile_owner_by_id(self: @TState, profile_id: ContractAddress) -> ContractAddress;
 }

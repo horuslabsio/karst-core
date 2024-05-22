@@ -1,5 +1,6 @@
 pub mod karstnft;
-pub mod interface;
+pub mod interfaces;
 pub mod profile;
-pub mod errors;
-pub mod test_helper;
+pub mod base;
+pub mod follownft;
+pub mod mocks;

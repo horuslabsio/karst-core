@@ -4,16 +4,16 @@ use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 use starknet::{ContractAddress, class_hash::ClassHash};
 use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank};
-use karst::interface::IkarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
+use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
-use karst::interface::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-use karst::interface::Iprofile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
+use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
 // Account
 use token_bound_accounts::interfaces::IAccount::{IAccountDispatcher, IAccountDispatcherTrait};
 use token_bound_accounts::presets::account::Account;
 // Registry
-use karst::test_helper::registry::Registry;
-use karst::interface::Iregistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
+use karst::mocks::registry::Registry;
+use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 
 
 fn deploy_account() -> ContractAddress {
@@ -86,8 +86,7 @@ fn test_token_mint() {
         user1.try_into().unwrap()
     );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    dispatcher
-        .create_karstprofile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
+    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
     let token_id = karstDispatcher.get_user_token_id(user1.try_into().unwrap());
     let _owner = erc721Dispatcher.owner_of(token_id);
     let current_token_id = karstDispatcher.get_current_token_id();
@@ -100,50 +99,45 @@ fn test_token_mint() {
     );
     assert(current_token_id == 1, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
-    //user2
+
+    //user2 create profile
     start_prank(
         CheatTarget::Multiple(array![profile_contract_address, contract_address]),
         user2.try_into().unwrap()
     );
     let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    karstDispatcher.mint_karstnft();
+    karstDispatcher.mint_karstnft(user2.try_into().unwrap());
     let _user2_token_id = karstDispatcher.get_user_token_id(user2.try_into().unwrap());
     let current_token_id = karstDispatcher.get_current_token_id();
-
-    dispatcher
-        .create_karstprofile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
+    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
     assert(current_token_id == 2, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
 
-    //user3
+    //user3 create profile
     start_prank(
         CheatTarget::Multiple(array![profile_contract_address, contract_address]),
         user3.try_into().unwrap()
     );
     let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    karstDispatcher.mint_karstnft();
+    karstDispatcher.mint_karstnft(user3.try_into().unwrap());
     let user3_token_id = karstDispatcher.get_user_token_id(user3.try_into().unwrap());
     let _token_user3_uri = erc721Dispatcher.token_uri(user3_token_id);
     let current_token_id = karstDispatcher.get_current_token_id();
-
-    dispatcher
-        .create_karstprofile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
+    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
     assert(current_token_id == 3, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
 
-    //user4
+    //user4 create profile
     start_prank(
         CheatTarget::Multiple(array![profile_contract_address, contract_address]),
         user4.try_into().unwrap()
     );
     let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    karstDispatcher.mint_karstnft();
+    karstDispatcher.mint_karstnft(user4.try_into().unwrap());
     let user4_token_id = karstDispatcher.get_user_token_id(user4.try_into().unwrap());
     let _token_user4_uri = erc721Dispatcher.token_uri(user4_token_id);
     let current_token_id = karstDispatcher.get_current_token_id();
-
-    dispatcher
-        .create_karstprofile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
+    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
     assert(current_token_id == 4, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
 }
