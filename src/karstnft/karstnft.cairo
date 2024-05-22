@@ -38,7 +38,7 @@ pub mod KarstNFT {
     //                             IMPORTS
     // *************************************************************************
     use starknet::{ContractAddress, get_caller_address};
-    use karst::interface::IkarstNFT;
+    use karst::interfaces::IKarstNFT;
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -113,13 +113,12 @@ pub mod KarstNFT {
     }
 
     #[abi(embed_v0)]
-    impl KarstImpl of IkarstNFT::IKarstNFT<ContractState> {
+    impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
         /// @notice mints kartsnft
-        fn mint_karstnft(ref self: ContractState) {
-            let caller = get_caller_address();
+        fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
             let mut current_token_id = self.token_id.read();
-            self.erc721._mint(caller, current_token_id);
-            self.user_token_id.write(caller, current_token_id);
+            self.erc721._mint(address, current_token_id);
+            self.user_token_id.write(address, current_token_id);
             current_token_id += 1;
             self.token_id.write(current_token_id);
         }
