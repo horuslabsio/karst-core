@@ -1,6 +1,6 @@
 # Karst
 
-Karst is a web3 social graph on Starknet. it aims to build a social infrastructure for the starknet ecosystem.
+Karst is a web3 social graph on Starknet. it aims to build a social Graph for the starknet ecosystem.
 
 ## TODOS
 
