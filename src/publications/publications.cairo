@@ -1,6 +1,8 @@
 //! Contract for Karst Publications
 
 use starknet::ContractAddress;
+pub mod types;
+
 // *************************************************************************
 //                              INTERFACE of KARST PUBLICATIONS
 // *************************************************************************
@@ -9,7 +11,8 @@ pub trait IKarstPublications<T> {
     // *************************************************************************
     //                              PUBLISHING FUNCTIONS  
     // *************************************************************************
-    fn post(ref self: T, post: felt252);
+
+    fn post(ref self: T, post: types.PostParams);
     fn postWithSig(ref self: T, post: felt252, sig: felt252);
     fn comment(ref self: T, comment: felt252);
     fn commentWithSig(ref self: T, comment: felt252, sig: felt252);
@@ -21,14 +24,6 @@ pub trait IKarstPublications<T> {
 // *************************************************************************
 //                              PROFILE INTERACTION FUNCTIONS  
 // *************************************************************************
-
-// fn follow(ref self:T, profile_id: felt252 );
-// fn followWithSig(ref self:T, profile_id: felt252, sig:felt252 );
-// fn unfollow(ref self:T, profile_id: felt252 );
-// fn unfollowWithSig(ref self:T, profile_id: felt252, sig:felt252 );
-// fn is_following(self: @T, profile_id: felt252) -> bool;
-// fn postWithSig(ref self:T, post: felt252, sig:felt252 );
-// fn isDelegatedExecutorApproved(self: @T, profile_id: felt252, executor: ContractAddress) -> bool;
 }
 
 #[starknet::contract]
@@ -129,7 +124,7 @@ pub mod Publications {
         // *************************************************************************
 
         //onlyProfileOwnerOrDelegatedExecutor can post
-        fn post(ref self: ContractState, post: felt252) {
+        fn post(ref self: ContractState, post: types::PostParams) {
             let publication_id = 0;
             let transaction_executor = get_caller_address();
             let block_timestamp = 0;
