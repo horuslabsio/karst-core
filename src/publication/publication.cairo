@@ -119,7 +119,7 @@ pub mod Publications {
 
         fn comment(
             ref self: ContractState,
-            referencePubParams: ReferencePubParams,
+            mut referencePubParams: ReferencePubParams,
             profile_address: ContractAddress
         ) -> u256 {
             let pubIdAssigned = self
