@@ -7,4 +7,5 @@ pub mod Errors {
     pub const HUB_RESTRICTED: felt252 = 'CALLER_IS_NOT_HUB';
     pub const FOLLOWING: felt252 = 'USER_ALREADY_FOLLOWING';
     pub const NOT_FOLLOWING: felt252 = 'USER_NOT_FOLLOWING';
+    pub const BLOCKED_STATUS: felt252 = 'BLOCKED';
 }

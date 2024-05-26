@@ -1,4 +1,5 @@
 use starknet::ContractAddress;
+use karst::base::types::Profile;
 // *************************************************************************
 //                              INTERFACE of KARST PROFILE
 // *************************************************************************
@@ -19,6 +20,10 @@ pub trait IKarstProfile<TState> {
     //                              GETTERS
     // *************************************************************************
     fn get_user_profile_address(self: @TState, user: ContractAddress) -> ContractAddress;
-    fn get_profile(self: @TState, profile_id: ContractAddress) -> ByteArray;
-    fn get_profile_owner_by_id(self: @TState, profile_id: ContractAddress) -> ContractAddress;
+    fn get_profile_metadata(self: @TState, user: ContractAddress) -> ByteArray;
+    fn get_profile_owner(self: @TState, user: ContractAddress) -> ContractAddress;
+    fn get_profile_details(
+        self: @TState, profile_address: ContractAddress
+    ) -> (u256, ByteArray, ContractAddress, ContractAddress);
+    fn get_profile(self: @TState, profile_address: ContractAddress) -> Profile;
 }
