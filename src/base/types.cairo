@@ -33,11 +33,11 @@ pub struct Profile {
 #[derive(Debug, Drop, Serde, starknet::Store)]
 pub struct Publication {
     pointed_profile_address: ContractAddress,
-    pointedPubId: u256,
-    contentURI: ByteArray,
-    pubType: Option<PublicationType>,
+    pointed_pub_id: u256,
+    content_URI: ByteArray,
+    pub_Type: PublicationType,
     root_profile_address: ContractAddress,
-    rootPubId: u256
+    root_pub_id: u256
 }
 
 

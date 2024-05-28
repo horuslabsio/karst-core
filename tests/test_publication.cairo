@@ -124,14 +124,25 @@ fn test_post() {
         contract_address: publication_contract_address
     };
     let contentURI: ByteArray = "ipfs://helloworld";
-    // let post1 = publication_dispatcher.post(contentURI, profile_address, profile_contract_address);
-    // let post2 = publication_dispatcher.post("ell", profile_address, profile_contract_address);
-    // let post3 = publication_dispatcher.post("hi", profile_address, profile_contract_address);
+    let post1 = publication_dispatcher.post(contentURI, profile_address, profile_contract_address);
+    let post2 = publication_dispatcher.post("ell", profile_address, profile_contract_address);
+    let post3 = publication_dispatcher.post("hi", profile_address, profile_contract_address);
 
-    // let post_publication_1 = IKarstPublicationsDispatcher{contract_address:publication_contract_address}.get_publication(profile_address, post1);
-    // let post_publication_2 = IKarstPublicationsDispatcher{contract_address:publication_contract_address}.get_publication(profile_address, post2);
-    // let post_publication_3 = IKarstPublicationsDispatcher{contract_address:publication_contract_address}.get_publication(profile_address, post3);
-
+    let _post_publication_1 = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    }
+        .get_publication(profile_address, post1);
+    let _post_publication_2 = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    }
+        .get_publication(profile_address, post2);
+    let _post_publication_3 = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    }
+        .get_publication(profile_address, post3);
+    assert(post1 == 0, 'invalid pub_count');
+    assert(post2 == 1, 'invalid pub_count');
+    assert(post3 == 2, 'invalid pub_count');
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );

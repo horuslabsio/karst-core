@@ -109,11 +109,15 @@ pub mod Publications {
                 contract_address: profile_contract_address
             }
                 .increment_publication_count();
-            let mut post = self.publication.read((profile_address, pubIdAssigned));
-            post.contentURI = contentURI;
-            post.pubType = Option::Some(PublicationType::Post);
-
-            self.publication.write((profile_address, pubIdAssigned), post);
+            let new_post = Publication {
+                pointed_profile_address: 0.try_into().unwrap(),
+                pointed_pub_id: 0,
+                content_URI: contentURI,
+                pub_Type: PublicationType::Post,
+                root_profile_address: 0.try_into().unwrap(),
+                root_pub_id: 0
+            };
+            self.publication.write((profile_address, pubIdAssigned), new_post);
             pubIdAssigned
         }
         fn get_publication(
