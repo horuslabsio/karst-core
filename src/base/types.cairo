@@ -1,3 +1,4 @@
+use core::option::OptionTrait;
 // *************************************************************************
 //                              TYPES
 // *************************************************************************
@@ -11,7 +12,6 @@ pub struct FollowData {
 
 #[derive(Drop, Serde, starknet::Store)]
 pub struct PostParams {
-    profileId: ContractAddress,
     contentURI: ByteArray,
     profile_address: ContractAddress,
 //actionModule,
@@ -23,25 +23,25 @@ pub struct PostParams {
 
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
-    pubCount: u256,
-    metadataURI: ByteArray,
+    pub_count: u256,
+    metadata_URI: ByteArray,
     profile_address: ContractAddress,
     profile_owner: ContractAddress
 }
 
 
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Debug, Drop, Serde, starknet::Store)]
 pub struct Publication {
     pointed_profile_address: ContractAddress,
     pointedPubId: u256,
     contentURI: ByteArray,
-    pubType: PublicationType,
+    pubType: Option<PublicationType>,
     root_profile_address: ContractAddress,
     rootPubId: u256
 }
 
 
-#[derive(Drop, Serde, starknet::Store, PartialEq)]
+#[derive(Debug, Drop, Serde, starknet::Store, PartialEq)]
 enum PublicationType {
     Nonexistent,
     Post,
@@ -49,7 +49,6 @@ enum PublicationType {
     Mirror,
     Quote
 }
-
 
 
 #[derive(Drop, Serde, starknet::Store)]

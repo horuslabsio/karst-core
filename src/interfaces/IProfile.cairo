@@ -14,7 +14,7 @@ pub trait IKarstProfile<TState> {
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252
-    );
+    ) -> ContractAddress;
     fn set_profile_metadata_uri(ref self: TState, metadata_uri: ByteArray);
     // *************************************************************************
     //                              GETTERS
@@ -23,7 +23,9 @@ pub trait IKarstProfile<TState> {
     fn get_profile_metadata(self: @TState, user: ContractAddress) -> ByteArray;
     fn get_profile_owner(self: @TState, user: ContractAddress) -> ContractAddress;
     fn get_profile_details(
-        self: @TState, profile_address: ContractAddress
+        self: @TState, user: ContractAddress
     ) -> (u256, ByteArray, ContractAddress, ContractAddress);
-    fn get_profile(self: @TState, profile_address: ContractAddress) -> Profile;
+    fn get_profile(ref self: TState, user: ContractAddress) -> Profile;
+    fn increment_publication_count(ref self: TState) -> u256;
+    fn get_user_publication_count(self: @TState, user: ContractAddress) -> u256;
 }

@@ -15,7 +15,7 @@ use token_bound_accounts::presets::account::Account;
 use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 
-
+const HUB_ADDRESS: felt252 = 'HUB';
 fn deploy_account() -> ContractAddress {
     let erc721_contract_address = deploy_contract("KarstNFT");
     // deploy account contract
@@ -36,7 +36,10 @@ fn deploy_registry() -> (ContractAddress, felt252) {
 }
 fn deploy_profile() -> ContractAddress {
     let profile_contract = declare("KarstProfile").unwrap();
-    let (profile_contract_address, _) = profile_contract.deploy(@array![]).unwrap();
+    let mut karst_profile_constructor_calldata = array![HUB_ADDRESS];
+    let (profile_contract_address, _) = profile_contract
+        .deploy(@karst_profile_constructor_calldata)
+        .unwrap();
     profile_contract_address
 }
 
@@ -83,35 +86,16 @@ fn test_token_mint() {
     //user 1 create profile
     start_prank(
         CheatTarget::Multiple(array![profile_contract_address, contract_address]),
-        user1.try_into().unwrap()
+        HUB_ADDRESS.try_into().unwrap()
     );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
     dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
     let current_token_id = karstDispatcher.get_current_token_id();
     dispatcher.set_profile_metadata_uri("ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
-    let user1_profile_uri = dispatcher.get_profile_metadata(user1.try_into().unwrap());
-    assert(
-        user1_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid'
-    );
+    let hub_profile_uri = dispatcher.get_profile_metadata(HUB_ADDRESS.try_into().unwrap());
+    assert(hub_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid');
 
     assert(current_token_id == 1, 'invalid');
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
-
-    //user 2 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, contract_address]),
-        user2.try_into().unwrap()
-    );
-    let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
-    let current_token_id = karstDispatcher.get_current_token_id();
-    dispatcher.set_profile_metadata_uri("ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
-    let user2_profile_uri = dispatcher.get_profile_metadata(user2.try_into().unwrap());
-    assert(
-        user2_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid'
-    );
-
-    assert(current_token_id == 2, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
 }
 
