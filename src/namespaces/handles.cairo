@@ -82,7 +82,6 @@ mod Handles {
         admin: ContractAddress,
         total_supply: u256,
         local_names: LegacyMap::<u256, felt252>,
-        token_uri_by_token_id: LegacyMap::<ByteArray, u256>,
         karst_hub: ContractAddress,
     }
 
@@ -136,7 +135,7 @@ mod Handles {
             // TODO
         }
 
-        fn set_handle_token_uri(ref self: ContractState, token_id: u256, token_uri: ByteArray) {
+        fn set_handle_token_uri(ref self: ContractState, token_id: u256, local_name: felt252) {
             // TODO
         }
 
@@ -169,9 +168,29 @@ mod Handles {
             self.total_supply.read()
         }
 
-        fn get_handle_token_uri(self: @ContractState, token_id: u256) -> ByteArray {
+        fn get_handle_token_uri(self: @ContractState, token_id: u256, local_name: felt252) -> ByteArray {
             // TODO
             return "TODO";
+        }
+    }
+
+    // *************************************************************************
+    //                            PRIVATE FUNCTIONS
+    // *************************************************************************
+    #[generate_trait]
+    impl Private of PrivateTrait {
+        fn _mint_handle(address: ContractAddress, local_name: felt252) -> u256 {
+            // TODO
+            return 123;
+        }
+
+        fn _validate_local_name(local_name: felt252) {
+            // TODO
+        }
+
+        fn _is_alpha_numeric(char: felt252) -> bool {
+            // TODO
+            return false;
         }
     }
 }
