@@ -126,20 +126,24 @@ mod Handles {
     // *************************************************************************
     #[abi(embed_v0)]
     impl HandlesImpl of IHandle<ContractState> {
-        fn mint_handle(ref self: ContractState, address: ContractAddress, local_name: felt252) -> u256 {
+        fn mint_handle(
+            ref self: ContractState, address: ContractAddress, local_name: felt252
+        ) -> u256 {
             // TODO
             return 123;
         }
 
-        fn burn_handle(ref self: ContractState, token_id: u256) {
-            // TODO
+        fn burn_handle(ref self: ContractState, token_id: u256) { // TODO
         }
 
-        fn set_handle_token_uri(ref self: ContractState, token_id: u256, local_name: felt252) {
-            // TODO
+        fn set_handle_token_uri(
+            ref self: ContractState, token_id: u256, local_name: felt252
+        ) { // TODO
         }
 
-        fn migrate_handle(ref self: ContractState, address: ContractAddress, local_name: felt252) -> u256 {
+        fn migrate_handle(
+            ref self: ContractState, address: ContractAddress, local_name: felt252
+        ) -> u256 {
             // TODO
             return 123;
         }
@@ -168,7 +172,9 @@ mod Handles {
             self.total_supply.read()
         }
 
-        fn get_handle_token_uri(self: @ContractState, token_id: u256, local_name: felt252) -> ByteArray {
+        fn get_handle_token_uri(
+            self: @ContractState, token_id: u256, local_name: felt252
+        ) -> ByteArray {
             // TODO
             return "TODO";
         }
@@ -184,8 +190,7 @@ mod Handles {
             return 123;
         }
 
-        fn _validate_local_name(local_name: felt252) {
-            // TODO
+        fn _validate_local_name(local_name: felt252) { // TODO
         }
 
         fn _is_alpha_numeric(char: felt252) -> bool {
