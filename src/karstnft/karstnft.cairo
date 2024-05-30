@@ -46,6 +46,7 @@ pub mod KarstNFT {
         },
         introspection::{src5::SRC5Component}
     };
+    use karst::base::{hubrestricted::HubRestricted::hub_only};
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
@@ -81,9 +82,9 @@ pub mod KarstNFT {
         src5: SRC5Component::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
-        admin: ContractAddress,
+        karst_hub: ContractAddress,
         token_id: u256,
-        user_token_id: LegacyMap<ContractAddress, u256>
+        user_token_id: LegacyMap<ContractAddress, u256>,
     }
 
     #[event]
@@ -103,12 +104,12 @@ pub mod KarstNFT {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        admin: ContractAddress, // to perform upgrade
+        hub: ContractAddress,
         name: ByteArray,
         symbol: ByteArray,
         base_uri: ByteArray
     ) {
-        self.admin.write(admin);
+        self.karst_hub.write(hub);
         self.erc721.initializer(name, symbol, base_uri);
     }
 
@@ -116,6 +117,7 @@ pub mod KarstNFT {
     impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
         /// @notice mints kartsnft
         fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
+            hub_only(self.karst_hub.read());
             let mut current_token_id = self.token_id.read();
             self.erc721._mint(address, current_token_id);
             self.user_token_id.write(address, current_token_id);

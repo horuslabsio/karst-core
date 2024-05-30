@@ -22,7 +22,7 @@ mod KarstProfile {
     // *************************************************************************
     #[storage]
     struct Storage {
-        profile: LegacyMap<ContractAddress, Profile>, //maps user => Profile
+        profile: LegacyMap<ContractAddress, Profile>, //maps profile_address => Profile
         karst_hub: ContractAddress,
     }
 
@@ -66,18 +66,18 @@ mod KarstProfile {
             karstnft_contract_address: ContractAddress,
             registry_hash: felt252,
             implementation_hash: felt252,
-            salt: felt252
+            salt: felt252,
+            recipient:ContractAddress
         ) -> ContractAddress {
             hub_only(self.karst_hub.read());
-            let caller = get_caller_address();
             let owns_karstnft = IERC721Dispatcher { contract_address: karstnft_contract_address }
-                .balance_of(caller);
+                .balance_of(recipient);
             if owns_karstnft == 0 {
                 IKarstNFTDispatcher { contract_address: karstnft_contract_address }
-                    .mint_karstnft(caller);
+                    .mint_karstnft(recipient);
             }
             let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
-                .get_user_token_id(caller);
+                .get_user_token_id(recipient);
 
             let profile_address = IRegistryLibraryDispatcher {
                 class_hash: registry_hash.try_into().unwrap()
@@ -86,79 +86,48 @@ mod KarstProfile {
             let new_profile = Profile {
                 pub_count: 0,
                 metadata_URI: "",
-                profile_address: profile_address,
-                profile_owner: caller
             };
-            self.profile.write(caller, new_profile);
-            self.emit(CreateProfile { user: caller, token_id, profile_address });
+            self.profile.write(profile_address, new_profile);
+            self.emit(CreateProfile { user: profile_address, token_id, profile_address });
             profile_address
         }
         /// @notice set profile metadata_uri (`banner_image, description, profile_image` to be uploaded to arweave or ipfs)
         /// @params metadata_uri the profile CID
-        fn set_profile_metadata_uri(ref self: ContractState, metadata_uri: ByteArray) {
-            let caller = get_caller_address();
-            let mut profile = self.profile.read(caller);
-            // assert that caller is the owner of the profile to be updated.
-            assert(caller == profile.profile_owner, NOT_PROFILE_OWNER);
+        fn set_profile_metadata_uri(ref self: ContractState, profile_address:ContractAddress, metadata_uri: ByteArray) {
+            hub_only(self.karst_hub.read());
+            let mut profile = self.profile.read(profile_address);
             profile.metadata_URI = metadata_uri;
-            self.profile.write(caller, profile);
+            self.profile.write(profile_address, profile);
         }
 
-        fn increment_publication_count(ref self: ContractState) -> u256 {
+        fn increment_publication_count(ref self: ContractState, profile_address:ContractAddress) -> u256 {
             hub_only(self.karst_hub.read());
-            let caller = get_caller_address();
-            let mut profile = self.profile.read(caller);
+            let mut profile = self.profile.read(profile_address);
             let updated_profile = Profile {
                 pub_count: profile.pub_count + 1,
                 metadata_URI: profile.metadata_URI,
-                profile_address: profile.profile_address,
-                profile_owner: caller
             };
-            self.profile.write(caller, updated_profile);
+            self.profile.write(profile_address, updated_profile);
             profile.pub_count
         }
 
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
-        /// @notice returns user profile_address
-        /// @params user ContractAddress of user 
-        fn get_user_profile_address(
-            self: @ContractState, user: ContractAddress
-        ) -> ContractAddress {
-            self.profile.read(user).profile_address
-        }
+
         /// @notice returns user metadata
         /// @params user 
-        fn get_profile_metadata(self: @ContractState, user: ContractAddress) -> ByteArray {
-            self.profile.read(user).metadata_URI
-        }
-        /// @notice returns owner of a profile
-        /// @params user the user address to query for.
-        fn get_profile_owner(self: @ContractState, user: ContractAddress) -> ContractAddress {
-            self.profile.read(user).profile_owner
+        fn get_profile_metadata(self: @ContractState, profile_address: ContractAddress) -> ByteArray {
+            self.profile.read(profile_address).metadata_URI
         }
 
-        /// @notice returns a profile
-        /// @params profile_address the profile_id_address to query for.
-        fn get_profile_details(
-            self: @ContractState, user: ContractAddress
-        ) -> (u256, ByteArray, ContractAddress, ContractAddress) {
-            let profile = self.profile.read(user);
-            (
-                profile.pub_count,
-                profile.metadata_URI,
-                profile.profile_address,
-                profile.profile_owner
-            )
+
+        fn get_profile(ref self: ContractState, profile_address: ContractAddress) -> Profile {
+            self.profile.read(profile_address)
         }
 
-        fn get_profile(ref self: ContractState, user: ContractAddress) -> Profile {
-            self.profile.read(user)
-        }
-
-        fn get_user_publication_count(self: @ContractState, user: ContractAddress) -> u256 {
-            self.profile.read(user).pub_count
+        fn get_user_publication_count(self: @ContractState, profile_address: ContractAddress) -> u256 {
+            self.profile.read(profile_address).pub_count
         }
     }
 }

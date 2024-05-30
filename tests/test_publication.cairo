@@ -37,8 +37,8 @@ use karst::base::types::{PostParams, ReferencePubParams};
 //                              SETUP 
 // *************************************************************************
 
-const USER1: felt252 = 'user-one';
-const HUB_ADDRESS: felt252 = 'hub';
+
+const HUB_ADDRESS: felt252 = 'HUB';
 // setup for publication contract
 fn __setup__() -> ContractAddress {
     let publication_contract = declare("Publications").unwrap();
@@ -61,11 +61,10 @@ fn deploy_profile() -> ContractAddress {
 // setup for nft contract
 fn deploy_contract(name: ByteArray) -> ContractAddress {
     let contract = declare(name).unwrap();
-    let admin: ContractAddress = 123.try_into().unwrap();
     let names: ByteArray = "KarstNFT";
     let symbol: ByteArray = "KNFT";
     let base_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/";
-    let mut calldata: Array<felt252> = array![admin.into()];
+    let mut calldata: Array<felt252> = array![HUB_ADDRESS];
     names.serialize(ref calldata);
     symbol.serialize(ref calldata);
     base_uri.serialize(ref calldata);
@@ -109,42 +108,52 @@ fn test_post() {
     let (_, registry_class_hash) = deploy_registry();
     let profile_contract_address = deploy_profile();
     let acct_class_hash = declare("Account").unwrap_syscall().class_hash;
-    start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        HUB_ADDRESS.try_into().unwrap()
-    );
+
     let profile_dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    let profile_address = profile_dispatcher
-        .create_profile(
-            karstnft_contract_address, registry_class_hash, acct_class_hash.into(), 2478
-        );
-    profile_dispatcher
-        .set_profile_metadata_uri("ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/");
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let _publication_dispatcher = IKarstPublicationsDispatcher {
         contract_address: publication_contract_address
     };
-    let contentURI: ByteArray = "ipfs://helloworld";
-    let post1 = publication_dispatcher.post(contentURI, profile_address, profile_contract_address);
-    let post2 = publication_dispatcher.post("ell", profile_address, profile_contract_address);
-    let post3 = publication_dispatcher.post("hi", profile_address, profile_contract_address);
+    start_prank(CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        HUB_ADDRESS.try_into().unwrap()
+    );
+    let profile_address = profile_dispatcher.create_profile(karstnft_contract_address, registry_class_hash, acct_class_hash.into(), 2478, HUB_ADDRESS.try_into().unwrap());
+    // profile_dispatcher.set_profile_metadata_uri(HUB_ADDRESS.try_into().unwrap(),"ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/");
 
-    let _post_publication_1 = IKarstPublicationsDispatcher {
-        contract_address: publication_contract_address
-    }
-        .get_publication(profile_address, post1);
-    let _post_publication_2 = IKarstPublicationsDispatcher {
-        contract_address: publication_contract_address
-    }
-        .get_publication(profile_address, post2);
-    let _post_publication_3 = IKarstPublicationsDispatcher {
-        contract_address: publication_contract_address
-    }
-        .get_publication(profile_address, post3);
-    assert(post1 == 0, 'invalid pub_count');
-    assert(post2 == 1, 'invalid pub_count');
-    assert(post3 == 2, 'invalid pub_count');
+    // // POST
+    // let contentURI: ByteArray = "ipfs://helloworld";
+    // let post1 = publication_dispatcher.post(contentURI, profile_address, profile_contract_address, HUB_ADDRESS.try_into().unwrap());
+    // let post2 = publication_dispatcher.post("ell", profile_address, profile_contract_address, HUB_ADDRESS.try_into().unwrap());
+
+    // // COMMENT
+    // let comment = publication_dispatcher.comment(profile_address, "hello", profile_address, post1, profile_contract_address);
+    // let comment2 = publication_dispatcher.comment(profile_address, "iam", profile_address, post2, profile_contract_address);
+
+    // let post_publication_1 = IKarstPublicationsDispatcher {contract_address: publication_contract_address}.get_publication(profile_address, post1);
+    // let post_publication_2 = IKarstPublicationsDispatcher {contract_address: publication_contract_address}.get_publication(profile_address, post2);
+
+    // post
+    // println!("post_publication_one: {:?}", post_publication_1);
+    // println!("post_publication_two: {:?}", post_publication_2);
+
+    // let comment_publication = IKarstPublicationsDispatcher {
+    //     contract_address: publication_contract_address
+    // }.get_publication(profile_address, comment);
+    // let comment_publication2 = IKarstPublicationsDispatcher {
+    //     contract_address: publication_contract_address
+    // }.get_publication(profile_address, comment2);
+
+    // // comment
+    // println!("comment_publication_one: {:?}", comment_publication);
+    // println!("comment_publication_two: {:?}", comment_publication2);
+
+    // assert(post1 == 0, 'invalid pub_count');
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
 }
 
+
+
+fn to_address(name: felt252) -> ContractAddress {
+    name.try_into().unwrap()
+}

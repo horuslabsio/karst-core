@@ -16,6 +16,7 @@ use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';
+const USER: felt252 = 'USER1';
 fn deploy_account() -> ContractAddress {
     let erc721_contract_address = deploy_contract("KarstNFT");
     // deploy account contract
@@ -45,11 +46,10 @@ fn deploy_profile() -> ContractAddress {
 
 fn deploy_contract(name: ByteArray) -> ContractAddress {
     let contract = declare(name).unwrap();
-    let admin: ContractAddress = 123.try_into().unwrap();
     let names: ByteArray = "KarstNFT";
     let symbol: ByteArray = "KNFT";
     let base_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/";
-    let mut calldata: Array<felt252> = array![admin.into()];
+    let mut calldata: Array<felt252> = array![HUB_ADDRESS];
     names.serialize(ref calldata);
     symbol.serialize(ref calldata);
     base_uri.serialize(ref calldata);
@@ -69,10 +69,6 @@ fn test_constructor_func() {
     assert(nft_symbol == "KNFT", 'error');
 }
 
-const user1: felt252 = 'user_one';
-const user2: felt252 = 'user_two';
-const user3: felt252 = 'user_three';
-const user4: felt252 = 'user_four';
 
 #[test]
 fn test_token_mint() {
@@ -89,9 +85,9 @@ fn test_token_mint() {
         HUB_ADDRESS.try_into().unwrap()
     );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
+    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456, HUB_ADDRESS.try_into().unwrap());
     let current_token_id = karstDispatcher.get_current_token_id();
-    dispatcher.set_profile_metadata_uri("ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
+    dispatcher.set_profile_metadata_uri(HUB_ADDRESS.try_into().unwrap(), "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
     let hub_profile_uri = dispatcher.get_profile_metadata(HUB_ADDRESS.try_into().unwrap());
     assert(hub_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid');
 

@@ -22,12 +22,21 @@ pub trait IKarstPublications<T> {
         profile_address: ContractAddress,
         profile_contract_address: ContractAddress
     ) -> u256;
-    // fn get_content_uri(self: @T, user: ContractAddress) -> ByteArray;
-    // fn get_pub_type(self: @T, user: ContractAddress) -> Option<PublicationType>;
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
-// fn comment(
-//     ref self: T, referencePubParams: ReferencePubParams, profile_address: ContractAddress
-// ) -> u256;
+    fn get_publication_type(
+        self: @T, profile_address: ContractAddress, pub_id_assigned: u256
+    ) -> PublicationType;
+    fn comment(
+        ref self: T,
+        profile_address: ContractAddress,
+        content_URI: ByteArray,
+        pointed_profile_address: ContractAddress,
+        pointed_pub_id: u256,
+        profile_contract_address: ContractAddress,
+    ) -> u256;
+    fn get_publication_content_uri(
+        self: @T, profile_address: ContractAddress, pub_id: u256
+    ) -> ByteArray;
 // *************************************************************************
 //                              PROFILE INTERACTION FUNCTIONS  
 // *************************************************************************
@@ -107,8 +116,7 @@ pub mod Publications {
             hub_only(self.karst_hub.read());
             let pubIdAssigned = IKarstProfileDispatcher {
                 contract_address: profile_contract_address
-            }
-                .increment_publication_count();
+            }.increment_publication_count(profile_address);
             let new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),
                 pointed_pub_id: 0,
@@ -120,157 +128,202 @@ pub mod Publications {
             self.publication.write((profile_address, pubIdAssigned), new_post);
             pubIdAssigned
         }
+        fn comment(
+            ref self: ContractState,
+            profile_address: ContractAddress,
+            content_URI: ByteArray,
+            pointed_profile_address: ContractAddress,
+            pointed_pub_id: u256,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
+            let pubIdAssigned = self
+                ._createReferencePublication(
+                    profile_address,
+                    content_URI,
+                    pointed_profile_address,
+                    pointed_pub_id,
+                    PublicationType::Comment,
+                    profile_contract_address
+                );
+            pubIdAssigned
+        }
+        fn get_publication_content_uri(
+            self: @ContractState, profile_address: ContractAddress, pub_id: u256
+        ) -> ByteArray {
+            self._getContentURI(profile_address, pub_id)
+        }
+
         fn get_publication(
             self: @ContractState, user: ContractAddress, pubIdAssigned: u256
         ) -> Publication {
             self.publication.read((user, pubIdAssigned))
         }
-    // fn comment(
-    //     ref self: ContractState,
-    //     mut referencePubParams: ReferencePubParams,
-    //     profile_address: ContractAddress
-    // ) -> u256 {
-    //     let pubIdAssigned = self
-    //        ._createReferencePublication(
-    //             ref referencePubParams, PublicationType::Comment, profile_address
-    //         );
-    //     pubIdAssigned
-    // }
+
+        fn get_publication_type(
+            self: @ContractState, profile_address: ContractAddress, pub_id_assigned: u256
+        ) -> PublicationType {
+            self._getPublicationType(profile_address, pub_id_assigned)
+        }
     }
-// *************************************************************************
-//                            PRIVATE FUNCTIONS
-// *************************************************************************
-// #[generate_trait]
-// impl Private of PrivateTrait {
-//     fn _fillRootOfPublicationInStorage(
-//         ref self: ContractState,
-//         pointedProfileId: ContractAddress,
-//         pointedPubId: u256,
-//         profile_contract_address: ContractAddress
-//     ) -> ContractAddress {
-//         let caller = get_caller_address();
-//         let (_, _, profile_address, _) = IKarstProfileDispatcher {
-//             contract_address: profile_contract_address
-//         }
-//             .get_profile_details(caller);
-//         let mut pubPointed = self.publication.read(profile_address);
-//         let pubPointedType = pubPointed.pubType;
+    // *************************************************************************
+    //                            PRIVATE FUNCTIONS
+    // *************************************************************************
+    #[generate_trait]
+    impl Private of PrivateTrait {
+        fn _fillRootOfPublicationInStorage(
+            ref self: ContractState,
+            profile_address:ContractAddress,
+            pointed_profile_address: ContractAddress,
+            pointed_pub_id: u256,
+            profile_contract_address: ContractAddress
+        ) -> ContractAddress {
+            hub_only(self.karst_hub.read());
+            let mut publication = self.publication.read((profile_address, pointed_pub_id));
+            let pointed = self.publication.read((profile_address, pointed_pub_id));
+            let publication_type = pointed.pub_Type;
+            match publication_type {
+                PublicationType::Post => {
+                    publication.root_pub_id = pointed_pub_id;
+                    publication.root_profile_address = pointed_profile_address;
+                },
+                PublicationType::Nonexistent |
+                PublicationType::Mirror => { return 0.try_into().unwrap(); },
+                PublicationType::Comment |
+                PublicationType::Quote => {
+                    publication.root_pub_id = pointed.root_pub_id;
+                    publication.root_profile_address = pointed.root_profile_address;
+                }
+            }
+            self.publication.write((profile_address, pointed_pub_id), publication);
+            self.publication.read((profile_address, pointed_pub_id)).root_profile_address
+        }
+        fn _fillRefeferencePublicationStorage(
+            ref self: ContractState,
+            profile_address: ContractAddress,
+            content_URI: ByteArray,
+            pointed_profile_address: ContractAddress,
+            pointed_pub_id: u256,
+            referencePubType: PublicationType,
+            profile_contract_address: ContractAddress
+        ) -> (u256, ContractAddress) {
+            let pub_id_assigned = IKarstProfileDispatcher {
+                contract_address: profile_contract_address
+            }
+                .increment_publication_count(profile_address);
+            let root_profile_address = self
+                ._fillRootOfPublicationInStorage(
+                    profile_address,pointed_profile_address, pointed_pub_id, profile_contract_address
+                );
+            let update_reference = Publication {
+                pointed_profile_address: profile_address,
+                pointed_pub_id: pointed_pub_id,
+                content_URI: content_URI,
+                pub_Type: referencePubType,
+                root_pub_id: 0,
+                root_profile_address: root_profile_address
+            };
+            self.publication.write((profile_address, pub_id_assigned), update_reference);
+            (pub_id_assigned, root_profile_address)
+        }
 
-//         if pubPointedType == Option::Some(PublicationType::Post) {
-//             pubPointed.rootPubId = pointedPubId;
-//             return pubPointed.root_profile_address;
-//         } else if pubPointedType == Option::Some(PublicationType::Comment)
-//             || pubPointedType == Option::Some(PublicationType::Quote) {
-//             pubPointed.rootPubId = pubPointed.rootPubId;
-//             return pubPointed.root_profile_address;
-//         };
-//         return 0.try_into().unwrap();
-//     }
+        fn _createReferencePublication(
+            ref self: ContractState,
+            profile_address: ContractAddress,
+            content_URI: ByteArray,
+            pointed_profile_address: ContractAddress,
+            pointed_pub_id: u256,
+            referencePubType: PublicationType,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
+            self._validatePointedPub(pointed_profile_address, pointed_pub_id);
 
-//     fn _fillRefeferencePublicationStorage(
-//         ref self: ContractState,
-//         ref referencePubParams: ReferencePubParams,
-//         referencePubType: PublicationType,
-//         profile_contract_address: ContractAddress
-//     ) -> (u256, ContractAddress) {
-//         let caller = get_caller_address();
-//         let mut profile = IKarstProfileDispatcher { contract_address: profile_contract_address }
-//             .get_profile(caller);
-//         profile.pubCount += 1;
-//         let mut referencePub = self.publication.read(referencePubParams.profile_address);
-//         referencePub.pointed_profile_address = referencePubParams.pointedProfile_address;
-//         referencePub.pointedPubId = referencePubParams.pointedPubId;
-//         referencePub.contentURI = referencePubParams.contentURI;
-//         referencePub.pubType = Option::Some(referencePubType);
-//         let rootProfileId = self
-//             ._fillRootOfPublicationInStorage(
-//                 referencePubParams.pointedProfile_address,
-//                 referencePubParams.pointedPubId,
-//                 profile_contract_address
-//             );
-//         (profile.pubCount, rootProfileId)
-//     }
+            let (pub_id_assigned, root_profile_address) = self
+                ._fillRefeferencePublicationStorage(
+                    profile_address,
+                    content_URI,
+                    pointed_profile_address,
+                    pointed_pub_id,
+                    referencePubType,
+                    profile_contract_address
+                );
 
-//     fn _createReferencePublication(
-//         ref self: ContractState,
-//         ref referencePubParams: ReferencePubParams,
-//         referencePubType: PublicationType,
-//         profile_contract_address: ContractAddress
-//     ) -> u256 {
-//         self._validatePointedPub(referencePubParams.pointedProfile_address);
+            if (root_profile_address != pointed_profile_address) {
+                self.validateNotBlocked(profile_address, pointed_profile_address, false);
+            }
+            pub_id_assigned
+        }
 
-//         let (pubIdAssigned, rootProfileId) = self
-//             ._fillRefeferencePublicationStorage(
-//                 ref referencePubParams, referencePubType, profile_contract_address
-//             );
+        fn _blockedStatus(
+            ref self: ContractState,
+            profile_address: ContractAddress,
+            by_profile_address: ContractAddress,
+        ) -> bool {
+            self.blocked_profile_address.write((profile_address, by_profile_address), false);
+            let status = self.blocked_profile_address.read((profile_address, by_profile_address));
+            status
+        }
 
-//         if (rootProfileId != referencePubParams.pointedProfile_address) {
-//             self
-//                 .validateNotBlocked(
-//                     referencePubParams.profile_address,
-//                     referencePubParams.pointedProfile_address,
-//                     false
-//                 );
-//         }
-//         pubIdAssigned
-//     }
+        fn validateNotBlocked(
+            ref self: ContractState,
+            profile_address: ContractAddress,
+            by_profile_address: ContractAddress,
+            unidirectional_check: bool
+        ) {
+            if (profile_address != by_profile_address
+                && (self._blockedStatus(profile_address, by_profile_address)
+                    || (!unidirectional_check
+                        && self
+                            ._blockedStatus(
+                                by_profile_address, profile_address
+                            )))) { // return; ERROR
+            }
+        }
 
-//     fn _blockedStatus(
-//         ref self: ContractState,
-//         profile_address: ContractAddress,
-//         byProfile_address: ContractAddress
-//     ) -> bool {
-//         self.blocked_profile_address.read((profile_address, byProfile_address))
-//     }
+        fn _validatePointedPub(
+            ref self: ContractState, profile_address: ContractAddress, pub_id: u256
+        ) {
+            // If it is pointing to itself it will fail because it will return a non-existent type.
+            let pointedPubType = self._getPublicationType(profile_address, pub_id);
+            if pointedPubType == PublicationType::Nonexistent
+                || pointedPubType == PublicationType::Mirror {
+                panic!("invalid pointed publication");
+            }
+        }
 
-//     fn validateNotBlocked(
-//         ref self: ContractState,
-//         profile_address: ContractAddress,
-//         byProfile_address: ContractAddress,
-//         unidirectionalCheck: bool,
-//     ) {
-//         if (profile_address != byProfile_address
-//             && (self._blockedStatus(profile_address, byProfile_address)
-//                 || (!unidirectionalCheck
-//                     && self._blockedStatus(byProfile_address, profile_address)))) {
-//             return;
-//         }
-//     }
+        fn _getPublicationType(
+            self: @ContractState, profile_address: ContractAddress, pub_id_assigned: u256
+        ) -> PublicationType {
+            let pub_type_option = self
+                .publication
+                .read((profile_address, pub_id_assigned))
+                .pub_Type;
+            match pub_type_option {
+                PublicationType::Nonexistent => PublicationType::Nonexistent,
+                PublicationType::Post => PublicationType::Post,
+                PublicationType::Comment => PublicationType::Comment,
+                PublicationType::Mirror => PublicationType::Mirror,
+                PublicationType::Quote => PublicationType::Quote,
+            }
+        }
 
-//     fn _validatePointedPub(ref self: ContractState, profile_address: ContractAddress) {
-//         // If it is pointing to itself it will fail because it will return a non-existent type.
-//         let pointedPubType = self._getPublicationType(profile_address);
-//         if pointedPubType == Option::Some(PublicationType::Nonexistent)
-//             || pointedPubType == Option::Some(PublicationType::Mirror) {
-//             return;
-//         }
-//     }
+        fn _getContentURI(
+            self: @ContractState, profile_address: ContractAddress, pub_id: u256
+        ) -> ByteArray {
+            let publication = self.publication.read((profile_address, pub_id));
+            let pub_type_option = publication.pub_Type;
 
-//     fn _getPublicationType(
-//         ref self: ContractState, profile_address: ContractAddress
-//     ) -> Option<PublicationType> {
-//         let pub_type_option = self.publication.read(profile_address).pubType;
-//         match pub_type_option {
-//             Option::Some(PublicationType::Nonexistent) => Option::Some(
-//                 PublicationType::Nonexistent
-//             ),
-//             PublicationType::Post => Option::Some(PublicationType::Post),
-//             PublicationType::Comment => Option::Some(PublicationType::Comment),
-//             PublicationType::Mirror => Option::Some(PublicationType::Mirror),
-//             PublicationType::Quote => Option::Some(PublicationType::Quote),
-//             Option::None => Option::None
-//         }
-//     }
-// }
+            if pub_type_option == PublicationType::Nonexistent {
+                return "0";
+            }
+            if pub_type_option == PublicationType::Mirror {
+                self
+                    .publication
+                    .read((publication.pointed_profile_address, publication.pointed_pub_id))
+                    .content_URI
+            } else {
+                self.publication.read((profile_address, pub_id)).content_URI
+            }
+        }
+    }
 }
-// {
-//     Option::Some(pub_type) => pub_type{
-//             PublicationType::Nonexistent => Option::Some(PublicationType::Nonexistent)
-//             PublicationType::Post => Option::Some(PublicationType::Post),
-//             PublicationType::Comment => Option::Some(PublicationType::Comment),
-//             PublicationType::Mirror => Option::Some(PublicationType::Mirror),
-//             PublicationType::Quote => Option::Some(PublicationType::Quote),
-
-//     }
-
 

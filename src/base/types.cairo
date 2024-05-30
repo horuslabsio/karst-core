@@ -25,8 +25,8 @@ pub struct PostParams {
 pub struct Profile {
     pub_count: u256,
     metadata_URI: ByteArray,
-    profile_address: ContractAddress,
-    profile_owner: ContractAddress
+    // profile_address: ContractAddress,
+    // profile_owner: ContractAddress
 }
 
 
@@ -54,9 +54,9 @@ enum PublicationType {
 #[derive(Drop, Serde, starknet::Store)]
 struct ReferencePubParams {
     profile_address: ContractAddress,
-    contentURI: ByteArray,
-    pointedProfile_address: ContractAddress,
-    pointedPubId: u256
+    content_URI: ByteArray,
+    pointed_profile_address: ContractAddress,
+    pointed_pub_id: u256
 //    uint256[] referrerProfileIds;
 //    uint256[] referrerPubIds;
 //    bytes referenceModuleData;
