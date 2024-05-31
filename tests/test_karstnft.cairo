@@ -85,7 +85,7 @@ fn test_token_mint() {
         HUB_ADDRESS.try_into().unwrap()
     );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    dispatcher
+    let profile_address = dispatcher
         .create_profile(
             contract_address,
             registry_class_hash,
@@ -96,11 +96,11 @@ fn test_token_mint() {
     let current_token_id = karstDispatcher.get_current_token_id();
     dispatcher
         .set_profile_metadata_uri(
-            HUB_ADDRESS.try_into().unwrap(),
+            profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/"
         );
-    let hub_profile_uri = dispatcher.get_profile_metadata(HUB_ADDRESS.try_into().unwrap());
-    assert(hub_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid');
+    let profile_uri = dispatcher.get_profile_metadata(profile_address.try_into().unwrap());
+    assert(profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid');
 
     assert(current_token_id == 1, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));

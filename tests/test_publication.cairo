@@ -15,7 +15,7 @@ use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait
 use karst::karstnft::karstnft::KarstNFT;
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
 use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
-use karst::publication::Publication;
+use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
@@ -105,7 +105,8 @@ fn test_post() {
         );
     profile_dispatcher
         .set_profile_metadata_uri(
-            USER.try_into().unwrap(), "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
+            profile_address.try_into().unwrap(),
+            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
         );
 
     // // POST

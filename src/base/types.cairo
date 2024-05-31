@@ -23,10 +23,10 @@ pub struct PostParams {
 
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
+    profile_address: ContractAddress,
+    profile_owner: ContractAddress,
     pub_count: u256,
     metadata_URI: ByteArray,
-// profile_address: ContractAddress,
-// profile_owner: ContractAddress
 }
 
 

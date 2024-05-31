@@ -1,1 +1,1 @@
-pub mod Publication;
+pub mod publication;
