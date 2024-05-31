@@ -11,7 +11,7 @@ pub trait IKarstPublications<T> {
         contentURI: ByteArray,
         profile_address: ContractAddress,
         profile_contract_address: ContractAddress,
-        user:ContractAddress
+        user: ContractAddress
     ) -> u256;
     fn comment(
         ref self: T,

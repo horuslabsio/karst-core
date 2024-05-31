@@ -116,7 +116,8 @@ pub mod Publications {
             hub_only(self.karst_hub.read());
             let pubIdAssigned = IKarstProfileDispatcher {
                 contract_address: profile_contract_address
-            }.increment_publication_count(profile_address);
+            }
+                .increment_publication_count(profile_address);
             let new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),
                 pointed_pub_id: 0,
@@ -172,7 +173,7 @@ pub mod Publications {
     impl Private of PrivateTrait {
         fn _fillRootOfPublicationInStorage(
             ref self: ContractState,
-            profile_address:ContractAddress,
+            profile_address: ContractAddress,
             pointed_profile_address: ContractAddress,
             pointed_pub_id: u256,
             profile_contract_address: ContractAddress
@@ -212,7 +213,10 @@ pub mod Publications {
                 .increment_publication_count(profile_address);
             let root_profile_address = self
                 ._fillRootOfPublicationInStorage(
-                    profile_address,pointed_profile_address, pointed_pub_id, profile_contract_address
+                    profile_address,
+                    pointed_profile_address,
+                    pointed_pub_id,
+                    profile_contract_address
                 );
             let update_reference = Publication {
                 pointed_profile_address: profile_address,

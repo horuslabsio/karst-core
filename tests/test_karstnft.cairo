@@ -85,9 +85,20 @@ fn test_token_mint() {
         HUB_ADDRESS.try_into().unwrap()
     );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456, HUB_ADDRESS.try_into().unwrap());
+    dispatcher
+        .create_profile(
+            contract_address,
+            registry_class_hash,
+            acct_class_hash.into(),
+            2456,
+            HUB_ADDRESS.try_into().unwrap()
+        );
     let current_token_id = karstDispatcher.get_current_token_id();
-    dispatcher.set_profile_metadata_uri(HUB_ADDRESS.try_into().unwrap(), "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
+    dispatcher
+        .set_profile_metadata_uri(
+            HUB_ADDRESS.try_into().unwrap(),
+            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/"
+        );
     let hub_profile_uri = dispatcher.get_profile_metadata(HUB_ADDRESS.try_into().unwrap());
     assert(hub_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid');
 

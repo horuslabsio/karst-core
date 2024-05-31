@@ -14,10 +14,12 @@ pub trait IKarstProfile<TState> {
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252,
-        recipient:ContractAddress
+        recipient: ContractAddress
     ) -> ContractAddress;
-    fn set_profile_metadata_uri(ref self: TState, profile_address:ContractAddress, metadata_uri: ByteArray);
-    fn increment_publication_count(ref self: TState, profile_address:ContractAddress) -> u256;
+    fn set_profile_metadata_uri(
+        ref self: TState, profile_address: ContractAddress, metadata_uri: ByteArray
+    );
+    fn increment_publication_count(ref self: TState, profile_address: ContractAddress) -> u256;
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************

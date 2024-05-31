@@ -25,8 +25,8 @@ pub struct PostParams {
 pub struct Profile {
     pub_count: u256,
     metadata_URI: ByteArray,
-    // profile_address: ContractAddress,
-    // profile_owner: ContractAddress
+// profile_address: ContractAddress,
+// profile_owner: ContractAddress
 }
 
 
