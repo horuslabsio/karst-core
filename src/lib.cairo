@@ -6,3 +6,5 @@ pub mod follownft;
 pub mod mocks;
 pub mod publication;
 
+
+pub mod namespaces;
