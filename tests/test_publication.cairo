@@ -19,23 +19,32 @@ use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
-use karst::base::types::{PostParams, ReferencePubParams};
+use karst::base::types::{PostParams, ReferencePubParams, PublicationType};
 
 const HUB_ADDRESS: felt252 = 'HUB';
-const USER: felt252 = 'USER';
+const USER_ONE: felt252 = 'BOB';
+const USER_TWO: felt252 = 'ALICE';
 
 // *************************************************************************
 //                              SETUP 
 // *************************************************************************
 fn __setup__() -> (
-    ContractAddress, ContractAddress, ContractAddress, ContractAddress, felt252, felt252
+    ContractAddress,
+    ContractAddress,
+    ContractAddress,
+    ContractAddress,
+    felt252,
+    felt252,
+    ContractAddress,
+    ContractAddress,
+    u256,
 ) {
     // deploy NFT
     let nft_contract = declare("KarstNFT").unwrap();
     let names: ByteArray = "KarstNFT";
     let symbol: ByteArray = "KNFT";
     let base_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/";
-    let mut calldata: Array<felt252> = array![USER];
+    let mut calldata: Array<felt252> = array![USER_ONE];
     names.serialize(ref calldata);
     symbol.serialize(ref calldata);
     base_uri.serialize(ref calldata);
@@ -54,7 +63,7 @@ fn __setup__() -> (
 
     // deploy publication
     let publication_contract = declare("Publications").unwrap();
-    let mut publication_constructor_calldata = array![HUB_ADDRESS];
+    let mut publication_constructor_calldata = array![];
     let (publication_contract_address, _) = publication_contract
         .deploy(@publication_constructor_calldata)
         .unwrap_syscall();
@@ -62,13 +71,68 @@ fn __setup__() -> (
     // declare account
     let account_class_hash = declare("Account").unwrap();
 
+    // ///// Deploying karst account for USER AND USE
+    let profile_dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_ONE.try_into().unwrap()
+    );
+    let user_one_profile_address = profile_dispatcher
+        .create_profile(
+            nft_contract_address,
+            registry_class_hash.class_hash.into(),
+            account_class_hash.class_hash.into(),
+            2478,
+            USER_ONE.try_into().unwrap()
+        );
+    profile_dispatcher
+        .set_profile_metadata_uri(
+            user_one_profile_address.try_into().unwrap(),
+            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
+        );
+    let contentURI: ByteArray = "ipfs://helloworld";
+    let user_one_first_post_pointed_pub_id = publication_dispatcher
+        .post(contentURI, user_one_profile_address, profile_contract_address);
+    stop_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+    );
+
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_TWO.try_into().unwrap()
+    );
+    let user_two_profile_address = profile_dispatcher
+        .create_profile(
+            nft_contract_address,
+            registry_class_hash.class_hash.into(),
+            account_class_hash.class_hash.into(),
+            2479,
+            USER_TWO.try_into().unwrap()
+        );
+    profile_dispatcher
+        .set_profile_metadata_uri(
+            user_two_profile_address.try_into().unwrap(),
+            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
+        );
+    let contentURI: ByteArray = "ipfs://helloworld";
+    publication_dispatcher.post(contentURI, user_two_profile_address, profile_contract_address);
+    stop_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+    );
+    //////
     return (
         nft_contract_address,
         registry_contract_address,
         profile_contract_address,
         publication_contract_address,
         registry_class_hash.class_hash.into(),
-        account_class_hash.class_hash.into()
+        account_class_hash.class_hash.into(),
+        user_one_profile_address,
+        user_two_profile_address,
+        user_one_first_post_pointed_pub_id,
     );
 }
 
@@ -79,68 +143,96 @@ fn __setup__() -> (
 #[test]
 fn test_post() {
     let (
-        nft_contract_address,
+        _,
         _,
         profile_contract_address,
         publication_contract_address,
-        registry_class_hash,
-        account_class_hash
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let profile_dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    let _publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IKarstPublicationsDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER.try_into().unwrap()
+        USER_ONE.try_into().unwrap()
     );
-    let profile_address = profile_dispatcher
-        .create_profile(
-            nft_contract_address,
-            registry_class_hash,
-            account_class_hash,
-            2478,
-            USER.try_into().unwrap()
-        );
-    profile_dispatcher
-        .set_profile_metadata_uri(
-            profile_address.try_into().unwrap(),
-            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
-        );
 
-    // // POST
-    // let contentURI: ByteArray = "ipfs://helloworld";
-    // let post1 = publication_dispatcher.post(contentURI, profile_address, profile_contract_address, HUB_ADDRESS.try_into().unwrap());
-    // let post2 = publication_dispatcher.post("ell", profile_address, profile_contract_address, HUB_ADDRESS.try_into().unwrap());
+    let publication_type = publication_dispatcher
+        .get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    assert(publication_type == PublicationType::Post, 'invalid pub_type');
 
-    // // COMMENT
-    // let comment = publication_dispatcher.comment(profile_address, "hello", profile_address, post1, profile_contract_address);
-    // let comment2 = publication_dispatcher.comment(profile_address, "iam", profile_address, post2, profile_contract_address);
-
-    // let post_publication_1 = IKarstPublicationsDispatcher {contract_address: publication_contract_address}.get_publication(profile_address, post1);
-    // let post_publication_2 = IKarstPublicationsDispatcher {contract_address: publication_contract_address}.get_publication(profile_address, post2);
-
-    // post
-    // println!("post_publication_one: {:?}", post_publication_1);
-    // println!("post_publication_two: {:?}", post_publication_2);
-
-    // let comment_publication = IKarstPublicationsDispatcher {
-    //     contract_address: publication_contract_address
-    // }.get_publication(profile_address, comment);
-    // let comment_publication2 = IKarstPublicationsDispatcher {
-    //     contract_address: publication_contract_address
-    // }.get_publication(profile_address, comment2);
-
-    // // comment
-    // println!("comment_publication_one: {:?}", comment_publication);
-    // println!("comment_publication_two: {:?}", comment_publication2);
-
-    // assert(post1 == 0, 'invalid pub_count');
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
 }
+
+
+#[test]
+fn test_comment() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_ONE.try_into().unwrap()
+    );
+    let user_one_comment_on_his_post_content_URI =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+    let user_two_comment_one_user_one_post_content_URI =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    // user comment on his own post
+    let user_one_comment_assigned_pub_id_1 = publication_dispatcher
+        .comment(
+            user_one_profile_address,
+            user_one_comment_on_his_post_content_URI,
+            user_one_profile_address,
+            user_one_first_post_pointed_pub_id,
+            profile_contract_address
+        );
+    // user two comment on user_one_post
+    let user_two_comment_on_user_one_assigned_pub_id_2 = publication_dispatcher
+        .comment(
+            user_two_profile_address,
+            user_two_comment_one_user_one_post_content_URI,
+            user_one_profile_address,
+            user_one_first_post_pointed_pub_id,
+            profile_contract_address
+        );
+
+    let user_one_publication_root_id = publication_dispatcher
+        .get_publication(user_one_profile_address, user_one_comment_assigned_pub_id_1)
+        .root_profile_address;
+    let user_two_comment_publication_root_id = publication_dispatcher
+        .get_publication(user_two_profile_address, user_two_comment_on_user_one_assigned_pub_id_2)
+        .root_profile_address;
+    let publication_type = publication_dispatcher
+        .get_publication_type(user_one_profile_address, user_one_comment_assigned_pub_id_1);
+    assert(publication_type == PublicationType::Comment, 'invalid pub_type');
+    assert(user_one_publication_root_id == user_two_comment_publication_root_id, 'Invalid root_id');
+
+    stop_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+    );
+}
+
 
 fn to_address(name: felt252) -> ContractAddress {
     name.try_into().unwrap()

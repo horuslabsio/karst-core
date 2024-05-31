@@ -104,11 +104,12 @@ mod KarstProfile {
 
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
+        /// how do we get the function? it acts an pub_count increase for all publication type.
         fn increment_publication_count(
             ref self: ContractState, profile_address: ContractAddress
         ) -> u256 {
-            hub_only(self.karst_hub.read());
             let mut profile = self.profile.read(profile_address);
+            // assert(get_caller_address() == profile.profile_owner, NOT_PROFILE_OWNER);
             let updated_profile = Profile {
                 profile_address: profile.profile_address,
                 profile_owner: profile.profile_owner,

@@ -64,7 +64,6 @@ pub mod Publications {
     struct Storage {
         publication: LegacyMap<(ContractAddress, u256), Publication>,
         blocked_profile_address: LegacyMap<(ContractAddress, ContractAddress), bool>,
-        karst_hub: ContractAddress,
     }
     // *************************************************************************
     //                              EVENTS
@@ -92,10 +91,6 @@ pub mod Publications {
     // *************************************************************************
     //                            CONSTRUCTOR
     // *************************************************************************
-    #[constructor]
-    fn constructor(ref self: ContractState, hub: ContractAddress) {
-        self.karst_hub.write(hub);
-    }
 
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
@@ -113,7 +108,13 @@ pub mod Publications {
             profile_address: ContractAddress,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            hub_only(self.karst_hub.read());
+            // assert that the person that created the profile can make a post
+            let profile_owner = IKarstProfileDispatcher {
+                contract_address: profile_contract_address
+            }
+                .get_profile(profile_address)
+                .profile_owner;
+            assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
             let pubIdAssigned = IKarstProfileDispatcher {
                 contract_address: profile_contract_address
             }
@@ -178,7 +179,6 @@ pub mod Publications {
             pointed_pub_id: u256,
             profile_contract_address: ContractAddress
         ) -> ContractAddress {
-            hub_only(self.karst_hub.read());
             let mut publication = self.publication.read((profile_address, pointed_pub_id));
             let pointed = self.publication.read((profile_address, pointed_pub_id));
             let publication_type = pointed.pub_Type;
@@ -247,7 +247,7 @@ pub mod Publications {
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    referencePubType,
+                    PublicationType::Comment,
                     profile_contract_address
                 );
 
