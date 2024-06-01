@@ -20,3 +20,4 @@ snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v
 [[target.starknet-contract]]
 casm = true
 build-external-contracts = ["token_bound_accounts::presets::account::Account"]
+allowed-libfuncs-list.name = "experimental"

@@ -15,7 +15,8 @@ use token_bound_accounts::presets::account::Account;
 use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 
-
+const HUB_ADDRESS: felt252 = 'HUB';
+const USER: felt252 = 'USER1';
 fn deploy_account() -> ContractAddress {
     let erc721_contract_address = deploy_contract("KarstNFT");
     // deploy account contract
@@ -36,17 +37,19 @@ fn deploy_registry() -> (ContractAddress, felt252) {
 }
 fn deploy_profile() -> ContractAddress {
     let profile_contract = declare("KarstProfile").unwrap();
-    let (profile_contract_address, _) = profile_contract.deploy(@array![]).unwrap();
+    let mut karst_profile_constructor_calldata = array![HUB_ADDRESS];
+    let (profile_contract_address, _) = profile_contract
+        .deploy(@karst_profile_constructor_calldata)
+        .unwrap();
     profile_contract_address
 }
 
 fn deploy_contract(name: ByteArray) -> ContractAddress {
     let contract = declare(name).unwrap();
-    let admin: ContractAddress = 123.try_into().unwrap();
     let names: ByteArray = "KarstNFT";
     let symbol: ByteArray = "KNFT";
     let base_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/";
-    let mut calldata: Array<felt252> = array![admin.into()];
+    let mut calldata: Array<felt252> = array![HUB_ADDRESS];
     names.serialize(ref calldata);
     symbol.serialize(ref calldata);
     base_uri.serialize(ref calldata);
@@ -66,10 +69,6 @@ fn test_constructor_func() {
     assert(nft_symbol == "KNFT", 'error');
 }
 
-const user1: felt252 = 'user_one';
-const user2: felt252 = 'user_two';
-const user3: felt252 = 'user_three';
-const user4: felt252 = 'user_four';
 
 #[test]
 fn test_token_mint() {
@@ -78,67 +77,32 @@ fn test_token_mint() {
     let profile_contract_address = deploy_profile();
     let acct_class_hash = declare("Account").unwrap_syscall().class_hash;
     let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    let erc721Dispatcher = IERC721Dispatcher { contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address };
 
     //user 1 create profile
     start_prank(
         CheatTarget::Multiple(array![profile_contract_address, contract_address]),
-        user1.try_into().unwrap()
+        HUB_ADDRESS.try_into().unwrap()
     );
     let dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
-    let token_id = karstDispatcher.get_user_token_id(user1.try_into().unwrap());
-    let _owner = erc721Dispatcher.owner_of(token_id);
+    let profile_address = dispatcher
+        .create_profile(
+            contract_address,
+            registry_class_hash,
+            acct_class_hash.into(),
+            2456,
+            HUB_ADDRESS.try_into().unwrap()
+        );
     let current_token_id = karstDispatcher.get_current_token_id();
-    let _token_user1_uri = erc721Dispatcher.token_uri(token_id);
-    dispatcher.set_profile_metadata_uri("ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/");
-    let user1_profile_id = dispatcher.get_user_profile_address(user1.try_into().unwrap());
-    let user1_profile_uri = dispatcher.get_profile(user1_profile_id);
-    assert(
-        user1_profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid'
-    );
+    dispatcher
+        .set_profile_metadata_uri(
+            profile_address.try_into().unwrap(),
+            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/"
+        );
+    let profile_uri = dispatcher.get_profile_metadata(profile_address.try_into().unwrap());
+    assert(profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid');
+
     assert(current_token_id == 1, 'invalid');
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
-
-    //user2 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, contract_address]),
-        user2.try_into().unwrap()
-    );
-    let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    karstDispatcher.mint_karstnft(user2.try_into().unwrap());
-    let _user2_token_id = karstDispatcher.get_user_token_id(user2.try_into().unwrap());
-    let current_token_id = karstDispatcher.get_current_token_id();
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
-    assert(current_token_id == 2, 'invalid');
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
-
-    //user3 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, contract_address]),
-        user3.try_into().unwrap()
-    );
-    let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    karstDispatcher.mint_karstnft(user3.try_into().unwrap());
-    let user3_token_id = karstDispatcher.get_user_token_id(user3.try_into().unwrap());
-    let _token_user3_uri = erc721Dispatcher.token_uri(user3_token_id);
-    let current_token_id = karstDispatcher.get_current_token_id();
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
-    assert(current_token_id == 3, 'invalid');
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
-
-    //user4 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, contract_address]),
-        user4.try_into().unwrap()
-    );
-    let karstDispatcher = IKarstNFTDispatcher { contract_address };
-    karstDispatcher.mint_karstnft(user4.try_into().unwrap());
-    let user4_token_id = karstDispatcher.get_user_token_id(user4.try_into().unwrap());
-    let _token_user4_uri = erc721Dispatcher.token_uri(user4_token_id);
-    let current_token_id = karstDispatcher.get_current_token_id();
-    dispatcher.create_profile(contract_address, registry_class_hash, acct_class_hash.into(), 2456);
-    assert(current_token_id == 4, 'invalid');
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, contract_address]));
 }
 
@@ -146,7 +110,4 @@ fn test_token_mint() {
 fn to_address(name: felt252) -> ContractAddress {
     name.try_into().unwrap()
 }
-// To do:
-// - Test profile token balance
-
 

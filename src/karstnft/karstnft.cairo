@@ -38,7 +38,9 @@ pub mod KarstNFT {
     //                             IMPORTS
     // *************************************************************************
     use starknet::{ContractAddress, get_caller_address};
+    use core::num::traits::zero::Zero;
     use karst::interfaces::IKarstNFT;
+    use karst::base::{hubrestricted::HubRestricted::hub_only, errors::Errors::ALREADY_MINTED};
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -63,7 +65,6 @@ pub mod KarstNFT {
     // allow to query name of nft collection
     #[abi(embed_v0)]
     impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
-
     // add an owner
     #[abi(embed_v0)]
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
@@ -83,9 +84,12 @@ pub mod KarstNFT {
         ownable: OwnableComponent::Storage,
         admin: ContractAddress,
         token_id: u256,
-        user_token_id: LegacyMap<ContractAddress, u256>
+        user_token_id: LegacyMap<ContractAddress, u256>,
     }
 
+    // *************************************************************************
+    //                              EVENTS
+    // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -103,10 +107,10 @@ pub mod KarstNFT {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        admin: ContractAddress, // to perform upgrade
+        admin: ContractAddress,
         name: ByteArray,
         symbol: ByteArray,
-        base_uri: ByteArray
+        base_uri: ByteArray,
     ) {
         self.admin.write(admin);
         self.erc721.initializer(name, symbol, base_uri);
@@ -116,17 +120,21 @@ pub mod KarstNFT {
     impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
         /// @notice mints kartsnft
         fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
+            let balance = self.erc721.balance_of(address);
+            assert(balance.is_zero(), ALREADY_MINTED);
             let mut current_token_id = self.token_id.read();
             self.erc721._mint(address, current_token_id);
             self.user_token_id.write(address, current_token_id);
             current_token_id += 1;
             self.token_id.write(current_token_id);
         }
+
         /// @notice returns karstnft token_id
         /// @param user the address of user to query its token_id
         fn get_user_token_id(self: @ContractState, user: ContractAddress) -> u256 {
             self.user_token_id.read(user)
         }
+
         /// @notice returns current token_id
         fn get_current_token_id(self: @ContractState) -> u256 {
             self.token_id.read()
