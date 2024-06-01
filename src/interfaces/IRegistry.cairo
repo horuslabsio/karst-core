@@ -5,6 +5,9 @@ use starknet::ContractAddress;
 // *************************************************************************
 #[starknet::interface]
 pub trait IRegistry<TContractState> {
+    // *************************************************************************
+    //                              EXTERNALS
+    // *************************************************************************
     fn create_account(
         ref self: TContractState,
         implementation_hash: felt252,
@@ -12,6 +15,10 @@ pub trait IRegistry<TContractState> {
         token_id: u256,
         salt: felt252
     ) -> ContractAddress;
+
+    // *************************************************************************
+    //                              GETTERS
+    // *************************************************************************
     fn get_account(
         self: @TContractState,
         implementation_hash: felt252,

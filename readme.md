@@ -1,4 +1,18 @@
-# Karst
+<!-- logo -->
+<p align="center">
+  <img width='300' src="https://avatars.githubusercontent.com/u/123994955?s=200&v=4">
+</p>
+
+<!-- primary badges -->
+<p align="center">
+  <a href="https://github.com/argentlabs/starknetkit/blob/main/LICENSE/">
+    <img src="https://img.shields.io/badge/license-MIT-black">
+  </a>
+</p>
+
+<div align="center">
+<h1> Karst </h1>
+</div>
 
 Karst is a permissionless and composable social graph built on Starknet, empowering creators to own every part of their social experience.
 
@@ -38,9 +52,8 @@ For more information on writing and running tests, refer to the [Starknet-Foundr
 
 ## Architecture
 
-Check out the architecture below, and also reference [lens protocol](https://github.com/lens-protocol/core/tree/master) to understand more.
+Check out the contract architecture below.
 
-*Architecture Preview.*
 <img width="100%" alt="Screenshot 2024-05-24 at 00 11 16" src="https://github.com/horuslabsio/karst-core/blob/main/img/architecture.png?raw=true">
 
 

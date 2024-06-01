@@ -122,7 +122,7 @@ fn __setup__() -> (
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
-    //////
+
     return (
         nft_contract_address,
         registry_contract_address,
@@ -170,7 +170,6 @@ fn test_post() {
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
 }
-
 
 #[test]
 fn test_comment() {

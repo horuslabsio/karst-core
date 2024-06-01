@@ -6,6 +6,9 @@ use karst::base::types::{PostParams, ReferencePubParams, PublicationType, Public
 
 #[starknet::interface]
 pub trait IKarstPublications<T> {
+    // *************************************************************************
+    //                              EXTERNALS
+    // *************************************************************************
     fn post(
         ref self: T,
         contentURI: ByteArray,
@@ -20,6 +23,10 @@ pub trait IKarstPublications<T> {
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
+
+    // *************************************************************************
+    //                              GETTERS
+    // *************************************************************************
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
     fn get_publication_type(
         self: @T, profile_address: ContractAddress, pub_id_assigned: u256

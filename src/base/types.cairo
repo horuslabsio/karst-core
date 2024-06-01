@@ -16,17 +16,23 @@ pub struct FollowData {
     follow_timestamp: u64
 }
 
+// /**
+// * @notice A struct containing the parameters supplied to the post method
+// *
+// * @param contentURI URI pointing to the post content
+// * @param profile_address profile address that owns the post
+// */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct PostParams {
     contentURI: ByteArray,
     profile_address: ContractAddress,
 }
-// * @notice A struct containing profile data.
-//      * profile_address The profile ID of a karst profile 
-//      * profile_owner The address that created the profile_address
-//      * @param pub_count The number of publications made to this profile.
-//      * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed name, description, interests, etc.
 
+// * @notice A struct containing profile data.
+// * profile_address The profile ID of a karst profile 
+// * profile_owner The address that created the profile_address
+// * @param pub_count The number of publications made to this profile.
+// * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed name, description, interests, etc.
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
     profile_address: ContractAddress,
@@ -49,7 +55,6 @@ pub struct Profile {
 // * @param root_profile_address The profile ID of the root post (to determine if comments/quotes and mirrors come from it).
 // * @param root_pub_id The publication ID of the root post (to determine if comments/quotes and mirrors come from it).
 // */
-
 #[derive(Debug, Drop, Serde, starknet::Store)]
 pub struct Publication {
     pointed_profile_address: ContractAddress,
@@ -78,6 +83,22 @@ enum PublicationType {
     Quote
 }
 
+// /**
+// * @notice A struct containing the parameters supplied to the comment method
+// *
+// * @param profile_address profile address that owns the comment
+// * @param contentURI URI pointing to the comment content
+// * @param pointed_profile_address profile address of the referenced publication/comment
+// * @param pointed_pub_id ID of the pointed publication
+// */
+#[derive(Drop, Serde, starknet::Store)]
+struct CommentParams {
+    profile_address: ContractAddress,
+    contentURI: ByteArray,
+    pointed_profile_address: ContractAddress,
+    pointed_pub_id: u256,
+}
+
 
 #[derive(Drop, Serde, starknet::Store)]
 struct ReferencePubParams {
@@ -87,11 +108,3 @@ struct ReferencePubParams {
     pointed_pub_id: u256
 }
 
-
-#[derive(Drop, Serde, starknet::Store)]
-struct CommentParams {
-    profile_address: ContractAddress,
-    contentURI: ByteArray,
-    pointedProfile_address: ContractAddress,
-    pointedPubId: u256,
-}
