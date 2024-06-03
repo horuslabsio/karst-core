@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 // *************************************************************************
-//                              INTERFACE of FollowNFT 
+//                              INTERFACE of HANDLE NFT 
 // *************************************************************************
 #[starknet::interface]
 pub trait IHandle<TState> {

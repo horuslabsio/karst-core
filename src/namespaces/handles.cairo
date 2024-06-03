@@ -185,15 +185,15 @@ mod Handles {
     // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
-        fn _mint_handle(address: ContractAddress, local_name: felt252) -> u256 {
+        fn _mint_handle(ref self: ContractState, address: ContractAddress, local_name: felt252) -> u256 {
             // TODO
             return 123;
         }
 
-        fn _validate_local_name(local_name: felt252) { // TODO
+        fn _validate_local_name(ref self: ContractState, local_name: felt252) { // TODO
         }
 
-        fn _is_alpha_numeric(char: felt252) -> bool {
+        fn _is_alpha_numeric(self: @ContractState, char: felt252) -> bool {
             // TODO
             return false;
         }
