@@ -2,7 +2,8 @@
 // [Len Publication Contract](https://github.com/lens-protocol/core/blob/master/contracts/libraries/PublicationLib.sol)
 use starknet::{ContractAddress, get_caller_address};
 use karst::base::types::{
-    PostParams, PublicationType, CommentParams, ReferencePubParams, Publication,MirrorParams, QuoteParams
+    PostParams, PublicationType, CommentParams, ReferencePubParams, Publication, MirrorParams,
+    QuoteParams
 };
 use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
 use core::option::OptionTrait;
@@ -49,7 +50,8 @@ pub mod Publications {
     // *************************************************************************
     use starknet::{ContractAddress, get_contract_address, get_caller_address};
     use karst::base::types::{
-        PostParams, Publication, PublicationType, ReferencePubParams, CommentParams,QuoteParams,MirrorParams
+        PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
+        MirrorParams
     };
     use super::IKarstPublications;
     use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
@@ -157,12 +159,12 @@ pub mod Publications {
         // *
         // * @return uint256 The created publication's pubId.
         // */
-        fn mirror(ref self: ContractState, mirrorParams: MirrorParams) -> u256 { 
+        fn mirror(ref self: ContractState, mirrorParams: MirrorParams) -> u256 {
             // logic here
             0
         }
 
-        fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 { 
+        fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 {
             // logic here
             0
         }
