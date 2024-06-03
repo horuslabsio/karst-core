@@ -24,8 +24,8 @@ mod HandleRegistry {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        Linked: Linked,
-        Unlinked: Unlinked,
+        Linked: HandleLinked,
+        Unlinked: HandleUnlinked,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -48,7 +48,9 @@ mod HandleRegistry {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(hub_address: ContractAddress, handle_address: ContractAddress) {
+    fn constructor(
+        ref self: ContractState, hub_address: ContractAddress, handle_address: ContractAddress
+    ) {
         self.hub_address.write(hub_address);
         self.handle_address.write(handle_address);
     }
@@ -70,21 +72,33 @@ mod HandleRegistry {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
-        fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {// TODO
+        fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
+            // TODO
+            0.try_into().unwrap()
         }
 
-        fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {// TODO
+        fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
+            // TODO
+            0.try_into().unwrap()
         }
     }
 
     // *************************************************************************
     //                            PRIVATE FUNCTIONS
-    // *************************************************************************   
+    // ************************************************************************* 
+    #[generate_trait]
     impl Private of PrivateTrait {
-        fn _link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {// TODO
+        fn _link(
+            ref self: ContractState, handle_id: u256, profile_address: ContractAddress
+        ) { // TODO
         }
 
-        fn _unlink(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {// TODO
+        fn _unlink(
+            ref self: ContractState,
+            handle_id: u256,
+            profile_address: ContractAddress,
+            caller: ContractAddress
+        ) { // TODO
         }
     }
 }

@@ -5,3 +5,4 @@ pub mod IProfile;
 pub mod IFollowNFT;
 pub mod IPublication;
 pub mod IHandle;
+pub mod IHandleRegistry;
