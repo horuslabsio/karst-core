@@ -30,7 +30,7 @@ mod HandleRegistry {
 
     #[derive(Drop, starknet::Event)]
     struct HandleLinked {
-        handle_id: u256, 
+        handle_id: u256,
         profile_address: ContractAddress,
         caller: ContractAddress,
         timestamp: u64
@@ -38,7 +38,7 @@ mod HandleRegistry {
 
     #[derive(Drop, starknet::Event)]
     struct HandleUnlinked {
-        handle_id: u256, 
+        handle_id: u256,
         profile_address: ContractAddress,
         caller: ContractAddress,
         timestamp: u64
@@ -70,12 +70,10 @@ mod HandleRegistry {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
-        fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
-            // TODO
+        fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {// TODO
         }
 
-        fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
-            // TODO
+        fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {// TODO
         }
     }
 
@@ -83,12 +81,10 @@ mod HandleRegistry {
     //                            PRIVATE FUNCTIONS
     // *************************************************************************   
     impl Private of PrivateTrait {
-        fn _link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
-            // TODO
+        fn _link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {// TODO
         }
 
-        fn _unlink(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
-            // TODO
+        fn _unlink(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {// TODO
         }
     }
 }

@@ -185,7 +185,9 @@ mod Handles {
     // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
-        fn _mint_handle(ref self: ContractState, address: ContractAddress, local_name: felt252) -> u256 {
+        fn _mint_handle(
+            ref self: ContractState, address: ContractAddress, local_name: felt252
+        ) -> u256 {
             // TODO
             return 123;
         }
