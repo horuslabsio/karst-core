@@ -101,10 +101,41 @@ struct CommentParams {
 
 
 #[derive(Drop, Serde, starknet::Store)]
-struct ReferencePubParams {
+pub struct ReferencePubParams {
     profile_address: ContractAddress,
     content_URI: ByteArray,
     pointed_profile_address: ContractAddress,
     pointed_pub_id: u256
 }
 
+// /**
+// * @notice A struct containing the parameters required for the `mirror()` function.
+// *
+// * @param profile_address The address of the profile to publish to.
+// * @param metadata_URI the URI containing metadata attributes to attach to this mirror publication.
+// * @param pointed_profile_id The profile address to point the mirror to.
+// * @param pointed_pub_id The publication ID to point the mirror to.
+// */
+#[derive(Drop, Serde, starknet::Store)]
+pub struct MirrorParams {
+    profile_address: ContractAddress,
+    metadata_URI: ByteArray,
+    pointed_profile_address: ContractAddress,
+    pointed_pub_id: u256
+}
+
+// /**
+// * @notice A struct containing the parameters required for the `quote()` function.
+// *
+// * @param profile_address The address of the profile to publish to.
+// * @param content_URI The URI to set for this new publication.
+// * @param pointed_profile_address The profile address of the publication author that is quoted.
+// * @param pointed_pub_id The publication ID that is quoted.
+// */
+#[derive(Drop, Serde, starknet::Store)]
+pub struct QuoteParams {
+    profile_address: ContractAddress,
+    content_URI: ByteArray,
+    pointed_profile_address: ContractAddress,
+    pointed_pub_id: u256
+}
