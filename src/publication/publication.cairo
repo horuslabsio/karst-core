@@ -1,5 +1,5 @@
-//! Contract for Karst Publications
-
+//! Contract for Karst Publications V1
+// [Len Publication Contract](https://github.com/lens-protocol/core/blob/master/contracts/libraries/PublicationLib.sol)
 use starknet::{ContractAddress, get_caller_address};
 use karst::base::types::{
     PostParams, PublicationType, CommentParams, ReferencePubParams, Publication
@@ -22,10 +22,6 @@ pub trait IKarstPublications<T> {
         profile_address: ContractAddress,
         profile_contract_address: ContractAddress
     ) -> u256;
-    fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
-    fn get_publication_type(
-        self: @T, profile_address: ContractAddress, pub_id_assigned: u256
-    ) -> PublicationType;
     fn comment(
         ref self: T,
         profile_address: ContractAddress,
@@ -34,12 +30,16 @@ pub trait IKarstPublications<T> {
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
+    fn mirror(ref self: T, mirrorParams: MirrorParams) -> u256;
+    fn quote(ref self: T, quoteParams: QuoteParams) -> u256;
+    ////// Getters//////
+    fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
+    fn get_publication_type(
+        self: @T, profile_address: ContractAddress, pub_id_assigned: u256
+    ) -> PublicationType;
     fn get_publication_content_uri(
         self: @T, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
-// *************************************************************************
-//                              PROFILE INTERACTION FUNCTIONS  
-// *************************************************************************
 }
 
 #[starknet::contract]
@@ -149,6 +149,22 @@ pub mod Publications {
                 );
             pubIdAssigned
         }
+
+        // /**
+        // * @notice Publishes a mirror to a given profile.
+        // *
+        // * @param mirrorParams the MirrorParams struct reference types.cairo to know MirrorParams.
+        // *
+        // * @return uint256 The created publication's pubId.
+        // */
+        fn mirror(ref self: ContractState, mirrorParams: MirrorParams) -> u256 { // logic here
+        }
+
+        fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 { // logic here
+        }
+        //////////////////////////////////////////////////////////////
+        /// GETTERS//////////////////////////////////////////////////
+        /// /////////////////////////////////////////////////////////
         fn get_publication_content_uri(
             self: @ContractState, profile_address: ContractAddress, pub_id: u256
         ) -> ByteArray {
