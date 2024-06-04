@@ -52,7 +52,7 @@ For more information on writing and running tests, refer to the [Starknet-Foundr
 
 ## Architecture
 
-Check out the contract architecture below.
+Check out the contract architecture below, and join our [working group](https://t.me/+DFfuHjLkeXlkNTg0).
 
 <img width="100%" alt="Screenshot 2024-05-24 at 00 11 16" src="https://github.com/horuslabsio/karst-core/blob/main/img/architecture.png?raw=true">
 

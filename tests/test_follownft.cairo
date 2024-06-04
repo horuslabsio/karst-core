@@ -27,6 +27,9 @@ fn __setup__() -> ContractAddress {
     return (follow_nft_contract_address);
 }
 
+// *************************************************************************
+//                              TEST
+// *************************************************************************
 #[test]
 fn test_follower_count_on_init_is_zero() {
     let follow_nft_contract_address = __setup__();

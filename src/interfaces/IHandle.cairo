@@ -10,8 +10,6 @@ pub trait IHandle<TState> {
     // *************************************************************************
     fn mint_handle(ref self: TState, address: ContractAddress, local_name: felt252) -> u256;
     fn burn_handle(ref self: TState, token_id: u256);
-    fn set_handle_token_uri(ref self: TState, token_id: u256, local_name: felt252);
-    fn migrate_handle(ref self: TState, address: ContractAddress, local_name: felt252) -> u256;
     // *************************************************************************
     //                            GETTERS
     // *************************************************************************

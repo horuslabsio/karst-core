@@ -136,18 +136,6 @@ mod Handles {
         fn burn_handle(ref self: ContractState, token_id: u256) { // TODO
         }
 
-        fn set_handle_token_uri(
-            ref self: ContractState, token_id: u256, local_name: felt252
-        ) { // TODO
-        }
-
-        fn migrate_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252
-        ) -> u256 {
-            // TODO
-            return 123;
-        }
-
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
