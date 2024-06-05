@@ -57,3 +57,14 @@ Check out the contract architecture below, and join our [working group](https://
 <img width="100%" alt="Screenshot 2024-05-24 at 00 11 16" src="https://github.com/horuslabsio/karst-core/blob/main/img/architecture.png?raw=true">
 
 
+## Contributing
+
+BEFORE you start work on a feature or fix, please read and follow our [contribution guide](https://github.com/horuslabsio/karst-core/blob/master/CONTRIBUTING.md) to help avoid any wasted or duplicate effort.
+
+## Security 
+
+If you believe you have found a security vulnerability in our code, please report it to us as described in our [security policy](https://github.com/horuslabsio/karst-core/blob/master/SECURITY.md).
+
+## License
+
+KARST is an open-source software licensed under the [MIT](https://github.com/horuslabsio/karst-core/blob/master/LICENSE.md).
