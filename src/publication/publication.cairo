@@ -176,7 +176,6 @@ pub mod Publications {
             profile_contract_address: ContractAddress
         ) -> u256 {
             // logic here
-            println!("profile_contract_address: {:?}", profile_contract_address);
             self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
             self
                 .validateNotBlocked(
@@ -190,7 +189,7 @@ pub mod Publications {
             let pub_id_assigned = pubIdAssigned
                 .get_user_publication_count(mirrorParams.profile_address);
             let publication = self
-                .get_publication(mirrorParams.pointed_profile_address, pub_id_assigned);
+                .get_publication(mirrorParams.pointed_profile_address, mirrorParams.pointed_pub_id);
 
             self
                 ._fillRefeferencePublicationStorage(
