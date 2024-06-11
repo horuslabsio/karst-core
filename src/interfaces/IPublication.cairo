@@ -2,7 +2,9 @@
 //                              INTERFACE of KARST PUBLICATIONS
 // *************************************************************************
 use starknet::ContractAddress;
-use karst::base::types::{PostParams, ReferencePubParams, PublicationType, Publication};
+use karst::base::types::{
+    PostParams, MirrorParams, ReferencePubParams, PublicationType, Publication
+};
 
 #[starknet::interface]
 pub trait IKarstPublications<T> {
@@ -28,6 +30,9 @@ pub trait IKarstPublications<T> {
     //                              GETTERS
     // *************************************************************************
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
+    fn mirror(
+        ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
+    ) -> u256;
     fn get_publication_type(
         self: @T, profile_address: ContractAddress, pub_id_assigned: u256
     ) -> PublicationType;

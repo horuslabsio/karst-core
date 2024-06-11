@@ -19,7 +19,7 @@ use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
-use karst::base::types::{PostParams, ReferencePubParams, PublicationType};
+use karst::base::types::{PostParams, MirrorParams, ReferencePubParams, PublicationType};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';
@@ -232,6 +232,46 @@ fn test_comment() {
     );
 }
 
+#[test]
+fn test_publish_mirrow() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let mirrow_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let actual_pub_id_assigned = IKarstProfileDispatcher {
+        contract_address: profile_contract_address
+    };
+
+    let pub_id_assigned = actual_pub_id_assigned
+        .get_user_publication_count(user_one_profile_address);
+    let pub_assign_id = publication_dispatcher.mirror(mirrow_params, profile_contract_address);
+
+    assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
 
 fn to_address(name: felt252) -> ContractAddress {
     name.try_into().unwrap()

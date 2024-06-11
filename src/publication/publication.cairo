@@ -5,6 +5,7 @@ use karst::base::types::{
     PostParams, PublicationType, CommentParams, ReferencePubParams, Publication, MirrorParams,
     QuoteParams
 };
+use karst::profile;
 use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
 use core::option::OptionTrait;
 
@@ -31,7 +32,9 @@ pub trait IKarstPublications<T> {
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
-    fn mirror(ref self: T, mirrorParams: MirrorParams) -> u256;
+    fn mirror(
+        ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
+    ) -> u256;
     fn quote(ref self: T, quoteParams: QuoteParams) -> u256;
     ////// Getters//////
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
@@ -41,6 +44,12 @@ pub trait IKarstPublications<T> {
     fn get_publication_content_uri(
         self: @T, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
+// fn publish_mirrow(
+//     ref self: T,
+//     mirrorParams: MirrorParams,
+//     post: PostParams,
+//     profile_contract_address: ContractAddress
+// ) -> u256;
 }
 
 #[starknet::contract]
@@ -48,7 +57,7 @@ pub mod Publications {
     // *************************************************************************
     //                              IMPORTS
     // *************************************************************************
-    use starknet::{ContractAddress, get_contract_address, get_caller_address};
+    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::base::types::{
         PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
         MirrorParams
@@ -75,6 +84,7 @@ pub mod Publications {
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         Post: Post,
+        MirrowCreated: MirrowCreated,
     }
 
     // *************************************************************************
@@ -87,6 +97,14 @@ pub mod Publications {
         pub publication_id: u256,
         pub transaction_executor: ContractAddress,
         pub block_timestamp: u256,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct MirrowCreated {
+        pub mirrorParams: MirrorParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
 
@@ -103,7 +121,6 @@ pub mod Publications {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
-
         fn post(
             ref self: ContractState,
             contentURI: ByteArray,
@@ -159,9 +176,48 @@ pub mod Publications {
         // *
         // * @return uint256 The created publication's pubId.
         // */
-        fn mirror(ref self: ContractState, mirrorParams: MirrorParams) -> u256 {
+        fn mirror(
+            ref self: ContractState,
+            mirrorParams: MirrorParams,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
             // logic here
-            0
+            println!("profile_contract_address: {:?}", profile_contract_address);
+            self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
+            self
+                .validateNotBlocked(
+                    mirrorParams.profile_address, mirrorParams.pointed_profile_address, false
+                );
+            let ref_mirrorParams = mirrorParams.clone();
+            // _processMirrorIfNeeded is not needed 
+            let pubIdAssigned = IKarstProfileDispatcher {
+                contract_address: profile_contract_address
+            };
+            let pub_id_assigned = pubIdAssigned
+                .get_user_publication_count(mirrorParams.profile_address);
+            let publication = self
+                .get_publication(mirrorParams.pointed_profile_address, pub_id_assigned);
+
+            self
+                ._fillRefeferencePublicationStorage(
+                    mirrorParams.profile_address,
+                    publication.content_URI,
+                    mirrorParams.pointed_profile_address,
+                    mirrorParams.pointed_pub_id,
+                    PublicationType::Mirror,
+                    profile_contract_address,
+                );
+            self
+                .emit(
+                    MirrowCreated {
+                        mirrorParams: ref_mirrorParams,
+                        publication_id: pub_id_assigned,
+                        transaction_executor: mirrorParams.profile_address,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+
+            pub_id_assigned
         }
 
         fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 {
@@ -188,6 +244,48 @@ pub mod Publications {
         ) -> PublicationType {
             self._getPublicationType(profile_address, pub_id_assigned)
         }
+    // fn publish_mirrow(
+    //     ref self: ContractState,
+    //     mirrorParams: MirrorParams,
+    //     post: PostParams,
+    //     profile_contract_address: ContractAddress
+    // ) -> u256 {
+    //     self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
+    //     self
+    //         .validateNotBlocked(
+    //             mirrorParams.profile_address, mirrorParams.pointed_profile_address, false
+    //         );
+    //     let ref_mirrorParams = mirrorParams.clone();
+    //     // _processMirrorIfNeeded is not needed 
+    //     let pubIdAssigned = IKarstProfileDispatcher {
+    //         contract_address: mirrorParams.profile_address
+    //     };
+    //     let pub_id_assigned = pubIdAssigned
+    //         .get_user_publication_count(mirrorParams.profile_address);
+
+    //     let publication = self
+    //         .get_publication(mirrorParams.pointed_profile_address, pub_id_assigned);
+    //     self
+    //         ._fillRefeferencePublicationStorage(
+    //             mirrorParams.profile_address,
+    //             publication.content_URI,
+    //             mirrorParams.pointed_profile_address,
+    //             mirrorParams.pointed_pub_id,
+    //             PublicationType::Mirror,
+    //             profile_contract_address
+    //         );
+    //     self
+    //         .emit(
+    //             MirrowCreated {
+    //                 mirrorParams: ref_mirrorParams,
+    //                 publication_id: pub_id_assigned,
+    //                 transaction_executor: mirrorParams.profile_address,
+    //                 block_timestamp: get_block_timestamp(),
+    //             }
+    //         );
+
+    //     pub_id_assigned
+    // }
     }
     // *************************************************************************
     //                            PRIVATE FUNCTIONS
