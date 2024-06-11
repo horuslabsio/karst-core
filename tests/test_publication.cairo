@@ -5,7 +5,7 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress, class_hash::ClassHash};
+use starknet::{ContractAddress, class_hash::ClassHash, contract_address_const};
 use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank};
 
 use token_bound_accounts::interfaces::IAccount::{IAccountDispatcher, IAccountDispatcherTrait};
@@ -233,7 +233,7 @@ fn test_comment() {
 }
 
 #[test]
-fn test_publish_mirrow() {
+fn test_publish_mirror() {
     let (
         _,
         _,
@@ -252,7 +252,7 @@ fn test_publish_mirrow() {
 
     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
 
-    let mirrow_params = MirrorParams {
+    let mirror_params = MirrorParams {
         profile_address: user_one_profile_address,
         metadata_URI: metadata_URI,
         pointed_profile_address: user_two_profile_address,
@@ -266,12 +266,100 @@ fn test_publish_mirrow() {
 
     let pub_id_assigned = actual_pub_id_assigned
         .get_user_publication_count(user_one_profile_address);
-    let pub_assign_id = publication_dispatcher.mirror(mirrow_params, profile_contract_address);
+    let pub_assign_id = publication_dispatcher.mirror(mirror_params, profile_contract_address);
 
     assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
 
     stop_prank(CheatTarget::One(publication_contract_address),);
 }
+
+#[test]
+fn test_mirror_pointed_profile_address() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let mirror_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let actual_pub_id_assigned = IKarstProfileDispatcher {
+        contract_address: profile_contract_address
+    };
+
+    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+
+    let pointed_profile = actual_pub_id_assigned.get_profile(user_one_profile_address);
+
+    assert(
+        pointed_profile.profile_address == user_one_profile_address,
+        'Invalid Pointed Profile Address'
+    );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+fn test_mirror_root_profile_address() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let mirror_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let actual_pub_id_assigned = IKarstProfileDispatcher {
+        contract_address: profile_contract_address
+    };
+
+    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+
+    let pointed_profile = actual_pub_id_assigned.get_profile(user_two_profile_address);
+
+    assert(
+        pointed_profile.profile_address == user_two_profile_address, 'Invalid Root Profile Address'
+    );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
 
 fn to_address(name: felt252) -> ContractAddress {
     name.try_into().unwrap()

@@ -78,7 +78,7 @@ pub mod Publications {
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         Post: Post,
-        MirrowCreated: MirrowCreated,
+        MirrorCreated: MirrorCreated,
     }
 
     // *************************************************************************
@@ -94,7 +94,7 @@ pub mod Publications {
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct MirrowCreated {
+    pub struct MirrorCreated {
         pub mirrorParams: MirrorParams,
         pub publication_id: u256,
         pub transaction_executor: ContractAddress,
@@ -176,6 +176,11 @@ pub mod Publications {
             profile_contract_address: ContractAddress
         ) -> u256 {
             // logic here
+
+            assert!(
+                profile_contract_address.into() != 0, "Contract Profile Address cannot be zero"
+            );
+
             self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
             self
                 .validateNotBlocked(
@@ -202,7 +207,7 @@ pub mod Publications {
                 );
             self
                 .emit(
-                    MirrowCreated {
+                    MirrorCreated {
                         mirrorParams: ref_mirrorParams,
                         publication_id: pub_id_assigned,
                         transaction_executor: mirrorParams.profile_address,
