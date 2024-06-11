@@ -32,7 +32,9 @@ pub trait IKarstPublications<T> {
         profile_contract_address: ContractAddress,
     ) -> u256;
     fn mirror(ref self: T, mirrorParams: MirrorParams) -> u256;
-    fn quote(ref self: T, quoteParams: QuoteParams) -> u256;
+    fn quote(
+        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+    ) -> u256;
     ////// Getters//////
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
     fn get_publication_type(
@@ -164,9 +166,21 @@ pub mod Publications {
             0
         }
 
-        fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 {
-            // logic here
-            0
+        fn quote(
+            ref self: ContractState,
+            quoteParams: QuoteParams,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
+            let pubIdAssigned = self
+                ._createReferencePublication(
+                    quoteParams.profile_address,
+                    quoteParams.content_URI,
+                    quoteParams.pointed_profile_address,
+                    quoteParams.pointed_pub_id,
+                    PublicationType::Quote,
+                    profile_contract_address
+                );
+            pubIdAssigned
         }
         // *************************************************************************
         //                              GETTERS
