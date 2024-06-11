@@ -44,12 +44,6 @@ pub trait IKarstPublications<T> {
     fn get_publication_content_uri(
         self: @T, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
-// fn publish_mirrow(
-//     ref self: T,
-//     mirrorParams: MirrorParams,
-//     post: PostParams,
-//     profile_contract_address: ContractAddress
-// ) -> u256;
 }
 
 #[starknet::contract]
