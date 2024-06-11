@@ -244,48 +244,6 @@ pub mod Publications {
         ) -> PublicationType {
             self._getPublicationType(profile_address, pub_id_assigned)
         }
-    // fn publish_mirrow(
-    //     ref self: ContractState,
-    //     mirrorParams: MirrorParams,
-    //     post: PostParams,
-    //     profile_contract_address: ContractAddress
-    // ) -> u256 {
-    //     self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
-    //     self
-    //         .validateNotBlocked(
-    //             mirrorParams.profile_address, mirrorParams.pointed_profile_address, false
-    //         );
-    //     let ref_mirrorParams = mirrorParams.clone();
-    //     // _processMirrorIfNeeded is not needed 
-    //     let pubIdAssigned = IKarstProfileDispatcher {
-    //         contract_address: mirrorParams.profile_address
-    //     };
-    //     let pub_id_assigned = pubIdAssigned
-    //         .get_user_publication_count(mirrorParams.profile_address);
-
-    //     let publication = self
-    //         .get_publication(mirrorParams.pointed_profile_address, pub_id_assigned);
-    //     self
-    //         ._fillRefeferencePublicationStorage(
-    //             mirrorParams.profile_address,
-    //             publication.content_URI,
-    //             mirrorParams.pointed_profile_address,
-    //             mirrorParams.pointed_pub_id,
-    //             PublicationType::Mirror,
-    //             profile_contract_address
-    //         );
-    //     self
-    //         .emit(
-    //             MirrowCreated {
-    //                 mirrorParams: ref_mirrorParams,
-    //                 publication_id: pub_id_assigned,
-    //                 transaction_executor: mirrorParams.profile_address,
-    //                 block_timestamp: get_block_timestamp(),
-    //             }
-    //         );
-
-    //     pub_id_assigned
-    // }
     }
     // *************************************************************************
     //                            PRIVATE FUNCTIONS
