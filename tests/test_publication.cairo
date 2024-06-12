@@ -5,7 +5,7 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress, class_hash::ClassHash};
+use starknet::{ContractAddress, class_hash::ClassHash, contract_address_const};
 use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank};
 
 use token_bound_accounts::interfaces::IAccount::{IAccountDispatcher, IAccountDispatcherTrait};
@@ -19,11 +19,12 @@ use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
-use karst::base::types::{PostParams, ReferencePubParams, PublicationType};
+use karst::base::types::{PostParams, MirrorParams, ReferencePubParams, PublicationType};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'ALICE';
+const USER_THREE: felt252 = 'ROB';
 
 // *************************************************************************
 //                              SETUP 
@@ -35,6 +36,7 @@ fn __setup__() -> (
     ContractAddress,
     felt252,
     felt252,
+    ContractAddress,
     ContractAddress,
     ContractAddress,
     u256,
@@ -123,6 +125,29 @@ fn __setup__() -> (
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
 
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_THREE.try_into().unwrap()
+    );
+    let user_three_profile_address = profile_dispatcher
+        .create_profile(
+            nft_contract_address,
+            registry_class_hash.class_hash.into(),
+            account_class_hash.class_hash.into(),
+            2480,
+            USER_THREE.try_into().unwrap()
+        );
+    profile_dispatcher
+        .set_profile_metadata_uri(
+            user_three_profile_address.try_into().unwrap(),
+            "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
+        );
+    let contentURI: ByteArray = "ipfs://helloworld";
+    publication_dispatcher.post(contentURI, user_three_profile_address, profile_contract_address);
+    stop_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+    );
+
     return (
         nft_contract_address,
         registry_contract_address,
@@ -132,6 +157,7 @@ fn __setup__() -> (
         account_class_hash.class_hash.into(),
         user_one_profile_address,
         user_two_profile_address,
+        user_three_profile_address,
         user_one_first_post_pointed_pub_id,
     );
 }
@@ -150,6 +176,7 @@ fn test_post() {
         _,
         _,
         user_one_profile_address,
+        _,
         _,
         user_one_first_post_pointed_pub_id,
     ) =
@@ -182,6 +209,7 @@ fn test_comment() {
         _,
         user_one_profile_address,
         user_two_profile_address,
+        _,
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
@@ -230,6 +258,189 @@ fn test_comment() {
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
+}
+
+#[test]
+fn test_publish_mirror() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let mirror_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+
+    let pub_id_assigned = profileDispatcher.get_user_publication_count(user_one_profile_address);
+    let pub_assign_id = publication_dispatcher.mirror(mirror_params, profile_contract_address);
+
+    assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+fn test_two_publish_mirror() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_three_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let profile_dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let metadata_URI_1 = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    let mirror_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
+
+    let mirror_params_1 = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI_1,
+        pointed_profile_address: user_three_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    publication_dispatcher.mirror(mirror_params_1, profile_contract_address);
+
+    let pointed_profile_three = profile_dispatcher.get_profile(user_three_profile_address);
+
+    assert(
+        pointed_profile_three.profile_address == user_three_profile_address,
+        'Invalid publication id assign'
+    );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+fn test_mirror_pointed_profile_address() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let mirror_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+
+    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+
+    let pointed_profile = profileDispatcher.get_profile(user_one_profile_address);
+
+    assert(
+        pointed_profile.profile_address == user_one_profile_address,
+        'Invalid Pointed Profile Address'
+    );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+fn test_mirror_root_profile_address() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+
+    let mirror_params = MirrorParams {
+        profile_address: user_one_profile_address,
+        metadata_URI: metadata_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+
+    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+
+    let pointed_profile = profileDispatcher.get_profile(user_two_profile_address);
+
+    assert(
+        pointed_profile.profile_address == user_two_profile_address, 'Invalid Root Profile Address'
+    );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
 }
 
 
