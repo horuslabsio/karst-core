@@ -1,7 +1,4 @@
 <!-- logo -->
-<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-2-orange.svg?style=flat-square)](#contributors-)
-<!-- ALL-CONTRIBUTORS-BADGE:END -->
 <p align="center">
   <img width='300' src="https://avatars.githubusercontent.com/u/123994955?s=200&v=4">
 </p>
@@ -75,22 +72,6 @@ KARST is an open-source software licensed under the [MIT](https://github.com/hor
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- prettier-ignore-start -->
-<!-- markdownlint-disable -->
-<table>
-  <tbody>
-    <tr>
-      <td align="center" valign="top" width="14.28%"><a href="https://github.com/codeWhizperer"><img src="https://avatars.githubusercontent.com/u/63842643?v=4?s=100" width="100px;" alt="Adegbite Ademola Kelvin"/><br /><sub><b>Adegbite Ademola Kelvin</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=codeWhizperer" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="https://www.github.com/eliashezron"><img src="https://avatars.githubusercontent.com/u/60871378?v=4?s=100" width="100px;" alt="eliashezron"/><br /><sub><b>eliashezron</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=eliashezron" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://0xdarlington.disha.page"><img src="https://avatars.githubusercontent.com/u/75126961?v=4?s=100" width="100px;" alt="Darlington Nnam"/><br /><sub><b>Darlington Nnam</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=Darlington02" title="Code">💻</a></td>
-    </tr>
-  </tbody>
-</table>
-
-<!-- markdownlint-restore -->
-<!-- prettier-ignore-end -->
-
-<!-- ALL-CONTRIBUTORS-LIST:END -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
