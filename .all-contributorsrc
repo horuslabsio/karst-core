@@ -28,7 +28,17 @@
         "code",
         "review"
       ]
+    },
+    {
+      "login": "codeWhizperer",
+      "name": "Adegbite Ademola Kelvin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63842643?v=4",
+      "profile": "https://github.com/codeWhizperer",
+      "contributions": [
+        "infra",
+        "code",
+        "review"
+      ]
     }
   ]
 }
-
