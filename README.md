@@ -74,14 +74,15 @@ KARST is an open-source software licensed under the [MIT](https://github.com/hor
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
+
 <table>
   <tbody>
     <tr>
-      <td align="center" valign="top" width="14.28%"><a href="http://mubarak23.github.io/"><img src="https://avatars.githubusercontent.com/u/7858376?v=4?s=100" width="100px;" alt="Mubarak Muhammad Aminu"/><br /><sub><b>Mubarak Muhammad Aminu</b></sub></a><br /><a href="#code-mubarak23" title="Code">💻</a> <a href="#review-mubarak23" title="Reviewed Pull Requests">👀</a> <a href="#infra-mubarak23" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://0xdarlington.disha.page"><img src="https://avatars.githubusercontent.com/u/75126961?v=4?s=100" width="100px;" alt="Darlington Nnam"/><br /><sub><b>Darlington Nnam</b></sub></a><br /><a href="#infra-Darlington02" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#code-Darlington02" title="Code">💻</a> <a href="#review-Darlington02" title="Reviewed Pull Requests">👀</a></td>
     </tr>
   </tbody>
 </table>
+
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
