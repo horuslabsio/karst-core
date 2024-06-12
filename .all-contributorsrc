@@ -1,4 +1,22 @@
 {
   "projectName": "karst-core",
-  "projectOwner": "Horus Lab"
+  "projectOwner": "horuslabsio",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "eliashezron",
+      "name": "eliashezron",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60871378?v=4",
+      "profile": "https://www.github.com/eliashezron",
+      "contributions": [
+        "infra",
+        "doc"
+      ]
+    }
+  ]
 }
