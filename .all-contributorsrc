@@ -1,3 +1,4 @@
+
 {
   "projectName": "karst-core",
   "projectOwner": "horuslabsio",
@@ -9,13 +10,13 @@
   "contributorsPerLine": 7,
   "contributors": [
     {
-      "login": "mubarak23",
-      "name": "Mubarak Muhammad Aminu",
-      "avatar_url": "https://avatars.githubusercontent.com/u/7858376?v=4",
-      "profile": "http://mubarak23.github.io/",
+      "login": "Darlington02",
+      "name": "Darlington Nnam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/75126961?v=4",
+      "profile": "http://0xdarlington.disha.page",
       "contributions": [
-        "code",
         "infra",
+        "code",
         "review"
       ]
     },
