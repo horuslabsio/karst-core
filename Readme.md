@@ -68,3 +68,14 @@ If you believe you have found a security vulnerability in our code, please repor
 ## License
 
 KARST is an open-source software licensed under the [MIT](https://github.com/horuslabsio/karst-core/blob/master/LICENSE.md).
+
+## Contributors
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
