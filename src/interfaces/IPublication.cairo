@@ -2,7 +2,7 @@
 //                              INTERFACE of KARST PUBLICATIONS
 // *************************************************************************
 use starknet::ContractAddress;
-use karst::base::types::{PostParams, ReferencePubParams, PublicationType, Publication};
+use karst::base::types::{PostParams, ReferencePubParams, PublicationType, Publication, QuoteParams};
 
 #[starknet::interface]
 pub trait IKarstPublications<T> {
@@ -23,7 +23,9 @@ pub trait IKarstPublications<T> {
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
-
+    fn quote(
+        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+    ) -> u256;
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************

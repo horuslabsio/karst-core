@@ -283,7 +283,7 @@ pub mod Publications {
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    PublicationType::Comment,
+                    referencePubType,
                     profile_contract_address
                 );
 
