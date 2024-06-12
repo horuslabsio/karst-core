@@ -129,9 +129,12 @@ mod Handles {
     #[abi(embed_v0)]
     impl HandlesImpl of IHandle<ContractState> {
         fn mint_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252, karstnft_contract_address: ContractAddress
+            ref self: ContractState,
+            address: ContractAddress,
+            local_name: felt252,
+            karstnft_contract_address: ContractAddress
         ) -> u256 {
-           let token_id = self._mint_handle(address, local_name, karstnft_contract_address);
+            let token_id = self._mint_handle(address, local_name, karstnft_contract_address);
             return token_id;
         }
 
@@ -175,10 +178,14 @@ mod Handles {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _mint_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252, karstnft_contract_address: ContractAddress
+            ref self: ContractState,
+            address: ContractAddress,
+            local_name: felt252,
+            karstnft_contract_address: ContractAddress
         ) -> u256 {
             // _validate_local_name(local_name) - This is waiting for #17
-            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }.get_user_token_id(address);
+            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
+                .get_user_token_id(address);
             self.local_names.write(token_id, local_name);
             return token_id;
         }

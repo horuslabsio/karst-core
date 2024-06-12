@@ -8,7 +8,12 @@ pub trait IHandle<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
-    fn mint_handle(ref self: TState, address: ContractAddress, local_name: felt252, karstnft_contract_address: ContractAddress) -> u256;
+    fn mint_handle(
+        ref self: TState,
+        address: ContractAddress,
+        local_name: felt252,
+        karstnft_contract_address: ContractAddress
+    ) -> u256;
     fn burn_handle(ref self: TState, token_id: u256);
     // *************************************************************************
     //                            GETTERS
