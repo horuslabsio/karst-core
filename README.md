@@ -1,4 +1,7 @@
 <!-- logo -->
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 <p align="center">
   <img width='300' src="https://avatars.githubusercontent.com/u/123994955?s=200&v=4">
 </p>
@@ -72,6 +75,20 @@ KARST is an open-source software licensed under the [MIT](https://github.com/hor
 ## Contributors
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/codeWhizperer"><img src="https://avatars.githubusercontent.com/u/63842643?v=4?s=100" width="100px;" alt="Adegbite Ademola Kelvin"/><br /><sub><b>Adegbite Ademola Kelvin</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=codeWhizperer" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
 
