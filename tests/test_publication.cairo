@@ -289,12 +289,9 @@ fn test_publish_mirror() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let actual_pub_id_assigned = IKarstProfileDispatcher {
-        contract_address: profile_contract_address
-    };
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
 
-    let pub_id_assigned = actual_pub_id_assigned
-        .get_user_publication_count(user_one_profile_address);
+    let pub_id_assigned = profileDispatcher.get_user_publication_count(user_one_profile_address);
     let pub_assign_id = publication_dispatcher.mirror(mirror_params, profile_contract_address);
 
     assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
@@ -390,13 +387,11 @@ fn test_mirror_pointed_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let actual_pub_id_assigned = IKarstProfileDispatcher {
-        contract_address: profile_contract_address
-    };
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
 
     publication_dispatcher.mirror(mirror_params, profile_contract_address);
 
-    let pointed_profile = actual_pub_id_assigned.get_profile(user_one_profile_address);
+    let pointed_profile = profileDispatcher.get_profile(user_one_profile_address);
 
     assert(
         pointed_profile.profile_address == user_one_profile_address,
@@ -435,13 +430,11 @@ fn test_mirror_root_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let actual_pub_id_assigned = IKarstProfileDispatcher {
-        contract_address: profile_contract_address
-    };
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
 
     publication_dispatcher.mirror(mirror_params, profile_contract_address);
 
-    let pointed_profile = actual_pub_id_assigned.get_profile(user_two_profile_address);
+    let pointed_profile = profileDispatcher.get_profile(user_two_profile_address);
 
     assert(
         pointed_profile.profile_address == user_two_profile_address, 'Invalid Root Profile Address'

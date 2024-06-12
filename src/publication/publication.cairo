@@ -5,7 +5,7 @@ use karst::base::types::{
     PostParams, PublicationType, CommentParams, ReferencePubParams, Publication, MirrorParams,
     QuoteParams
 };
-use karst::profile;
+
 use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
 use core::option::OptionTrait;
 
@@ -188,10 +188,10 @@ pub mod Publications {
                 );
             let ref_mirrorParams = mirrorParams.clone();
             // _processMirrorIfNeeded is not needed 
-            let pubIdAssigned = IKarstProfileDispatcher {
+            let profileDispatcher = IKarstProfileDispatcher {
                 contract_address: profile_contract_address
             };
-            let pub_id_assigned = pubIdAssigned
+            let pub_id_assigned = profileDispatcher
                 .get_user_publication_count(mirrorParams.profile_address);
             let publication = self
                 .get_publication(mirrorParams.pointed_profile_address, mirrorParams.pointed_pub_id);

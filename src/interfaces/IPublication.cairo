@@ -25,14 +25,14 @@ pub trait IKarstPublications<T> {
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
+    fn mirror(
+        ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
+    ) -> u256;
 
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
-    fn mirror(
-        ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
-    ) -> u256;
     fn get_publication_type(
         self: @T, profile_address: ContractAddress, pub_id_assigned: u256
     ) -> PublicationType;
