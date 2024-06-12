@@ -19,7 +19,9 @@ use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
-use karst::base::types::{PostParams, MirrorParams, ReferencePubParams, PublicationType, QuoteParams};
+use karst::base::types::{
+    PostParams, MirrorParams, ReferencePubParams, PublicationType, QuoteParams
+};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';
@@ -270,6 +272,7 @@ fn test_quote() {
         _,
         user_one_profile_address,
         user_two_profile_address,
+        _,
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
