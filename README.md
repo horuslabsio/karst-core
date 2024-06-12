@@ -68,3 +68,26 @@ If you believe you have found a security vulnerability in our code, please repor
 ## License
 
 KARST is an open-source software licensed under the [MIT](https://github.com/horuslabsio/karst-core/blob/master/LICENSE.md).
+
+## Contributors
+
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.github.com/eliashezron"><img src="https://avatars.githubusercontent.com/u/60871378?v=4?s=100" width="100px;" alt="eliashezron"/><br /><sub><b>eliashezron</b></sub></a><br /><a href="#infra-eliashezron" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#doc-eliashezron" title="Documentation">📖</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://0xdarlington.disha.page"><img src="https://avatars.githubusercontent.com/u/75126961?v=4?s=100" width="100px;" alt="Darlington Nnam"/><br /><sub><b>Darlington Nnam</b></sub></a><br /><a href="#infra-Darlington02" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#code-Darlington02" title="Code">💻</a> <a href="#review-Darlington02" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/codeWhizperer"><img src="https://avatars.githubusercontent.com/u/63842643?v=4?s=100" width="100px;" alt="Adegbite Ademola Kelvin"/><br /><sub><b>Adegbite Ademola Kelvin</b></sub></a><br /><a href="#infra-codeWhizperer" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#code-codeWhizperer" title="Code">💻</a> <a href="#review-codeWhizperer" title="Reviewed Pull Requests">👀</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://mubarak23.github.io/"><img src="https://avatars.githubusercontent.com/u/7858376?v=4?s=100" width="100px;" alt="Mubarak Muhammad Aminu"/><br /><sub><b>Mubarak Muhammad Aminu</b></sub></a><br /><a href="#code-mubarak23" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/raizo07"><img src="https://avatars.githubusercontent.com/u/81079370?v=4?s=100" width="100px;" alt="Wolf"/><br /><sub><b>Wolf</b></sub></a><br /><a href="#code-raizo07" title="Code">💻</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
