@@ -13,7 +13,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/63842643?v=4",
       "profile": "https://github.com/codeWhizperer",
       "contributions": [
-        "code"
+        "code",
+        "infra",
+        "review"
       ]
     }
   ],
