@@ -75,22 +75,13 @@ KARST is an open-source software licensed under the [MIT](https://github.com/hor
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
 <!-- markdownlint-disable -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://www.github.com/eliashezron"><img src="https://avatars.githubusercontent.com/u/60871378?v=4?s=100" width="100px;" alt="eliashezron"/><br /><sub><b>eliashezron</b></sub></a><br /><a href="#infra-eliashezron" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="#doc-eliashezron" title="Documentation">📖</a></td>
+    </tr>
+  </tbody>
+</table>
 
 <!-- markdownlint-restore -->
 <!-- prettier-ignore-end -->
