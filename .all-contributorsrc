@@ -1,11 +1,19 @@
 {
+
+  "projectName": "Karst-core",
+  "projectOwner": "horuslabsio",
+  "repoType": "github",
+  "repoHost": "https://github.com",
   "files": [
     "README.md"
   ],
   "imageSize": 100,
-  "commit": false,
-  "commitType": "docs",
-  "commitConvention": "angular",
+  "commit": true,
+  "commitConvention": "gitmoji",
+  "contributors": [],
+  "contributorsPerLine": 7,
+  "linkToUsage": false
+}
   "contributors": [
     {
       "login": "codeWhizperer",
@@ -17,6 +25,15 @@
       ]
     },
     {
+      "login": "Darlington02",
+      "name": "Darlington Nnam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/75126961?v=4",
+      "profile": "http://0xdarlington.disha.page",
+      "contributions": [
+        "code"
+      ]
+    },
+        {
       "login": "eliashezron",
       "name": "eliashezron",
       "avatar_url": "https://avatars.githubusercontent.com/u/60871378?v=4",
@@ -28,8 +45,5 @@
   ],
   "contributorsPerLine": 7,
   "skipCi": true,
-  "repoType": "github",
-  "repoHost": "https://github.com",
-  "projectName": "karst-core",
-  "projectOwner": "horuslabsio"
 }
+
