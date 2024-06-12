@@ -3,7 +3,7 @@
 // *************************************************************************
 use starknet::ContractAddress;
 use karst::base::types::{
-    PostParams, MirrorParams, ReferencePubParams, PublicationType, Publication
+    PostParams, MirrorParams, ReferencePubParams, PublicationType, Publication, QuoteParams
 };
 
 #[starknet::interface]
@@ -28,7 +28,7 @@ pub trait IKarstPublications<T> {
     fn mirror(
         ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
     ) -> u256;
-
+    fn quote(ref self: T, quoteParams: QuoteParams) -> u256;
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************
