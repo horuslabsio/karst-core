@@ -1,6 +1,21 @@
 {
-
-  "projectName": "<insert the repo's name>",
-  "projectOwner": "<insert the repo's owner/orgs>"
+  "projectName": "karst-core",
+  "projectOwner": "horuslabsio",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "mubarak23",
+      "name": "Mubarak Muhammad Aminu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7858376?v=4",
+      "profile": "http://mubarak23.github.io/",
+      "contributions": [
+        "code"
+      ]
+    }
+  ]
 }
-
