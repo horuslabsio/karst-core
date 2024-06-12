@@ -81,7 +81,7 @@ KARST is an open-source software licensed under the [MIT](https://github.com/hor
   <tbody>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/codeWhizperer"><img src="https://avatars.githubusercontent.com/u/63842643?v=4?s=100" width="100px;" alt="Adegbite Ademola Kelvin"/><br /><sub><b>Adegbite Ademola Kelvin</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=codeWhizperer" title="Code">💻</a></td>
-      <td align="center" valign="top" width="14.28%"><a href="http://0xdarlington.disha.page"><img src="https://avatars.githubusercontent.com/u/75126961?v=4?s=100" width="100px;" alt="Darlington Nnam"/><br /><sub><b>Darlington Nnam</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=Darlington02" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://0xdarlington.disha.page"><img src="https://avatars.githubusercontent.com/u/75126961?v=4?s=100" width="100px;" alt="Darlington Nnam"/><br /><sub><b>Darlington Nnam</b></sub></a><br /><a href="https://github.com/horuslabsio/karst-core/commits?author=Darlington02" title="Code">💻</a> <a href="https://github.com/horuslabsio/karst-core/pulls?q=is%3Apr+reviewed-by%3ADarlington02" title="Reviewed Pull Requests">👀</a></td>
     </tr>
   </tbody>
 </table>
