@@ -6,6 +6,7 @@ use openzeppelin::{
     introspection::src5::SRC5Component,
 };
 
+
 #[starknet::interface]
 trait IERC721Metadata<TState> {
     fn name(self: @TState) -> ByteArray;
@@ -45,6 +46,7 @@ mod Handles {
         },
         introspection::{src5::SRC5Component}
     };
+    use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IHandle::IHandle;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -127,10 +129,10 @@ mod Handles {
     #[abi(embed_v0)]
     impl HandlesImpl of IHandle<ContractState> {
         fn mint_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252
+            ref self: ContractState, address: ContractAddress, local_name: felt252, karstnft_contract_address: ContractAddress
         ) -> u256 {
-            // TODO
-            return 123;
+           let token_id = self._mint_handle(address, local_name, karstnft_contract_address);
+            return token_id;
         }
 
         fn burn_handle(ref self: ContractState, token_id: u256) { // TODO
@@ -148,8 +150,7 @@ mod Handles {
         }
 
         fn get_handle(self: @ContractState, token_id: u256) -> ByteArray {
-            // TODO
-            return "TODO";
+            return "1234";
         }
 
         fn exists(self: @ContractState, token_id: u256) -> bool {
@@ -174,10 +175,12 @@ mod Handles {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _mint_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252
+            ref self: ContractState, address: ContractAddress, local_name: felt252, karstnft_contract_address: ContractAddress
         ) -> u256 {
-            // TODO
-            return 123;
+            // _validate_local_name(local_name) - This is waiting for #17
+            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }.get_user_token_id(address);
+            self.local_names.write(token_id, local_name);
+            return token_id;
         }
 
         fn _validate_local_name(ref self: ContractState, local_name: felt252) { // TODO
