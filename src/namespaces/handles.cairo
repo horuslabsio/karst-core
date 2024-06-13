@@ -133,7 +133,12 @@ mod Handles {
             return 123;
         }
 
-        fn burn_handle(ref self: ContractState, token_id: u256) { // TODO
+        fn burn_handle(ref self: ContractState, token_id: u256) {
+            assert(get_caller_address() == ownerOf(token_id), 'NOT_OWNER');
+            let current_supply = self.total_supply.read();
+            self.total_supply.write(current_supply - 1);
+            _burn(tokenId);
+            self.local_names.write(tokenId, '');
         }
 
         // *************************************************************************
