@@ -111,7 +111,7 @@ mod Handles {
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleMinted {
-        pub local_name: felt252 ,
+        pub local_name: felt252,
         pub token_id: u256,
         pub to: ContractAddress,
         pub block_timestamp: u64,
@@ -193,17 +193,26 @@ mod Handles {
             karstnft_contract_address: ContractAddress
         ) -> u256 {
             // _validate_local_name(local_name) - This is waiting for #17
-            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }.get_user_token_id(address);
+            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
+                .get_user_token_id(address);
 
             let _total_supply = self.total_supply.read();
 
             self.total_supply.write(_total_supply + 1);
 
-            self.erc721._mint(address, token_id );
+            self.erc721._mint(address, token_id);
 
             self.local_names.write(token_id, local_name);
 
-            self.emit(HandleMinted{local_name: local_name, to: address, token_id: token_id, block_timestamp: get_block_timestamp()});
+            self
+                .emit(
+                    HandleMinted {
+                        local_name: local_name,
+                        to: address,
+                        token_id: token_id,
+                        block_timestamp: get_block_timestamp()
+                    }
+                );
 
             token_id
         }
@@ -216,6 +225,4 @@ mod Handles {
             return false;
         }
     }
-
-
 }
