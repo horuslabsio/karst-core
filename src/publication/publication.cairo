@@ -79,6 +79,7 @@ pub mod Publications {
     pub enum Event {
         Post: Post,
         MirrorCreated: MirrorCreated,
+        QuoteCreated: QuoteCreated,
     }
 
     // *************************************************************************
@@ -96,6 +97,14 @@ pub mod Publications {
     #[derive(Drop, starknet::Event)]
     pub struct MirrorCreated {
         pub mirrorParams: MirrorParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct QuoteCreated {
+        pub quoteParams: QuoteParams,
         pub publication_id: u256,
         pub transaction_executor: ContractAddress,
         pub block_timestamp: u64,
@@ -217,7 +226,9 @@ pub mod Publications {
             quoteParams: QuoteParams,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            let pubIdAssigned = self
+            let ref_quoteParams = quoteParams.clone();
+
+            let pub_id_assigned = self
                 ._createReferencePublication(
                     quoteParams.profile_address,
                     quoteParams.content_URI,
@@ -226,7 +237,17 @@ pub mod Publications {
                     PublicationType::Quote,
                     profile_contract_address
                 );
-            pubIdAssigned
+
+            self
+                .emit(
+                    QuoteCreated {
+                        quoteParams: ref_quoteParams,
+                        publication_id: pub_id_assigned,
+                        transaction_executor: quoteParams.profile_address,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+            pub_id_assigned
         }
         // *************************************************************************
         //                              GETTERS
