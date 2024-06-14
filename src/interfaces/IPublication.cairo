@@ -25,10 +25,12 @@ pub trait IKarstPublications<T> {
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
+    fn quote(
+        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+    ) -> u256;
     fn mirror(
         ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
     ) -> u256;
-    fn quote(ref self: T, quoteParams: QuoteParams) -> u256;
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************

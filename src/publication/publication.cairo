@@ -9,6 +9,42 @@ use karst::base::types::{
 use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
 use core::option::OptionTrait;
 
+// *************************************************************************
+//                              INTERFACE of KARST PUBLICATIONS
+// *************************************************************************
+#[starknet::interface]
+pub trait IKarstPublications<T> {
+    // *************************************************************************
+    //                              PUBLISHING FUNCTIONS  
+    // *************************************************************************
+
+    fn post(
+        ref self: T,
+        contentURI: ByteArray,
+        profile_address: ContractAddress,
+        profile_contract_address: ContractAddress
+    ) -> u256;
+    fn comment(
+        ref self: T,
+        profile_address: ContractAddress,
+        content_URI: ByteArray,
+        pointed_profile_address: ContractAddress,
+        pointed_pub_id: u256,
+        profile_contract_address: ContractAddress,
+    ) -> u256;
+    fn mirror(ref self: T, mirrorParams: MirrorParams) -> u256;
+    fn quote(
+        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+    ) -> u256;
+    ////// Getters//////
+    fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
+    fn get_publication_type(
+        self: @T, profile_address: ContractAddress, pub_id_assigned: u256
+    ) -> PublicationType;
+    fn get_publication_content_uri(
+        self: @T, profile_address: ContractAddress, pub_id: u256
+    ) -> ByteArray;
+}
 
 #[starknet::contract]
 pub mod Publications {
@@ -43,6 +79,7 @@ pub mod Publications {
     pub enum Event {
         Post: Post,
         MirrorCreated: MirrorCreated,
+        QuoteCreated: QuoteCreated,
     }
 
     // *************************************************************************
@@ -60,6 +97,14 @@ pub mod Publications {
     #[derive(Drop, starknet::Event)]
     pub struct MirrorCreated {
         pub mirrorParams: MirrorParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct QuoteCreated {
+        pub quoteParams: QuoteParams,
         pub publication_id: u256,
         pub transaction_executor: ContractAddress,
         pub block_timestamp: u64,
@@ -176,8 +221,33 @@ pub mod Publications {
             pub_id_assigned
         }
 
-        fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 {
-            0
+        fn quote(
+            ref self: ContractState,
+            quoteParams: QuoteParams,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
+            let ref_quoteParams = quoteParams.clone();
+
+            let pub_id_assigned = self
+                ._createReferencePublication(
+                    quoteParams.profile_address,
+                    quoteParams.content_URI,
+                    quoteParams.pointed_profile_address,
+                    quoteParams.pointed_pub_id,
+                    PublicationType::Quote,
+                    profile_contract_address
+                );
+
+            self
+                .emit(
+                    QuoteCreated {
+                        quoteParams: ref_quoteParams,
+                        publication_id: pub_id_assigned,
+                        transaction_executor: quoteParams.profile_address,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+            pub_id_assigned
         }
         // *************************************************************************
         //                              GETTERS
@@ -280,7 +350,7 @@ pub mod Publications {
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    PublicationType::Comment,
+                    referencePubType,
                     profile_contract_address
                 );
 

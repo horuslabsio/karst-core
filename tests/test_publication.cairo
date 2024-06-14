@@ -19,7 +19,9 @@ use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
-use karst::base::types::{PostParams, MirrorParams, ReferencePubParams, PublicationType};
+use karst::base::types::{
+    PostParams, MirrorParams, ReferencePubParams, PublicationType, QuoteParams
+};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';
@@ -243,7 +245,6 @@ fn test_comment() {
             user_one_first_post_pointed_pub_id,
             profile_contract_address
         );
-
     let user_one_publication_root_id = publication_dispatcher
         .get_publication(user_one_profile_address, user_one_comment_assigned_pub_id_1)
         .root_profile_address;
@@ -258,6 +259,126 @@ fn test_comment() {
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
+}
+
+#[test]
+fn test_quote() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_three_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_ONE.try_into().unwrap()
+    );
+    let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
+
+    let quote_params = QuoteParams {
+        profile_address: user_two_profile_address,
+        content_URI: quote_content_URI,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id
+    };
+    // user one publish quote to user 2 profile
+    let quote_pub_id = publication_dispatcher.quote(quote_params, profile_contract_address);
+
+    let publication_type = publication_dispatcher
+        .get_publication_type(user_two_profile_address, quote_pub_id);
+    assert(publication_type == PublicationType::Quote, 'invalid pub_type');
+
+    stop_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+    );
+
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_TWO.try_into().unwrap()
+    );
+    let user_two_quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/";
+
+    let user_two_quote_params = QuoteParams {
+        profile_address: user_three_profile_address,
+        content_URI: user_two_quote_content_URI,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id
+    };
+    // user 2 publish quote to user 3 profile
+    let user_two_quote_pub_id = publication_dispatcher
+        .quote(user_two_quote_params, profile_contract_address);
+
+    let publication_type = publication_dispatcher
+        .get_publication_type(user_three_profile_address, user_two_quote_pub_id);
+    assert(publication_type == PublicationType::Quote, 'invalid pub_type');
+
+    let user_one_publication_root_id = publication_dispatcher
+        .get_publication(user_two_profile_address, quote_pub_id)
+        .root_profile_address;
+    let user_two_publication_root_id = publication_dispatcher
+        .get_publication(user_three_profile_address, user_two_quote_pub_id)
+        .root_profile_address;
+    assert(user_one_publication_root_id == user_two_publication_root_id, 'Invalid root_id');
+
+    stop_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+    );
+}
+
+#[test]
+fn test_quote_pointed_profile_address() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+    start_prank(
+        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
+        USER_ONE.try_into().unwrap()
+    );
+    let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
+
+    let quote_params = QuoteParams {
+        profile_address: user_two_profile_address,
+        content_URI: quote_content_URI,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+
+    publication_dispatcher.quote(quote_params, profile_contract_address);
+
+    let pointed_profile = profileDispatcher.get_profile(user_one_profile_address);
+
+    assert(
+        pointed_profile.profile_address == user_one_profile_address,
+        'Invalid Pointed Profile Address'
+    );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
 }
 
 #[test]
@@ -442,7 +563,6 @@ fn test_mirror_root_profile_address() {
 
     stop_prank(CheatTarget::One(publication_contract_address),);
 }
-
 
 fn to_address(name: felt252) -> ContractAddress {
     name.try_into().unwrap()
