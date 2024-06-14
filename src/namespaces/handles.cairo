@@ -38,7 +38,7 @@ mod Handles {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -105,8 +105,17 @@ mod Handles {
         SRC5Event: SRC5Component::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        HandleMinted: HandleMinted,
     }
 
+
+    #[derive(Drop, starknet::Event)]
+    pub struct HandleMinted {
+        pub local_name: felt252 ,
+        pub token_id: u256,
+        pub to: ContractAddress,
+        pub block_timestamp: u64,
+    }
     // *************************************************************************
     //                            CONSTRUCTOR
     // *************************************************************************
@@ -135,7 +144,7 @@ mod Handles {
             karstnft_contract_address: ContractAddress
         ) -> u256 {
             let token_id = self._mint_handle(address, local_name, karstnft_contract_address);
-            return token_id;
+            token_id
         }
 
         fn burn_handle(ref self: ContractState, token_id: u256) { // TODO
@@ -184,10 +193,19 @@ mod Handles {
             karstnft_contract_address: ContractAddress
         ) -> u256 {
             // _validate_local_name(local_name) - This is waiting for #17
-            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
-                .get_user_token_id(address);
+            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }.get_user_token_id(address);
+
+            let _total_supply = self.total_supply.read();
+
+            self.total_supply.write(_total_supply + 1);
+
+            self.erc721._mint(address, token_id );
+
             self.local_names.write(token_id, local_name);
-            return token_id;
+
+            self.emit(HandleMinted{local_name: local_name, to: address, token_id: token_id, block_timestamp: get_block_timestamp()});
+
+            token_id
         }
 
         fn _validate_local_name(ref self: ContractState, local_name: felt252) { // TODO
@@ -198,4 +216,6 @@ mod Handles {
             return false;
         }
     }
+
+
 }
