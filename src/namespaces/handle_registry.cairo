@@ -4,7 +4,7 @@ mod HandleRegistry {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, emit_event};
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
 
     // *************************************************************************
@@ -73,13 +73,11 @@ mod HandleRegistry {
         //                            GETTERS
         // *************************************************************************
         fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
-            // TODO
-            0.try_into().unwrap()
+            self.handle_to_profile_address.read(handle_id)
         }
 
         fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
-            // TODO
-            0.try_into().unwrap()
+            self.profile_address_to_handle.read(profile_address)
         }
     }
 
@@ -90,7 +88,17 @@ mod HandleRegistry {
     impl Private of PrivateTrait {
         fn _link(
             ref self: ContractState, handle_id: u256, profile_address: ContractAddress
-        ) { // TODO
+        ) {
+            self.handle_to_profile_address.write(handle_id, profile_address);
+            self.profile_address_to_handle.write(profile_address, handle_id);
+            let caller = get_caller_address();
+            let timestamp = starknet::get_block_timestamp();
+            emit_event(Event::Linked(HandleLinked {
+                handle_id,
+                profile_address,
+                caller,
+                timestamp,
+            }));
         }
 
         fn _unlink(
@@ -98,7 +106,16 @@ mod HandleRegistry {
             handle_id: u256,
             profile_address: ContractAddress,
             caller: ContractAddress
-        ) { // TODO
+        ) {
+            self.handle_to_profile_address.remove(handle_id);
+            self.profile_address_to_handle.remove(profile_address);
+            let timestamp = starknet::get_block_timestamp();
+            emit_event(Event::Unlinked(HandleUnlinked {
+                handle_id,
+                profile_address,
+                caller,
+                timestamp,
+            }));
         }
     }
 }
