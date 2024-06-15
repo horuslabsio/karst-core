@@ -1,0 +1,71 @@
+{
+  "projectName": "karst-core",
+  "projectOwner": "horuslabsio",
+  "files": [
+    "README.md"
+  ],
+  "commitType": "docs",
+  "commitConvention": "angular",
+  "contributorsPerLine": 7,
+  "contributors": [
+    {
+      "login": "eliashezron",
+      "name": "eliashezron",
+      "avatar_url": "https://avatars.githubusercontent.com/u/60871378?v=4",
+      "profile": "https://www.github.com/eliashezron",
+      "contributions": [
+        "infra",
+        "doc"
+      ]
+    },
+    {
+      "login": "Darlington02",
+      "name": "Darlington Nnam",
+      "avatar_url": "https://avatars.githubusercontent.com/u/75126961?v=4",
+      "profile": "http://0xdarlington.disha.page",
+      "contributions": [
+        "infra",
+        "code",
+        "review"
+      ]
+    },
+    {
+      "login": "codeWhizperer",
+      "name": "Adegbite Ademola Kelvin",
+      "avatar_url": "https://avatars.githubusercontent.com/u/63842643?v=4",
+      "profile": "https://github.com/codeWhizperer",
+      "contributions": [
+        "infra",
+        "code",
+        "review"
+      ]
+    },
+    {
+      "login": "mubarak23",
+      "name": "Mubarak Muhammad Aminu",
+      "avatar_url": "https://avatars.githubusercontent.com/u/7858376?v=4",
+      "profile": "http://mubarak23.github.io/",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "raizo07",
+      "name": "Wolf",
+      "avatar_url": "https://avatars.githubusercontent.com/u/81079370?v=4",
+      "profile": "https://github.com/raizo07",
+      "contributions": [
+        "code"
+      ]
+    },
+    {
+      "login": "EjembiEmmanuel",
+      "name": "Oche",
+      "avatar_url": "https://avatars.githubusercontent.com/u/83036156?v=4",
+      "profile": "https://github.com/EjembiEmmanuel",
+      "contributions": [
+        "code"
+      ]
+    }
+  ]
+}

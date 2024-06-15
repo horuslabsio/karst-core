@@ -116,7 +116,7 @@ pub struct ReferencePubParams {
 // * @param pointed_profile_id The profile address to point the mirror to.
 // * @param pointed_pub_id The publication ID to point the mirror to.
 // */
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct MirrorParams {
     profile_address: ContractAddress,
     metadata_URI: ByteArray,
@@ -132,7 +132,7 @@ pub struct MirrorParams {
 // * @param pointed_profile_address The profile address of the publication author that is quoted.
 // * @param pointed_pub_id The publication ID that is quoted.
 // */
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct QuoteParams {
     profile_address: ContractAddress,
     content_URI: ByteArray,

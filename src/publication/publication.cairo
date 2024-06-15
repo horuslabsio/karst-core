@@ -5,6 +5,7 @@ use karst::base::types::{
     PostParams, PublicationType, CommentParams, ReferencePubParams, Publication, MirrorParams,
     QuoteParams
 };
+
 use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
 use core::option::OptionTrait;
 
@@ -32,7 +33,9 @@ pub trait IKarstPublications<T> {
         profile_contract_address: ContractAddress,
     ) -> u256;
     fn mirror(ref self: T, mirrorParams: MirrorParams) -> u256;
-    fn quote(ref self: T, quoteParams: QuoteParams) -> u256;
+    fn quote(
+        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+    ) -> u256;
     ////// Getters//////
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
     fn get_publication_type(
@@ -48,12 +51,12 @@ pub mod Publications {
     // *************************************************************************
     //                              IMPORTS
     // *************************************************************************
-    use starknet::{ContractAddress, get_contract_address, get_caller_address};
+    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::base::types::{
         PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
         MirrorParams
     };
-    use super::IKarstPublications;
+    use karst::interfaces::IPublication::IKarstPublications;
     use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
     use karst::base::errors::Errors::{NOT_PROFILE_OWNER, BLOCKED_STATUS};
     use karst::base::{hubrestricted::HubRestricted::hub_only};
@@ -75,6 +78,8 @@ pub mod Publications {
     #[derive(Drop, starknet::Event)]
     pub enum Event {
         Post: Post,
+        MirrorCreated: MirrorCreated,
+        QuoteCreated: QuoteCreated,
     }
 
     // *************************************************************************
@@ -89,10 +94,22 @@ pub mod Publications {
         pub block_timestamp: u256,
     }
 
+    #[derive(Drop, starknet::Event)]
+    pub struct MirrorCreated {
+        pub mirrorParams: MirrorParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
+    }
 
-    // *************************************************************************
-    //                            CONSTRUCTOR
-    // *************************************************************************
+    #[derive(Drop, starknet::Event)]
+    pub struct QuoteCreated {
+        pub quoteParams: QuoteParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
+    }
+
 
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
@@ -103,7 +120,6 @@ pub mod Publications {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
-
         fn post(
             ref self: ContractState,
             contentURI: ByteArray,
@@ -159,14 +175,79 @@ pub mod Publications {
         // *
         // * @return uint256 The created publication's pubId.
         // */
-        fn mirror(ref self: ContractState, mirrorParams: MirrorParams) -> u256 {
-            // logic here
-            0
+        fn mirror(
+            ref self: ContractState,
+            mirrorParams: MirrorParams,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
+            assert!(
+                profile_contract_address.into() != 0, "Contract Profile Address cannot be zero"
+            );
+
+            self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
+            self
+                .validateNotBlocked(
+                    mirrorParams.profile_address, mirrorParams.pointed_profile_address, false
+                );
+            let ref_mirrorParams = mirrorParams.clone();
+            // _processMirrorIfNeeded is not needed 
+            let profileDispatcher = IKarstProfileDispatcher {
+                contract_address: profile_contract_address
+            };
+            let pub_id_assigned = profileDispatcher
+                .get_user_publication_count(mirrorParams.profile_address);
+            let publication = self
+                .get_publication(mirrorParams.pointed_profile_address, mirrorParams.pointed_pub_id);
+
+            self
+                ._fillRefeferencePublicationStorage(
+                    mirrorParams.profile_address,
+                    publication.content_URI,
+                    mirrorParams.pointed_profile_address,
+                    mirrorParams.pointed_pub_id,
+                    PublicationType::Mirror,
+                    profile_contract_address,
+                );
+            self
+                .emit(
+                    MirrorCreated {
+                        mirrorParams: ref_mirrorParams,
+                        publication_id: pub_id_assigned,
+                        transaction_executor: mirrorParams.profile_address,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+
+            pub_id_assigned
         }
 
-        fn quote(ref self: ContractState, quoteParams: QuoteParams) -> u256 {
-            // logic here
-            0
+        fn quote(
+            ref self: ContractState,
+            quoteParams: QuoteParams,
+            profile_contract_address: ContractAddress
+        ) -> u256 {
+            let ref_quoteParams = quoteParams.clone();
+
+            let pub_id_assigned = self
+                ._createReferencePublication(
+                    quoteParams.profile_address,
+                    quoteParams.content_URI,
+                    quoteParams.pointed_profile_address,
+                    quoteParams.pointed_pub_id,
+                    PublicationType::Quote,
+                    profile_contract_address
+                );
+
+            self
+                .emit(
+                    QuoteCreated {
+                        quoteParams: ref_quoteParams,
+                        publication_id: pub_id_assigned,
+                        transaction_executor: quoteParams.profile_address,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+            pub_id_assigned
         }
         // *************************************************************************
         //                              GETTERS
@@ -269,7 +350,7 @@ pub mod Publications {
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    PublicationType::Comment,
+                    referencePubType,
                     profile_contract_address
                 );
 
