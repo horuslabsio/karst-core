@@ -12,7 +12,6 @@ pub trait IHandle<TState> {
         ref self: TState,
         address: ContractAddress,
         local_name: felt252,
-        karstnft_contract_address: ContractAddress
     ) -> u256;
     fn burn_handle(ref self: TState, token_id: u256);
     // *************************************************************************
@@ -23,5 +22,6 @@ pub trait IHandle<TState> {
     fn get_handle(self: @TState, token_id: u256) -> ByteArray;
     fn exists(self: @TState, token_id: u256) -> bool;
     fn total_supply(self: @TState) -> u256;
+    fn get_token_id(self: @TState, local_name: felt252) -> u256;
     fn get_handle_token_uri(self: @TState, token_id: u256, local_name: felt252) -> ByteArray;
 }

@@ -138,12 +138,10 @@ mod Handles {
     #[abi(embed_v0)]
     impl HandlesImpl of IHandle<ContractState> {
         fn mint_handle(
-            ref self: ContractState,
-            address: ContractAddress,
-            local_name: felt252,
-            karstnft_contract_address: ContractAddress
+            ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
-            let token_id = self._mint_handle(address, local_name, karstnft_contract_address);
+            // self._validate_local_name(local_name) - This is waiting for #17
+            let token_id = self._mint_handle(address, local_name);
             token_id
         }
 
@@ -173,6 +171,10 @@ mod Handles {
             self.total_supply.read()
         }
 
+        fn get_token_id(self: @ContractState, local_name: felt252) -> u256 {
+            return 1234;
+        }
+
         fn get_handle_token_uri(
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
@@ -190,15 +192,14 @@ mod Handles {
             ref self: ContractState,
             address: ContractAddress,
             local_name: felt252,
-            karstnft_contract_address: ContractAddress
         ) -> u256 {
-            // _validate_local_name(local_name) - This is waiting for #17
-            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
-                .get_user_token_id(address);
+            let token_id = self.get_token_id(local_name);
 
-            let _total_supply = self.total_supply.read();
+            let mut current_total_supply = self.total_supply.read();
 
-            self.total_supply.write(_total_supply + 1);
+            current_total_supply += 1;
+
+            self.total_supply.write(current_total_supply);
 
             self.erc721._mint(address, token_id);
 
