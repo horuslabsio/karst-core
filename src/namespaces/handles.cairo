@@ -38,6 +38,8 @@ mod Handles {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
+    use core::poseidon::PoseidonTrait;
+    use core::hash::{HashStateTrait, HashStateExTrait};
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
@@ -172,7 +174,12 @@ mod Handles {
         }
 
         fn get_token_id(self: @ContractState, local_name: felt252) -> u256 {
-            return 1234;
+            let hash: u256 = PoseidonTrait::new()
+                .update_with(local_name)
+                .finalize()
+                .try_into()
+                .unwrap();
+            hash
         }
 
         fn get_handle_token_uri(
@@ -189,9 +196,7 @@ mod Handles {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _mint_handle(
-            ref self: ContractState,
-            address: ContractAddress,
-            local_name: felt252,
+            ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
             let token_id = self.get_token_id(local_name);
 

@@ -10,21 +10,23 @@ use snforge_std::{
 use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 use karst::namespaces::handles::Handles;
 
+
 const HUB_ADDRESS: felt252 = 'HUB';
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
+const TEST_LOCAL_NAME: felt252 = 'Karst';
+
+
 fn __setup__() -> ContractAddress {
-    // deploy handles
+    // deploy handles contract
     let handles_class_hash = declare("Handles").unwrap();
-    let admin: ContractAddress = ADMIN_ADDRESS.try_into().unwrap();
     let symbol: ByteArray = "HNFT";
     let name: ByteArray = "HANDLES_HUB";
-    let mut calldata: Array<felt252> = array![USER_ONE];
-    admin.serialize(ref calldata);
-    symbol.serialize(ref calldata);
+    let mut calldata: Array<felt252> = array![ADMIN_ADDRESS];
     name.serialize(ref calldata);
+    symbol.serialize(ref calldata);
+    HUB_ADDRESS.serialize(ref calldata);
     let (handles_contract_address, _) = handles_class_hash.deploy(@calldata).unwrap_syscall();
-
     handles_contract_address
 }
 // *************************************************************************
@@ -34,18 +36,25 @@ fn __setup__() -> ContractAddress {
 #[test]
 fn test_mint_handle() {
     let handles_contract_address = __setup__();
-    let _handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
-// start_prank(
-//     CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-//     USER_ONE.try_into().unwrap()
-// );
 
-// let publication_type = publication_dispatcher
-//     .get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
-// assert(publication_type == PublicationType::Post, 'invalid pub_type');
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 
-// stop_prank(
-//     CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-// );
+    let total_supply_before = handles_dispatcher.total_supply();
+
+    assert(total_supply_before == 0, 'total supply should be 0');
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+
+    let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+
+    let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
+
+    let total_supply = handles_dispatcher.total_supply();
+
+    assert(total_supply == total_supply_before + 1, 'local name not minted');
+
+    assert(local_name == TEST_LOCAL_NAME, 'invalid local name');
+
+    stop_prank(CheatTarget::One(handles_contract_address));
 }
 
