@@ -2,7 +2,7 @@
 //                            OZ ERC721
 // *************************************************************************
 use openzeppelin::{
-    token::erc721::{ERC721Component::{ERC721Metadata, HasComponent}},
+    token::erc721::{ERC721Component::{ERC721Metadata, ERC721Mixin, HasComponent}},
     introspection::src5::SRC5Component,
 };
 
@@ -37,7 +37,7 @@ mod Handles {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -134,11 +134,11 @@ mod Handles {
         }
 
         fn burn_handle(ref self: ContractState, token_id: u256) {
-            assert(get_caller_address() == ownerOf(token_id), 'NOT_OWNER');
+            assert(get_caller_address() == self.erc721.owner_of(token_id), 'Wrong owner');
             let current_supply = self.total_supply.read();
             self.total_supply.write(current_supply - 1);
-            _burn(tokenId);
-            self.local_names.write(tokenId, '');
+            self.erc721._burn(token_id);
+            self.local_names.write(token_id, '');
         }
 
         // *************************************************************************
