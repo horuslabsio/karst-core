@@ -39,7 +39,9 @@ fn __setup__() -> ContractAddress {
     name.serialize(ref handles_constructor_calldata);
     symbol.serialize(ref handles_constructor_calldata);
     HUB_ADDRESS.serialize(ref handles_constructor_calldata);
-    let (contract_address, _) = handles_contract.deploy(@handles_constructor_calldata).unwrap_syscall();
+    let (contract_address, _) = handles_contract
+        .deploy(@handles_constructor_calldata)
+        .unwrap_syscall();
     contract_address
 }
 // *************************************************************************
