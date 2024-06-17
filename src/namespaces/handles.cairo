@@ -6,6 +6,7 @@ use openzeppelin::{
     introspection::src5::SRC5Component,
 };
 
+
 #[starknet::interface]
 trait IERC721Metadata<TState> {
     fn name(self: @TState) -> ByteArray;
@@ -37,6 +38,8 @@ mod Handles {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
+    use core::poseidon::PoseidonTrait;
+    use core::hash::{HashStateTrait, HashStateExTrait};
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
@@ -45,6 +48,7 @@ mod Handles {
         },
         introspection::{src5::SRC5Component}
     };
+    use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IHandle::IHandle;
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -103,8 +107,17 @@ mod Handles {
         SRC5Event: SRC5Component::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        HandleMinted: HandleMinted,
     }
 
+
+    #[derive(Drop, starknet::Event)]
+    pub struct HandleMinted {
+        pub local_name: felt252,
+        pub token_id: u256,
+        pub to: ContractAddress,
+        pub block_timestamp: u64,
+    }
     // *************************************************************************
     //                            CONSTRUCTOR
     // *************************************************************************
@@ -127,10 +140,11 @@ mod Handles {
     #[abi(embed_v0)]
     impl HandlesImpl of IHandle<ContractState> {
         fn mint_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252
+            ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
-            // TODO
-            return 123;
+            // self._validate_local_name(local_name) - This is waiting for #17
+            let token_id = self._mint_handle(address, local_name);
+            token_id
         }
 
         fn burn_handle(ref self: ContractState, token_id: u256) {
@@ -153,8 +167,7 @@ mod Handles {
         }
 
         fn get_handle(self: @ContractState, token_id: u256) -> ByteArray {
-            // TODO
-            return "TODO";
+            return "1234";
         }
 
         fn exists(self: @ContractState, token_id: u256) -> bool {
@@ -163,6 +176,15 @@ mod Handles {
 
         fn total_supply(self: @ContractState) -> u256 {
             self.total_supply.read()
+        }
+
+        fn get_token_id(self: @ContractState, local_name: felt252) -> u256 {
+            let hash: u256 = PoseidonTrait::new()
+                .update_with(local_name)
+                .finalize()
+                .try_into()
+                .unwrap();
+            hash
         }
 
         fn get_handle_token_uri(
@@ -179,10 +201,31 @@ mod Handles {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _mint_handle(
-            ref self: ContractState, address: ContractAddress, local_name: felt252
+            ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
-            // TODO
-            return 123;
+            let token_id = self.get_token_id(local_name);
+
+            let mut current_total_supply = self.total_supply.read();
+
+            current_total_supply += 1;
+
+            self.total_supply.write(current_total_supply);
+
+            self.erc721._mint(address, token_id);
+
+            self.local_names.write(token_id, local_name);
+
+            self
+                .emit(
+                    HandleMinted {
+                        local_name: local_name,
+                        to: address,
+                        token_id: token_id,
+                        block_timestamp: get_block_timestamp()
+                    }
+                );
+
+            token_id
         }
 
         fn _validate_local_name(ref self: ContractState, local_name: felt252) { // TODO
