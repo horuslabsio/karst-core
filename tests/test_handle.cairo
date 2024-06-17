@@ -38,24 +38,69 @@ fn __setup__() -> ContractAddress {
 // *************************************************************************
 
 #[test]
+#[should_panic(expected: ('Wrong owner',))]
+fn test_cannot_burn_if_not_owner_of() {
+    let contract_address = __setup__();
+    let dispatcher = IHandleDispatcher { contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address };
+
+    start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
+    let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
+
+    assert(dispatcher.exists(handle_id), 'Handle ID does not exist');
+
+    start_prank(CheatTarget::One(contract_address), USER_TWO.try_into().unwrap());
+    dispatcher.burn_handle(handle_id);
+}
+
+#[test]
+fn test_handle_id_exists_after_mint() {
+    let contract_address = __setup__();
+    let dispatcher = IHandleDispatcher { contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address };
+
+    start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
+    let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
+
+    assert(dispatcher.exists(handle_id), 'Handle ID does not exist');
+}
+
+#[test]
 fn test_total_supply() {
-    let handles_contract_address = __setup__();
+    let contract_address = __setup__();
+    let dispatcher = IHandleDispatcher { contract_address };
 
-    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+    let current_total_supply: u256 = dispatcher.total_supply();
 
-    let total_supply_before = handles_dispatcher.total_supply();
+    start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
+    let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
 
-    assert(total_supply_before == 0, 'total supply should be 0');
+    let total_supply_after_mint: u256 = dispatcher.total_supply();
+    assert(total_supply_after_mint == current_total_supply + 1, 'WRONG_TOTAL_SUPPLY');
 
-    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    start_prank(CheatTarget::One(contract_address), USER_ONE.try_into().unwrap());
+    dispatcher.burn_handle(handle_id);
 
-    handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+    let total_supply_after_burn: u256 = dispatcher.total_supply();
+    assert(total_supply_after_burn == total_supply_after_mint - 1, 'WRONG_TOTAL_SUPPLY');
+}
 
-    let total_supply = handles_dispatcher.total_supply();
+#[test]
+fn test_burn() {
+    let contract_address = __setup__();
+    let dispatcher = IHandleDispatcher { contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address };
 
-    assert(total_supply == total_supply_before + 1, 'total supply not incremented');
+    start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
+    let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
 
-    stop_prank(CheatTarget::One(handles_contract_address));
+    assert(dispatcher.exists(handle_id) == true, 'Handle ID does not exist');
+    assert(_erc721Dispatcher.owner_of(handle_id) == USER_ONE.try_into().unwrap(), 'Wrong Owner');
+
+    start_prank(CheatTarget::One(contract_address), USER_ONE.try_into().unwrap());
+    dispatcher.burn_handle(handle_id);
+
+    assert(dispatcher.exists(handle_id) == false, 'BURN FAILED');
 }
 
 
