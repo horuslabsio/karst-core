@@ -231,6 +231,7 @@ fn test_comment() {
     let user_one_comment_assigned_pub_id_1 = publication_dispatcher
         .comment(
             user_one_profile_address,
+            PublicationType::Comment,
             user_one_comment_on_his_post_content_URI,
             user_one_profile_address,
             user_one_first_post_pointed_pub_id,
@@ -240,6 +241,7 @@ fn test_comment() {
     let user_two_comment_on_user_one_assigned_pub_id_2 = publication_dispatcher
         .comment(
             user_two_profile_address,
+            PublicationType::Comment,
             user_two_comment_one_user_one_post_content_URI,
             user_one_profile_address,
             user_one_first_post_pointed_pub_id,
@@ -259,6 +261,44 @@ fn test_comment() {
     stop_prank(
         CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
     );
+}
+
+#[test]
+#[should_panic(expected: ('Unsupported publication type',))]
+fn test_with_as_reference_pub_params() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+
+    let user_one_comment_on_his_post_content_URI =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+
+    // user comment on his own post
+    publication_dispatcher
+        .comment(
+            user_one_profile_address,
+            PublicationType::Mirror,
+            user_one_comment_on_his_post_content_URI,
+            user_one_profile_address,
+            user_one_first_post_pointed_pub_id,
+            profile_contract_address
+        );
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
 }
 
 #[test]
@@ -292,7 +332,8 @@ fn test_quote() {
         pointed_pub_id: user_one_first_post_pointed_pub_id
     };
     // user one publish quote to user 2 profile
-    let quote_pub_id = publication_dispatcher.quote(quote_params, profile_contract_address);
+    let quote_pub_id = publication_dispatcher
+        .quote(PublicationType::Quote, quote_params, profile_contract_address);
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_two_profile_address, quote_pub_id);
@@ -316,7 +357,7 @@ fn test_quote() {
     };
     // user 2 publish quote to user 3 profile
     let user_two_quote_pub_id = publication_dispatcher
-        .quote(user_two_quote_params, profile_contract_address);
+        .quote(PublicationType::Quote, user_two_quote_params, profile_contract_address);
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_three_profile_address, user_two_quote_pub_id);
@@ -369,7 +410,7 @@ fn test_quote_pointed_profile_address() {
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
 
-    publication_dispatcher.quote(quote_params, profile_contract_address);
+    publication_dispatcher.quote(PublicationType::Quote, quote_params, profile_contract_address);
 
     let pointed_profile = profileDispatcher.get_profile(user_one_profile_address);
 

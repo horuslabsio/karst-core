@@ -161,14 +161,18 @@ pub mod Publications {
             pointed_pub_id: u256,
             profile_contract_address: ContractAddress
         ) -> u256 {
+            let reference_pub_type = self._as_reference_pub_params(reference_pub_type);
+
+            // println!("result from reference_pub_type: {:?}", reference_pub_type);
+            assert!(reference_pub_type == PublicationType::Comment, "Unsupported publication type");
+
             let pubIdAssigned = self
                 ._createReferencePublication(
                     profile_address,
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    self._as_reference_pub_params(reference_pub_type),
-                    // PublicationType::Comment,
+                    reference_pub_type,
                     profile_contract_address
                 );
             pubIdAssigned
@@ -234,6 +238,9 @@ pub mod Publications {
             profile_contract_address: ContractAddress
         ) -> u256 {
             let ref_quoteParams = quoteParams.clone();
+            let reference_pub_type = self._as_reference_pub_params(reference_pub_type);
+            //  println!("result from reference_pub_type: {:?}", reference_pub_type);
+            assert!(reference_pub_type == PublicationType::Quote, "Unsupported publication type");
 
             let pub_id_assigned = self
                 ._createReferencePublication(
@@ -241,8 +248,7 @@ pub mod Publications {
                     quoteParams.content_URI,
                     quoteParams.pointed_profile_address,
                     quoteParams.pointed_pub_id,
-                    self._as_reference_pub_params(reference_pub_type),
-                    // PublicationType::Quote,
+                    reference_pub_type,
                     profile_contract_address
                 );
 
@@ -368,11 +374,13 @@ pub mod Publications {
             pub_id_assigned
         }
 
-        fn _as_reference_pub_params(ref self: ContractState, reference_pub_type: PublicationType) -> PublicationType {
+        fn _as_reference_pub_params(
+            ref self: ContractState, reference_pub_type: PublicationType
+        ) -> PublicationType {
             match reference_pub_type {
                 PublicationType::Quote => PublicationType::Quote,
                 PublicationType::Comment => PublicationType::Comment,
-                _ => panic!("Unsupported publication type"), // Or return an error value
+                _ => PublicationType::Nonexistent,
             }
         }
 
