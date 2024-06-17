@@ -15,6 +15,7 @@ use karst::namespaces::handles::Handles;
 const HUB_ADDRESS: felt252 = 'HUB';
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
+const USER_TWO: felt252 = 'JOHN';
 const TEST_LOCAL_NAME: felt252 = 'Karst';
 const TEST_LOCAL_NAME_TWO: felt252 = 'KarstTwo';
 const TEST_TOKEN_ID: u256 =
