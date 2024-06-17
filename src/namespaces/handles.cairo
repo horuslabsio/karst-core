@@ -2,7 +2,7 @@
 //                            OZ ERC721
 // *************************************************************************
 use openzeppelin::{
-    token::erc721::{ERC721Component::{ERC721Metadata, HasComponent}},
+    token::erc721::{ERC721Component::{ERC721Metadata, ERC721Mixin, HasComponent}},
     introspection::src5::SRC5Component,
 };
 
@@ -147,7 +147,12 @@ mod Handles {
             token_id
         }
 
-        fn burn_handle(ref self: ContractState, token_id: u256) { // TODO
+        fn burn_handle(ref self: ContractState, token_id: u256) {
+            assert(get_caller_address() == self.erc721.owner_of(token_id), 'Wrong owner');
+            let current_supply = self.total_supply.read();
+            self.total_supply.write(current_supply - 1);
+            self.erc721._burn(token_id);
+            self.local_names.write(token_id, '');
         }
 
         // *************************************************************************
