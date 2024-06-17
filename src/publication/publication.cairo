@@ -27,6 +27,7 @@ pub trait IKarstPublications<T> {
     fn comment(
         ref self: T,
         profile_address: ContractAddress,
+        reference_pub_type: PublicationType,
         content_URI: ByteArray,
         pointed_profile_address: ContractAddress,
         pointed_pub_id: u256,
@@ -34,7 +35,10 @@ pub trait IKarstPublications<T> {
     ) -> u256;
     fn mirror(ref self: T, mirrorParams: MirrorParams) -> u256;
     fn quote(
-        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+        ref self: T,
+        reference_pub_type: PublicationType,
+        quoteParams: QuoteParams,
+        profile_contract_address: ContractAddress
     ) -> u256;
     ////// Getters//////
     fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
@@ -151,6 +155,7 @@ pub mod Publications {
         fn comment(
             ref self: ContractState,
             profile_address: ContractAddress,
+            reference_pub_type: PublicationType,
             content_URI: ByteArray,
             pointed_profile_address: ContractAddress,
             pointed_pub_id: u256,
@@ -162,7 +167,8 @@ pub mod Publications {
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    PublicationType::Comment,
+                    self._as_reference_pub_params(reference_pub_type),
+                    // PublicationType::Comment,
                     profile_contract_address
                 );
             pubIdAssigned
@@ -223,6 +229,7 @@ pub mod Publications {
 
         fn quote(
             ref self: ContractState,
+            reference_pub_type: PublicationType,
             quoteParams: QuoteParams,
             profile_contract_address: ContractAddress
         ) -> u256 {
@@ -234,7 +241,8 @@ pub mod Publications {
                     quoteParams.content_URI,
                     quoteParams.pointed_profile_address,
                     quoteParams.pointed_pub_id,
-                    PublicationType::Quote,
+                    self._as_reference_pub_params(reference_pub_type),
+                    // PublicationType::Quote,
                     profile_contract_address
                 );
 
@@ -358,6 +366,14 @@ pub mod Publications {
                 self.validateNotBlocked(profile_address, pointed_profile_address, false);
             }
             pub_id_assigned
+        }
+
+        fn _as_reference_pub_params(ref self: ContractState, reference_pub_type: PublicationType) -> PublicationType {
+            match reference_pub_type {
+                PublicationType::Quote => PublicationType::Quote,
+                PublicationType::Comment => PublicationType::Comment,
+                _ => panic!("Unsupported publication type"), // Or return an error value
+            }
         }
 
         fn _blockedStatus(

@@ -20,13 +20,17 @@ pub trait IKarstPublications<T> {
     fn comment(
         ref self: T,
         profile_address: ContractAddress,
+        reference_pub_type: PublicationType,
         content_URI: ByteArray,
         pointed_profile_address: ContractAddress,
         pointed_pub_id: u256,
         profile_contract_address: ContractAddress,
     ) -> u256;
     fn quote(
-        ref self: T, quoteParams: QuoteParams, profile_contract_address: ContractAddress
+        ref self: T,
+        reference_pub_type: PublicationType,
+        quoteParams: QuoteParams,
+        profile_contract_address: ContractAddress
     ) -> u256;
     fn mirror(
         ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
