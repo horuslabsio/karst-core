@@ -139,3 +139,18 @@ pub struct QuoteParams {
     pointed_profile_address: ContractAddress,
     pointed_pub_id: u256
 }
+
+mod RegistryTypes {
+    use starknet::ContractAddress;
+    #[derive(Drop, Serde, starknet::Store, Clone)]
+    pub struct Token {
+        id: u256,
+        collection: ContractAddress
+    }
+
+    #[derive(Drop, Serde, starknet::Store, Clone)]
+    pub struct Handle {
+        id: u256,
+        collection: ContractAddress
+    }
+}

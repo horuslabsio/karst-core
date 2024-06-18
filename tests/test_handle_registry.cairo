@@ -11,7 +11,6 @@ use karst::interfaces::IHandleRegistry::{IHandleRegistryDispatcher, IHandleRegis
 use karst::namespaces::handle_registry::HandleRegistry;
 
 
-
 const HUB_ADDRESS: felt252 = 'HUB';
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const PROFILE_ADDRESS: felt252 = 'PROFILE';
@@ -19,7 +18,7 @@ const HANDLE_ADDRESS: felt252 = 'HANDLE';
 const PROFILE_ID: u256 = 1234;
 const HANDLE_ID: u256 = 1234;
 
-fn __deploy_handles_contract() -> ContractAddress{
+fn __deploy_handles_contract() -> ContractAddress {
     let handles_class_hash = declare("Handles").unwrap();
     let symbol: ByteArray = "HNFT";
     let name: ByteArray = "HANDLES_HUB";
@@ -62,5 +61,7 @@ fn test_resolve() {
     start_prank(CheatTarget::One(contract_address), HUB_ADDRESS.try_into().unwrap());
     dispatcher.link(HANDLE_ID, PROFILE_ADDRESS.try_into().unwrap());
 
-    assert(dispatcher.resolve(HANDLE_ID) == PROFILE_ADDRESS.try_into().unwrap(), 'INCORRECT PROFILE ID');
+    assert(
+        dispatcher.resolve(HANDLE_ID) == PROFILE_ADDRESS.try_into().unwrap(), 'INCORRECT PROFILE ID'
+    );
 }

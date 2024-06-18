@@ -7,6 +7,7 @@ mod HandleRegistry {
     use starknet::{ContractAddress, get_caller_address};
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+    use karst::base::types::RegistryTypes;
 
     // *************************************************************************
     //                            STORAGE
@@ -77,10 +78,9 @@ mod HandleRegistry {
             let isExist = IHandleDispatcher { contract_address: self.handle_address.read() }
                 .exists(handle_id);
             assert(isExist, 'Handle ID does not exist');
-            let resolved_handle_profile_address: ContractAddress = self
-                ._resolve_handle_to_profile_address(
-                    RegistryTypes::Handle { id: handle_id, collection: self.handle_address.read() }
-                );
+            let resolved_handle_profile_address: ContractAddress = self._resolve_handle_to_profile_address(
+                RegistryTypes::Handle { id: handle_id, collection: self.handle_address.read() }
+            );
             resolved_handle_profile_address
         }
 
@@ -100,7 +100,7 @@ mod HandleRegistry {
         ) -> ContractAddress {
             self.handle_to_profile_address.read(handle.id)
         }
-        
+
         fn _link(
             ref self: ContractState, handle_id: u256, profile_address: ContractAddress
         ) { // TODO
