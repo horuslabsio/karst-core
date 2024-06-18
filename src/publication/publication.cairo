@@ -163,8 +163,7 @@ pub mod Publications {
         ) -> u256 {
             let reference_pub_type = self._as_reference_pub_params(reference_pub_type);
 
-            // println!("result from reference_pub_type: {:?}", reference_pub_type);
-            assert!(reference_pub_type == PublicationType::Comment, "Unsupported publication type");
+            assert(reference_pub_type == PublicationType::Comment, 'Unsupported publication type');
 
             let pubIdAssigned = self
                 ._createReferencePublication(
@@ -239,8 +238,8 @@ pub mod Publications {
         ) -> u256 {
             let ref_quoteParams = quoteParams.clone();
             let reference_pub_type = self._as_reference_pub_params(reference_pub_type);
-            //  println!("result from reference_pub_type: {:?}", reference_pub_type);
-            assert!(reference_pub_type == PublicationType::Quote, "Unsupported publication type");
+
+            assert(reference_pub_type == PublicationType::Quote, 'Unsupported publication type');
 
             let pub_id_assigned = self
                 ._createReferencePublication(

@@ -377,6 +377,42 @@ fn test_quote() {
 }
 
 #[test]
+#[should_panic(expected: ('Unsupported publication type',))]
+fn test_quote_as_reference_pub_params() {
+    let (
+        _,
+        _,
+        profile_contract_address,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let publication_dispatcher = IKarstPublicationsDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+
+    let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
+
+    let quote_params = QuoteParams {
+        profile_address: user_two_profile_address,
+        content_URI: quote_content_URI,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id
+    };
+
+    publication_dispatcher.quote(PublicationType::Mirror, quote_params, profile_contract_address);
+
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
 fn test_quote_pointed_profile_address() {
     let (
         _,
