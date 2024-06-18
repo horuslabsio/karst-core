@@ -48,6 +48,7 @@ mod Handles {
         },
         introspection::{src5::SRC5Component}
     };
+    use karst::base::errors::Errors;
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IHandle::IHandle;
 
@@ -108,16 +109,25 @@ mod Handles {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         HandleMinted: HandleMinted,
+        HandleBurnt: HandleBurnt,
     }
-
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleMinted {
-        pub local_name: felt252,
-        pub token_id: u256,
-        pub to: ContractAddress,
-        pub block_timestamp: u64,
+        local_name: felt252,
+        token_id: u256,
+        to: ContractAddress,
+        block_timestamp: u64,
     }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct HandleBurnt {
+        local_name: felt252,
+        token_id: u256,
+        owner: ContractAddress,
+        block_timestamp: u64,
+    }
+
     // *************************************************************************
     //                            CONSTRUCTOR
     // *************************************************************************
@@ -148,11 +158,21 @@ mod Handles {
         }
 
         fn burn_handle(ref self: ContractState, token_id: u256) {
-            assert(get_caller_address() == self.erc721.owner_of(token_id), 'Wrong owner');
+            assert(get_caller_address() == self.erc721.owner_of(token_id), Errors::INVALID_OWNER);
             let current_supply = self.total_supply.read();
-            self.total_supply.write(current_supply - 1);
+            let local_name = self.local_names.read(token_id);
             self.erc721._burn(token_id);
-            self.local_names.write(token_id, '');
+            self.total_supply.write(current_supply - 1);
+            self.local_names.write(token_id, 0);
+            self
+                .emit(
+                    HandleBurnt {
+                        local_name: local_name,
+                        owner: get_caller_address(),
+                        token_id: token_id,
+                        block_timestamp: get_block_timestamp()
+                    }
+                );
         }
 
         // *************************************************************************
@@ -204,15 +224,11 @@ mod Handles {
             ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
             let token_id = self.get_token_id(local_name);
-
             let mut current_total_supply = self.total_supply.read();
-
             current_total_supply += 1;
-
             self.total_supply.write(current_total_supply);
 
             self.erc721._mint(address, token_id);
-
             self.local_names.write(token_id, local_name);
 
             self
@@ -224,7 +240,6 @@ mod Handles {
                         block_timestamp: get_block_timestamp()
                     }
                 );
-
             token_id
         }
 

@@ -10,4 +10,5 @@ pub mod Errors {
     pub const NOT_FOLLOWING: felt252 = 'USER_NOT_FOLLOWING';
     pub const BLOCKED_STATUS: felt252 = 'BLOCKED';
     pub const INVALID_POINTED_PUBLICATION: felt252 = 'INVALID_POINTED_PUB';
+    pub const INVALID_OWNER: felt252 = 'CALLER_NOT_OWNER';
 }

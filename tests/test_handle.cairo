@@ -39,7 +39,7 @@ fn __setup__() -> ContractAddress {
 // *************************************************************************
 
 #[test]
-#[should_panic(expected: ('Wrong owner',))]
+#[should_panic(expected: ('CALLER_NOT_OWNER',))]
 fn test_cannot_burn_if_not_owner_of() {
     let contract_address = __setup__();
     let dispatcher = IHandleDispatcher { contract_address };
@@ -108,15 +108,12 @@ fn test_burn() {
 #[test]
 fn test_mint_handle() {
     let handles_contract_address = __setup__();
-
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-
     let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
     let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
-
     assert(local_name == TEST_LOCAL_NAME, 'invalid local name');
 
     stop_prank(CheatTarget::One(handles_contract_address));
@@ -124,17 +121,15 @@ fn test_mint_handle() {
 
 
 fn test_mint_handle_two() {
+    // TODO: test total supply
     let handles_contract_address = __setup__();
-
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-
     let token_id = handles_dispatcher
         .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_TWO);
 
     let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
-
     assert(local_name == TEST_LOCAL_NAME_TWO, 'invalid local name two');
 
     stop_prank(CheatTarget::One(handles_contract_address));
@@ -144,13 +139,10 @@ fn test_mint_handle_two() {
 #[test]
 fn test_get_token_id() {
     let handles_contract_address = __setup__();
-
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-
     let token_id = handles_dispatcher.get_token_id(TEST_LOCAL_NAME);
-
     assert!(token_id == TEST_TOKEN_ID, "Invalid token ID");
 
     stop_prank(CheatTarget::One(handles_contract_address));

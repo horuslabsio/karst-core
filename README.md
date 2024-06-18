@@ -1,6 +1,6 @@
 <!-- logo -->
 <p align="center">
-  <img width='300' src="https://avatars.githubusercontent.com/u/123994955?s=200&v=4">
+  <img width='300' src="./img/logo.png">
 </p>
 
 <!-- primary badges -->
@@ -9,10 +9,6 @@
     <img src="https://img.shields.io/badge/license-MIT-black">
   </a>
 </p>
-
-<div align="center">
-<h1> Karst </h1>
-</div>
 
 Karst is a permissionless and composable social graph built on Starknet, empowering creators to own every part of their social experience.
 
@@ -50,13 +46,6 @@ scarb fmt
 
 For more information on writing and running tests, refer to the [Starknet-Foundry documentation](https://foundry-rs.github.io/starknet-foundry/index.html)
 
-## Architecture
-
-Check out the contract architecture below, and join our [working group](https://t.me/+DFfuHjLkeXlkNTg0).
-
-<img width="100%" alt="Screenshot 2024-05-24 at 00 11 16" src="https://github.com/horuslabsio/karst-core/blob/main/img/architecture.png?raw=true">
-
-
 ## Contributing
 
 BEFORE you start work on a feature or fix, please read and follow our [contribution guide](https://github.com/horuslabsio/karst-core/blob/master/CONTRIBUTING.md) to help avoid any wasted or duplicate effort.
@@ -68,6 +57,13 @@ If you believe you have found a security vulnerability in our code, please repor
 ## License
 
 KARST is an open-source software licensed under the [MIT](https://github.com/horuslabsio/karst-core/blob/master/LICENSE.md).
+
+
+## Architecture
+
+Check out the contract architecture below, and join our [working group](https://t.me/+DFfuHjLkeXlkNTg0).
+
+<img width="100%" alt="Screenshot 2024-05-24 at 00 11 16" src="https://github.com/horuslabsio/karst-core/blob/main/img/architecture.png?raw=true">
 
 ## Contributors
 
