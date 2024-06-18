@@ -6,6 +6,7 @@ mod HandleRegistry {
     use core::traits::TryInto;
     use starknet::{ContractAddress, get_caller_address};
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
+    use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 
     // *************************************************************************
     //                            STORAGE
@@ -72,9 +73,15 @@ mod HandleRegistry {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
-        fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
-            // TODO
-            0.try_into().unwrap()
+        fn resolve(ref self: ContractState, handle_id: u256) -> ContractAddress {
+            let isExist = IHandleDispatcher { contract_address: self.handle_address.read() }
+                .exists(handle_id);
+            assert(isExist, 'Handle ID does not exist');
+            let resolved_handle_profile_address: ContractAddress = self
+                ._resolve_handle_to_profile_address(
+                    RegistryTypes::Handle { id: handle_id, collection: self.handle_address.read() }
+                );
+            resolved_handle_profile_address
         }
 
         fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
@@ -88,6 +95,12 @@ mod HandleRegistry {
     // ************************************************************************* 
     #[generate_trait]
     impl Private of PrivateTrait {
+        fn _resolve_handle_to_profile_address(
+            ref self: ContractState, handle: RegistryTypes::Handle
+        ) -> ContractAddress {
+            self.handle_to_profile_address.read(handle.id)
+        }
+        
         fn _link(
             ref self: ContractState, handle_id: u256, profile_address: ContractAddress
         ) { // TODO
