@@ -4,8 +4,9 @@ mod HandleRegistry {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address, emit_event};
+    use starknet::{ContractAddress, get_caller_address};
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
+    use karst::interfaces::IHandleNFT::IHandleNFTDispatcher; // Import the IHandleNFT interface
 
     // *************************************************************************
     //                            STORAGE
@@ -87,27 +88,40 @@ mod HandleRegistry {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
+            // Dispatcher to call ownerOf on the handle NFT contract
+            let owner = IHandleNFTDispatcher {
+                contract_address: self.handle_address.read(),
+            }.owner_of(handle_id);
+
+            // Check if the owner of the NFT is the profile_address
+            assert(owner == profile_address, 'Profile address does not own the NFT being linked');
+
             self.handle_to_profile_address.write(handle_id, profile_address);
             self.profile_address_to_handle.write(profile_address, handle_id);
             let caller = get_caller_address();
             let timestamp = starknet::get_block_timestamp();
-            emit_event(
-                Event::Linked(HandleLinked { handle_id, profile_address, caller, timestamp, })
-            );
+            // Emit the Linked event using self.emit
+            self.emit(Event::Linked(HandleLinked { handle_id, profile_address, caller, timestamp }));
         }
 
-        fn _unlink(
-            ref self: ContractState,
-            handle_id: u256,
-            profile_address: ContractAddress,
-            caller: ContractAddress
-        ) {
-            self.handle_to_profile_address.remove(handle_id);
-            self.profile_address_to_handle.remove(profile_address);
+        fn _unlink(ref self: ContractState,handle_id: u256,profile_address: ContractAddress,caller: ContractAddress) {
+            // Check that handle_id and profile_address are not zero
+            assert(handle_id != 0, "handle_id cannot be zero");
+            assert(profile_address != ContractAddress::zero(), "profile_address cannot be zero");
+        
+            // Dispatcher to call ownerOf on the handle NFT contract
+            let owner = IHandleNFTDispatcher {
+                contract_address: self.handle_address.read(),
+            }.owner_of(handle_id);
+        
+            // Check that the profile_address owns the NFT and is equal to the caller
+            assert(owner == profile_address, "profile_address does not own the NFT being unlinked");
+            assert(profile_address == caller, "caller is not the owner of the NFT");
+        
+            self.handle_to_profile_address.write(handle_id, ContractAddress::zero());
+            self.profile_address_to_handle.write(profile_address, 0);
             let timestamp = starknet::get_block_timestamp();
-            emit_event(
-                Event::Unlinked(HandleUnlinked { handle_id, profile_address, caller, timestamp, })
-            );
+            self.emit(Event::Unlinked(HandleUnlinked { handle_id, profile_address, caller, timestamp }));
         }
     }
 }

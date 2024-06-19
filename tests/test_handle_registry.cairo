@@ -12,6 +12,34 @@ use karst::namespaces::handle_registry::HandleRegistry;
 
 fn __setup__() { // should contain any actions or logic to be carried out before a test is run
 }
+
+// function to deploy the HandleRegistry contract
+fn deploy_handle_registry() -> (HandleRegistry, ContractAddress) {
+    // Deploy the contract and return the instance and address
+    let contract_class = declare(HandleRegistry::get_contract_class()).unwrap();
+    let contract_address = contract_class.deploy().unwrap();
+    let handle_registry: HandleRegistry = HandleRegistry::from_contract_address(contract_address);
+    (handle_registry, contract_address)
+}
+
+// function to fetch the linked event
+fn fetch_linked_event(handle_registry_address: ContractAddress) -> HandleLinked {
+    // Fetch the linked event from the handle_registry_address
+    // placeholder implementation
+    HandleLinked { handle_id: 123, profile_address: contract_address_const::<'profile_address'>(), caller: caller(), timestamp: 12345 }
+}
+
+//  function to fetch the unlinked event
+fn fetch_unlinked_event(handle_registry_address: ContractAddress) -> HandleUnlinked {
+    // Fetch the unlinked event from the handle_registry_address
+    // placeholder implementation
+    HandleUnlinked { handle_id: 123, profile_address: contract_address_const::<'profile_address'>(), caller: caller(), timestamp: 12345 }
+}
+
+// Define the caller address for the tests
+fn caller() -> ContractAddress {
+    contract_address_const::<'caller'>()
+}
 // *************************************************************************
 //                              TEST
 // *************************************************************************
