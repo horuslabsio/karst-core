@@ -10,4 +10,8 @@ pub mod Errors {
     pub const NOT_FOLLOWING: felt252 = 'USER_NOT_FOLLOWING';
     pub const BLOCKED_STATUS: felt252 = 'BLOCKED';
     pub const INVALID_POINTED_PUBLICATION: felt252 = 'INVALID_POINTED_PUB';
+    pub const PROFILE_DOESNT_OWN_NFT: felt252 = 'Profile address does not own the NFT being linked';
+    pub const HANDLEID_NOT_ZERO: felt252 = 'handle_id cannot be zero';
+    pub const PROFILEADDRESS_NOT_ZERO: felt252 = 'profile_address cannot be zero';
+    pub const CALLER_NOT_OWNER_OF_NFT: felt252 = 'caller is not the owner of the NFT';
 }

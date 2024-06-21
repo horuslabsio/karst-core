@@ -2,50 +2,53 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress};
+use starknet::{ContractAddress, get_caller_address};
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp, spy_events, SpyOn
 };
-
 use karst::interfaces::IHandleRegistry::{IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait};
 use karst::namespaces::handle_registry::HandleRegistry;
 
-fn __setup__() { // should contain any actions or logic to be carried out before a test is run
+#[derive(Drop, starknet::Event)]
+struct HandleLinked {
+    handle_id: u256,
+    profile_address: ContractAddress,
+    caller: ContractAddress,
+    timestamp: u64
 }
 
-// function to deploy the HandleRegistry contract
-fn deploy_handle_registry() -> (HandleRegistry, ContractAddress) {
-    // Deploy the contract and return the instance and address
-    let contract_class = declare(HandleRegistry::get_contract_class()).unwrap();
-    let contract_address = contract_class.deploy().unwrap();
-    let handle_registry: HandleRegistry = HandleRegistry::from_contract_address(contract_address);
-    (handle_registry, contract_address)
+#[derive(Drop, starknet::Event)]
+struct HandleUnlinked {
+    handle_id: u256,
+    profile_address: ContractAddress,
+    caller: ContractAddress,
+    timestamp: u64
 }
 
-// function to fetch the linked event
-fn fetch_linked_event(handle_registry_address: ContractAddress) -> HandleLinked {
-    // Fetch the linked event from the handle_registry_address
-    // placeholder implementation
-    HandleLinked { handle_id: 123, profile_address: contract_address_const::<'profile_address'>(), caller: caller(), timestamp: 12345 }
+fn __setup__() {
+    // Any actions or logic to be carried out before a test is run
+
+
+    // Helper function to deploy the HandleRegistry contract
+    fn deploy_handle_registry() -> (HandleRegistry, ContractAddress) {
+        let contract_class = declare(HandleRegistry::get_contract_class()).unwrap();
+        let contract_address = contract_class.deploy().unwrap();
+        let handle_registry: HandleRegistry = HandleRegistry::from_contract_address(contract_address);
+        (handle_registry, contract_address)
+    }
+
+    // Define the caller address for the tests
+    fn caller() -> ContractAddress {
+        contract_address_const::<'caller'>()
+    }
 }
 
-//  function to fetch the unlinked event
-fn fetch_unlinked_event(handle_registry_address: ContractAddress) -> HandleUnlinked {
-    // Fetch the unlinked event from the handle_registry_address
-    // placeholder implementation
-    HandleUnlinked { handle_id: 123, profile_address: contract_address_const::<'profile_address'>(), caller: caller(), timestamp: 12345 }
-}
-
-// Define the caller address for the tests
-fn caller() -> ContractAddress {
-    contract_address_const::<'caller'>()
-}
 // *************************************************************************
 //                              TEST
 // *************************************************************************
 
 #[test]
-fn test_link_should_emit_linked_event() {
+fn test_link_should_emit_linked_event_and_update_state() {
     // Deploy the contract and get its address
     let (handle_registry, handle_registry_address) = deploy_handle_registry();
 
@@ -54,24 +57,31 @@ fn test_link_should_emit_linked_event() {
     let profile_address: ContractAddress = contract_address_const::<'profile_address'>();
 
     // Start the prank to simulate a caller
-    start_prank(handle_registry_address, caller());
+    start_prank(caller());
+
+    // Spy on events emitted by the contract
+    let mut spy = spy_events(SpyOn::One(handle_registry_address));
 
     // Call the link function
     handle_registry.link(handle_id, profile_address);
 
     // Stop the prank
-    stop_prank(handle_registry_address);
+    stop_prank();
 
     // Verify that the Linked event was emitted
-    let linked_event = fetch_linked_event(handle_registry_address);
-    assert_eq!(linked_event.handle_id, handle_id);
-    assert_eq!(linked_event.profile_address, profile_address);
-    assert_eq!(linked_event.caller, caller());
-    assert_ne!(linked_event.timestamp, 0); // Verify timestamp is set
+    let expected_event = HandleLinked { handle_id, profile_address, caller: caller(), timestamp: starknet::get_block_timestamp() };
+    spy.assert_emitted(@array![(handle_registry_address, expected_event)]);
+
+    // Verify the state was updated
+    let resolved_address = handle_registry.resolve(handle_id);
+    assert_eq!(resolved_address, profile_address);
+
+    let handle = handle_registry.get_handle(profile_address);
+    assert_eq!(handle, handle_id);
 }
 
 #[test]
-fn test_unlink_should_emit_unlinked_event() {
+fn test_unlink_should_emit_unlinked_event_and_update_state() {
     // Deploy the contract and get its address
     let (handle_registry, handle_registry_address) = deploy_handle_registry();
 
@@ -80,7 +90,10 @@ fn test_unlink_should_emit_unlinked_event() {
     let profile_address: ContractAddress = contract_address_const::<'profile_address'>();
 
     // Start the prank to simulate a caller
-    start_prank(handle_registry_address, caller());
+    start_prank(caller());
+
+    // Spy on events emitted by the contract
+    let mut spy = spy_events(SpyOn::One(handle_registry_address));
 
     // Call the link function
     handle_registry.link(handle_id, profile_address);
@@ -89,12 +102,16 @@ fn test_unlink_should_emit_unlinked_event() {
     handle_registry.unlink(handle_id, profile_address);
 
     // Stop the prank
-    stop_prank(handle_registry_address);
+    stop_prank();
 
     // Verify that the Unlinked event was emitted
-    let unlinked_event = fetch_unlinked_event(handle_registry_address);
-    assert_eq!(unlinked_event.handle_id, handle_id);
-    assert_eq!(unlinked_event.profile_address, profile_address);
-    assert_eq!(unlinked_event.caller, caller());
-    assert_ne!(unlinked_event.timestamp, 0); // Verify timestamp is set
+    let expected_event = HandleUnlinked { handle_id, profile_address, caller: caller(), timestamp: starknet::get_block_timestamp() };
+    spy.assert_emitted(@array![(handle_registry_address, expected_event)]);
+
+    // Verify the state was updated
+    let resolved_address = handle_registry.resolve(handle_id);
+    assert_eq!(resolved_address, ContractAddress::zero());
+
+    let handle = handle_registry.get_handle(profile_address);
+    assert_eq!(handle, 0);
 }

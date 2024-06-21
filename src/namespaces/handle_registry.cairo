@@ -7,6 +7,7 @@ mod HandleRegistry {
     use starknet::{ContractAddress, get_caller_address};
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IHandleNFT::IHandleNFTDispatcher; // Import the IHandleNFT interface
+    use karst::base::errors::Errors;
 
     // *************************************************************************
     //                            STORAGE
@@ -94,7 +95,7 @@ mod HandleRegistry {
             }.owner_of(handle_id);
 
             // Check if the owner of the NFT is the profile_address
-            assert(owner == profile_address, 'Profile address does not own the NFT being linked');
+            assert(owner == profile_address, Errors::PROFILE_DOESNT_OWN_NFT);
 
             self.handle_to_profile_address.write(handle_id, profile_address);
             self.profile_address_to_handle.write(profile_address, handle_id);
@@ -106,8 +107,8 @@ mod HandleRegistry {
 
         fn _unlink(ref self: ContractState,handle_id: u256,profile_address: ContractAddress,caller: ContractAddress) {
             // Check that handle_id and profile_address are not zero
-            assert(handle_id != 0, "handle_id cannot be zero");
-            assert(profile_address != ContractAddress::zero(), "profile_address cannot be zero");
+            assert(handle_id != 0,Errors::HANDLEID_NOT_ZERO );
+            assert(profile_address != ContractAddress::zero(), Errors::PROFILEADDRESS_NOT_ZERO);
         
             // Dispatcher to call ownerOf on the handle NFT contract
             let owner = IHandleNFTDispatcher {
@@ -115,8 +116,8 @@ mod HandleRegistry {
             }.owner_of(handle_id);
         
             // Check that the profile_address owns the NFT and is equal to the caller
-            assert(owner == profile_address, "profile_address does not own the NFT being unlinked");
-            assert(profile_address == caller, "caller is not the owner of the NFT");
+            assert(owner == profile_address,  Errors::PROFILE_DOESNT_OWN_NFT);
+            assert(profile_address == caller, Errors::CALLER_NOT_OWNER_OF_NFT);
         
             self.handle_to_profile_address.write(handle_id, ContractAddress::zero());
             self.profile_address_to_handle.write(profile_address, 0);
