@@ -78,8 +78,11 @@ mod HandleRegistry {
         }
 
         fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
-            // TODO
-            0.try_into().unwrap()
+            let handle = self.profile_address_to_handle.read(profile_address);
+            if(handle == 0) {
+                return 0;
+            } 
+           handle
         }
     }
 
