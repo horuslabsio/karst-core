@@ -8,6 +8,7 @@ pub trait IKarstProfile<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
+    fn initialize(ref self: TState, hub_address: ContractAddress);
     fn create_profile(
         ref self: TState,
         karstnft_contract_address: ContractAddress,
