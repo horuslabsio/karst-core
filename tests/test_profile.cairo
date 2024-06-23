@@ -9,7 +9,7 @@ use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_pr
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
 use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
+use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
 
 // Account
 use token_bound_accounts::interfaces::IAccount::{IAccountDispatcher, IAccountDispatcherTrait};
@@ -26,13 +26,7 @@ const USER: felt252 = 'USER1';
 //                              SETUP 
 // *************************************************************************
 
-fn __setup__() -> (
-    ContractAddress,
-    ContractAddress,
-    felt252,
-    felt252,
-    ContractAddress
- ) {
+fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractAddress) {
     // deploy NFT
     let nft_contract = declare("KarstNFT").unwrap();
     let names: ByteArray = "KarstNFT";
@@ -74,15 +68,11 @@ fn __setup__() -> (
 #[test]
 fn test_profile_creation() {
     let (
-        nft_contract_address,
-        _,
-        registry_class_hash,
-        account_class_hash,
-        profile_contract_address
+        nft_contract_address, _, registry_class_hash, account_class_hash, profile_contract_address
     ) =
         __setup__();
     let karstNFTDispatcher = IKarstNFTDispatcher { contract_address: nft_contract_address };
-    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     //user 1 create profile
     start_prank(
@@ -115,14 +105,10 @@ fn test_profile_creation() {
 #[test]
 fn test_profile_metadata() {
     let (
-        nft_contract_address,
-        _,
-        registry_class_hash,
-        account_class_hash,
-        profile_contract_address
+        nft_contract_address, _, registry_class_hash, account_class_hash, profile_contract_address
     ) =
         __setup__();
-    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     //user 1 create profile
     start_prank(
@@ -146,7 +132,10 @@ fn test_profile_metadata() {
 
     // test profile URI
     let profile_uri = profileDispatcher.get_profile_metadata(profile_address.try_into().unwrap());
-    assert(profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/", 'invalid profile URI');
+    assert(
+        profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/",
+        'invalid profile URI'
+    );
 
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
 }

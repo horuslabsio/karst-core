@@ -14,7 +14,7 @@ use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
+use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
 use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
@@ -76,7 +76,7 @@ fn __setup__() -> (
     let account_class_hash = declare("Account").unwrap();
 
     // ///// Deploying karst account for USER AND USE
-    let profile_dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profile_dispatcher = IProfileDispatcher { contract_address: profile_contract_address };
     let publication_dispatcher = IKarstPublicationsDispatcher {
         contract_address: publication_contract_address
     };
@@ -444,7 +444,7 @@ fn test_quote_pointed_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     publication_dispatcher.quote(PublicationType::Quote, quote_params, profile_contract_address);
 
@@ -487,7 +487,7 @@ fn test_publish_mirror() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     let pub_id_assigned = profileDispatcher.get_user_publication_count(user_one_profile_address);
     let pub_assign_id = publication_dispatcher.mirror(mirror_params, profile_contract_address);
@@ -517,7 +517,7 @@ fn test_two_publish_mirror() {
         contract_address: publication_contract_address
     };
 
-    let profile_dispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profile_dispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
 
@@ -585,7 +585,7 @@ fn test_mirror_pointed_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     publication_dispatcher.mirror(mirror_params, profile_contract_address);
 
@@ -628,7 +628,7 @@ fn test_mirror_root_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IKarstProfileDispatcher { contract_address: profile_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     publication_dispatcher.mirror(mirror_params, profile_contract_address);
 

@@ -4,11 +4,11 @@ use karst::base::types::Profile;
 //                              INTERFACE of KARST PROFILE
 // *************************************************************************
 #[starknet::interface]
-pub trait IKarstProfile<TState> {
+pub trait IProfile<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
-    fn initialize(ref self: TState, hub_address: ContractAddress);
+    fn initializer(ref self: TState, hub_address: ContractAddress);
     fn create_profile(
         ref self: TState,
         karstnft_contract_address: ContractAddress,

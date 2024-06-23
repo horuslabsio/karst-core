@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::component]
-mod KarstProfile {
+mod ProfileComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
@@ -12,7 +12,7 @@ mod KarstProfile {
         IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
     };
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::interfaces::IProfile::IKarstProfile;
+    use karst::interfaces::IProfile::IProfile;
     use karst::base::types::Profile;
     use karst::base::errors::Errors::NOT_PROFILE_OWNER;
     use karst::base::{hubrestricted::HubRestricted::hub_only};
@@ -47,13 +47,12 @@ mod KarstProfile {
     // *************************************************************************
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(ProfileComp)]
-    impl KarstProfileImpl<
-        TContractState,
-        +HasComponent<TContractState>
-    > of IKarstProfile<ComponentState<TContractState>> {
-        /// @notice creates karst profile
-        fn initialize(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
+    #[embeddable_as(KarstProfile)]
+    impl ProfileImpl<
+        TContractState, +HasComponent<TContractState>
+    > of IProfile<ComponentState<TContractState>> {
+        /// @notice initialize profile component
+        fn initializer(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
             self.karst_hub.write(hub_address);
         }
         /// @notice creates karst profile
@@ -94,7 +93,9 @@ mod KarstProfile {
         /// @params profile_address the targeted profile address
         /// @params metadata_uri the profile CID
         fn set_profile_metadata_uri(
-            ref self: ComponentState<TContractState>, profile_address: ContractAddress, metadata_uri: ByteArray
+            ref self: ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            metadata_uri: ByteArray
         ) {
             let mut profile: Profile = self.profile.read(profile_address);
             assert(get_caller_address() == profile.profile_owner, NOT_PROFILE_OWNER);
@@ -126,7 +127,9 @@ mod KarstProfile {
 
         // @notice returns the Profile struct of a profile address
         // @params profile_address the targeted profile address
-        fn get_profile(ref self: ComponentState<TContractState>, profile_address: ContractAddress) -> Profile {
+        fn get_profile(
+            ref self: ComponentState<TContractState>, profile_address: ContractAddress
+        ) -> Profile {
             self.profile.read(profile_address)
         }
 
