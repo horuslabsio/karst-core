@@ -104,12 +104,11 @@ mod KarstProfile {
 
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
-        /// how do we gate the function? it acts an pub_count increase for all publication type.
         fn increment_publication_count(
             ref self: ContractState, profile_address: ContractAddress
         ) -> u256 {
+            // hub_only(self.karst_hub.read());
             let mut profile = self.profile.read(profile_address);
-            // assert(get_caller_address() == profile.profile_owner, NOT_PROFILE_OWNER);
             let updated_profile = Profile {
                 profile_address: profile.profile_address,
                 profile_owner: profile.profile_owner,
@@ -125,18 +124,18 @@ mod KarstProfile {
         //                            GETTERS
         // *************************************************************************
 
+        // @notice returns the Profile struct of a profile address
+        // @params profile_address the targeted profile address
+        fn get_profile(ref self: ContractState, profile_address: ContractAddress) -> Profile {
+            self.profile.read(profile_address)
+        }
+
         /// @notice returns user metadata
         /// @params user 
         fn get_profile_metadata(
             self: @ContractState, profile_address: ContractAddress
         ) -> ByteArray {
             self.profile.read(profile_address).metadata_URI
-        }
-
-        // @notice returns the Profile struct of a profile address
-        // @params profile_address the targeted profile address
-        fn get_profile(ref self: ContractState, profile_address: ContractAddress) -> Profile {
-            self.profile.read(profile_address)
         }
 
         // @notice returns the publication count of a profile address

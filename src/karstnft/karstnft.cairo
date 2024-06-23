@@ -83,7 +83,7 @@ pub mod KarstNFT {
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
         admin: ContractAddress,
-        token_id: u256,
+        last_minted_id: u256,
         user_token_id: LegacyMap<ContractAddress, u256>,
     }
 
@@ -118,26 +118,23 @@ pub mod KarstNFT {
 
     #[abi(embed_v0)]
     impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
-        /// @notice mints kartsnft
         fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
             let balance = self.erc721.balance_of(address);
             assert(balance.is_zero(), ALREADY_MINTED);
-            let mut current_token_id = self.token_id.read();
-            self.erc721._mint(address, current_token_id);
-            self.user_token_id.write(address, current_token_id);
-            current_token_id += 1;
-            self.token_id.write(current_token_id);
+
+            let mut token_id = self.last_minted_id.read() + 1;
+            self.erc721._mint(address, token_id);
+
+            self.user_token_id.write(address, token_id);
+            self.last_minted_id.write(token_id);
         }
 
-        /// @notice returns karstnft token_id
-        /// @param user the address of user to query its token_id
         fn get_user_token_id(self: @ContractState, user: ContractAddress) -> u256 {
             self.user_token_id.read(user)
         }
 
-        /// @notice returns current token_id
-        fn get_current_token_id(self: @ContractState) -> u256 {
-            self.token_id.read()
+        fn get_last_minted_id(self: @ContractState) -> u256 {
+            self.last_minted_id.read()
         }
     }
 }
