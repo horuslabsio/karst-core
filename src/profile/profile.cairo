@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
-#[starknet::contract]
-mod KarstProfile {
+#[starknet::component]
+mod ProfileComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
@@ -12,7 +12,7 @@ mod KarstProfile {
         IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
     };
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::interfaces::IProfile::IKarstProfile;
+    use karst::interfaces::IProfile::IProfile;
     use karst::base::types::Profile;
     use karst::base::errors::Errors::NOT_PROFILE_OWNER;
     use karst::base::{hubrestricted::HubRestricted::hub_only};
@@ -45,24 +45,23 @@ mod KarstProfile {
     }
 
     // *************************************************************************
-    //                            CONSTRUCTOR
-    // *************************************************************************
-    #[constructor]
-    fn constructor(ref self: ContractState, hub: ContractAddress) {
-        self.karst_hub.write(hub);
-    }
-    // *************************************************************************
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[abi(embed_v0)]
-    impl KarstProfileImpl of IKarstProfile<ContractState> {
+    #[embeddable_as(KarstProfile)]
+    impl ProfileImpl<
+        TContractState, +HasComponent<TContractState>
+    > of IProfile<ComponentState<TContractState>> {
+        /// @notice initialize profile component
+        fn initializer(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
+            self.karst_hub.write(hub_address);
+        }
         /// @notice creates karst profile
         /// @param karstnft_contract_address address of karstnft
         /// @param registry_hash class_hash of registry contract
         /// @param implementation_hash the class hash of the reference account
         /// @param salt random salt for deployment
         fn create_profile(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             karstnft_contract_address: ContractAddress,
             registry_hash: felt252,
             implementation_hash: felt252,
@@ -94,9 +93,11 @@ mod KarstProfile {
         /// @params profile_address the targeted profile address
         /// @params metadata_uri the profile CID
         fn set_profile_metadata_uri(
-            ref self: ContractState, profile_address: ContractAddress, metadata_uri: ByteArray
+            ref self: ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            metadata_uri: ByteArray
         ) {
-            let mut profile = self.profile.read(profile_address);
+            let mut profile: Profile = self.profile.read(profile_address);
             assert(get_caller_address() == profile.profile_owner, NOT_PROFILE_OWNER);
             profile.metadata_URI = metadata_uri;
             self.profile.write(profile_address, profile);
@@ -104,12 +105,11 @@ mod KarstProfile {
 
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
-        /// how do we gate the function? it acts an pub_count increase for all publication type.
         fn increment_publication_count(
-            ref self: ContractState, profile_address: ContractAddress
+            ref self: ComponentState<TContractState>, profile_address: ContractAddress
         ) -> u256 {
-            let mut profile = self.profile.read(profile_address);
-            // assert(get_caller_address() == profile.profile_owner, NOT_PROFILE_OWNER);
+            // hub_only(self.karst_hub.read());
+            let mut profile: Profile = self.profile.read(profile_address);
             let updated_profile = Profile {
                 profile_address: profile.profile_address,
                 profile_owner: profile.profile_owner,
@@ -125,26 +125,30 @@ mod KarstProfile {
         //                            GETTERS
         // *************************************************************************
 
-        /// @notice returns user metadata
-        /// @params user 
-        fn get_profile_metadata(
-            self: @ContractState, profile_address: ContractAddress
-        ) -> ByteArray {
-            self.profile.read(profile_address).metadata_URI
-        }
-
         // @notice returns the Profile struct of a profile address
         // @params profile_address the targeted profile address
-        fn get_profile(ref self: ContractState, profile_address: ContractAddress) -> Profile {
+        fn get_profile(
+            ref self: ComponentState<TContractState>, profile_address: ContractAddress
+        ) -> Profile {
             self.profile.read(profile_address)
+        }
+
+        /// @notice returns user profile metadata
+        /// @params profile_address the targeted profile address 
+        fn get_profile_metadata(
+            self: @ComponentState<TContractState>, profile_address: ContractAddress
+        ) -> ByteArray {
+            let profile: Profile = self.profile.read(profile_address);
+            profile.metadata_URI
         }
 
         // @notice returns the publication count of a profile address
         // @params profile_address the targeted profile address
         fn get_user_publication_count(
-            self: @ContractState, profile_address: ContractAddress
+            self: @ComponentState<TContractState>, profile_address: ContractAddress
         ) -> u256 {
-            self.profile.read(profile_address).pub_count
+            let profile: Profile = self.profile.read(profile_address);
+            profile.pub_count
         }
     }
 }

@@ -6,7 +6,7 @@ use karst::base::types::{
     QuoteParams
 };
 
-use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
+use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
 use core::option::OptionTrait;
 
 // *************************************************************************
@@ -61,7 +61,7 @@ pub mod Publications {
         MirrorParams
     };
     use karst::interfaces::IPublication::IKarstPublications;
-    use karst::interfaces::IProfile::{IKarstProfileDispatcher, IKarstProfileDispatcherTrait};
+    use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
     use karst::base::errors::Errors::{NOT_PROFILE_OWNER, BLOCKED_STATUS};
     use karst::base::{hubrestricted::HubRestricted::hub_only};
     use core::option::OptionTrait;
@@ -131,15 +131,11 @@ pub mod Publications {
             profile_contract_address: ContractAddress
         ) -> u256 {
             // assert that the person that created the profile can make a post
-            let profile_owner = IKarstProfileDispatcher {
-                contract_address: profile_contract_address
-            }
+            let profile_owner = IProfileDispatcher { contract_address: profile_contract_address }
                 .get_profile(profile_address)
                 .profile_owner;
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
-            let pubIdAssigned = IKarstProfileDispatcher {
-                contract_address: profile_contract_address
-            }
+            let pubIdAssigned = IProfileDispatcher { contract_address: profile_contract_address }
                 .increment_publication_count(profile_address);
             let new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),
@@ -200,7 +196,7 @@ pub mod Publications {
                 );
             let ref_mirrorParams = mirrorParams.clone();
             // _processMirrorIfNeeded is not needed 
-            let profileDispatcher = IKarstProfileDispatcher {
+            let profileDispatcher = IProfileDispatcher {
                 contract_address: profile_contract_address
             };
             let pub_id_assigned = profileDispatcher
@@ -323,9 +319,7 @@ pub mod Publications {
             referencePubType: PublicationType,
             profile_contract_address: ContractAddress
         ) -> (u256, ContractAddress) {
-            let pub_id_assigned = IKarstProfileDispatcher {
-                contract_address: profile_contract_address
-            }
+            let pub_id_assigned = IProfileDispatcher { contract_address: profile_contract_address }
                 .increment_publication_count(profile_address);
             let root_profile_address = self
                 ._fillRootOfPublicationInStorage(
