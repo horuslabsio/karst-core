@@ -11,6 +11,7 @@ mod HandleRegistry {
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::base::{hubrestricted::HubRestricted::hub_only};
+    use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
     use karst::base::errors::Errors;
 
     // *************************************************************************
@@ -80,8 +81,10 @@ mod HandleRegistry {
         //                            GETTERS
         // *************************************************************************
         fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
-            // TODO
-            0.try_into().unwrap()
+            let it_exists = IHandleDispatcher { contract_address: self.handle_address.read() }
+                .exists(handle_id);
+            assert(it_exists, 'Handle ID does not exist');
+            self.handle_to_profile_address.read(handle_id)
         }
 
         fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
