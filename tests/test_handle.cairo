@@ -143,3 +143,24 @@ fn test_cannot_burn_if_not_owner_of() {
     dispatcher.burn_handle(handle_id);
 }
 
+#[test]
+fn test_get_handle() {
+    let handles_contract_address = _setup_();
+
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+
+    let token_id = handles_dispatcher
+        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_THREE);
+
+    let handle: felt252 = handles_dispatcher.get_handle(token_id);
+
+    let namespace: felt252 = handles_dispatcher.get_namespace();
+
+    let test_handle: felt252 = namespace + '@/' + TEST_LOCAL_NAME_THREE;
+
+    assert(handle == test_handle, 'Invalid handle');
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
