@@ -11,4 +11,6 @@ pub mod Errors {
     pub const BLOCKED_STATUS: felt252 = 'BLOCKED';
     pub const INVALID_POINTED_PUBLICATION: felt252 = 'INVALID_POINTED_PUB';
     pub const INVALID_OWNER: felt252 = 'CALLER_NOT_OWNER';
+    pub const INVALID_PROFILE: felt252 = 'PROFILE_IS_NOT_OWNER';
+    pub const OWNER_NOT_ZERO: felt252 = 'HANDLE_HAS_ALREADY_BEEN_LINKED';
 }

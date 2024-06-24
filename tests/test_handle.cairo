@@ -25,11 +25,7 @@ const TEST_TOKEN_ID: u256 =
 fn __setup__() -> ContractAddress {
     // deploy handles contract
     let handles_class_hash = declare("Handles").unwrap();
-    let symbol: ByteArray = "HNFT";
-    let name: ByteArray = "HANDLES_HUB";
     let mut calldata: Array<felt252> = array![ADMIN_ADDRESS];
-    name.serialize(ref calldata);
-    symbol.serialize(ref calldata);
     HUB_ADDRESS.serialize(ref calldata);
     let (handles_contract_address, _) = handles_class_hash.deploy(@calldata).unwrap_syscall();
     handles_contract_address
@@ -39,20 +35,47 @@ fn __setup__() -> ContractAddress {
 // *************************************************************************
 
 #[test]
-#[should_panic(expected: ('CALLER_NOT_OWNER',))]
-fn test_cannot_burn_if_not_owner_of() {
-    let contract_address = __setup__();
-    let dispatcher = IHandleDispatcher { contract_address };
-    let _erc721Dispatcher = IERC721Dispatcher { contract_address };
+fn test_mint_handle() {
+    let handles_contract_address = __setup__();
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 
-    start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
-    let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
-    assert(dispatcher.exists(handle_id), 'Handle ID does not exist');
+    let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
+    assert(local_name == TEST_LOCAL_NAME, 'invalid local name');
 
-    start_prank(CheatTarget::One(contract_address), USER_TWO.try_into().unwrap());
-    dispatcher.burn_handle(handle_id);
+    stop_prank(CheatTarget::One(handles_contract_address));
 }
+
+
+fn test_mint_handle_two() {
+    // TODO: test total supply
+    let handles_contract_address = __setup__();
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    let token_id = handles_dispatcher
+        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_TWO);
+
+    let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
+    assert(local_name == TEST_LOCAL_NAME_TWO, 'invalid local name two');
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
+
+#[test]
+fn test_get_token_id() {
+    let handles_contract_address = __setup__();
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    let token_id = handles_dispatcher.get_token_id(TEST_LOCAL_NAME);
+    assert!(token_id == TEST_TOKEN_ID, "Invalid token ID");
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
+
 
 #[test]
 fn test_handle_id_exists_after_mint() {
@@ -104,47 +127,19 @@ fn test_burn() {
     assert(dispatcher.exists(handle_id) == false, 'BURN FAILED');
 }
 
-
 #[test]
-fn test_mint_handle() {
-    let handles_contract_address = __setup__();
-    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+#[should_panic(expected: ('CALLER_NOT_OWNER',))]
+fn test_cannot_burn_if_not_owner_of() {
+    let contract_address = __setup__();
+    let dispatcher = IHandleDispatcher { contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address };
 
-    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-    let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+    start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
+    let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
 
-    let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
-    assert(local_name == TEST_LOCAL_NAME, 'invalid local name');
+    assert(dispatcher.exists(handle_id), 'Handle ID does not exist');
 
-    stop_prank(CheatTarget::One(handles_contract_address));
-}
-
-
-fn test_mint_handle_two() {
-    // TODO: test total supply
-    let handles_contract_address = __setup__();
-    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
-
-    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-    let token_id = handles_dispatcher
-        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_TWO);
-
-    let local_name: felt252 = handles_dispatcher.get_local_name(token_id);
-    assert(local_name == TEST_LOCAL_NAME_TWO, 'invalid local name two');
-
-    stop_prank(CheatTarget::One(handles_contract_address));
-}
-
-
-#[test]
-fn test_get_token_id() {
-    let handles_contract_address = __setup__();
-    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
-
-    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-    let token_id = handles_dispatcher.get_token_id(TEST_LOCAL_NAME);
-    assert!(token_id == TEST_TOKEN_ID, "Invalid token ID");
-
-    stop_prank(CheatTarget::One(handles_contract_address));
+    start_prank(CheatTarget::One(contract_address), USER_TWO.try_into().unwrap());
+    dispatcher.burn_handle(handle_id);
 }
 
