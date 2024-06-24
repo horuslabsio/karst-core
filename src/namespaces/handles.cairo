@@ -135,8 +135,6 @@ mod Handles {
     fn constructor(
         ref self: ContractState,
         admin: ContractAddress, // to perform upgrade
-        name: ByteArray,
-        symbol: ByteArray,
         hub_address: ContractAddress
     ) {
         self.admin.write(admin);

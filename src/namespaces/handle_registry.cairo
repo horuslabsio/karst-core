@@ -4,15 +4,21 @@ mod HandleRegistry {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address};
+    use core::num::traits::zero::Zero;
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const
+    };
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
+    use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+    use karst::base::{hubrestricted::HubRestricted::hub_only};
+    use karst::base::errors::Errors;
 
     // *************************************************************************
     //                            STORAGE
     // *************************************************************************
     #[storage]
     struct Storage {
-        hub_address: ContractAddress,
+        karst_hub: ContractAddress,
         handle_address: ContractAddress,
         handle_to_profile_address: LegacyMap::<u256, ContractAddress>,
         profile_address_to_handle: LegacyMap::<ContractAddress, u256>,
@@ -51,7 +57,7 @@ mod HandleRegistry {
     fn constructor(
         ref self: ContractState, hub_address: ContractAddress, handle_address: ContractAddress
     ) {
-        self.hub_address.write(hub_address);
+        self.karst_hub.write(hub_address);
         self.handle_address.write(handle_address);
     }
 
@@ -61,6 +67,7 @@ mod HandleRegistry {
     #[abi(embed_v0)]
     impl HandleRegistryImpl of IHandleRegistry<ContractState> {
         fn link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
+            hub_only(self.karst_hub.read());
             self._link(handle_id, profile_address);
         }
 
@@ -78,8 +85,7 @@ mod HandleRegistry {
         }
 
         fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
-            // TODO
-            0.try_into().unwrap()
+            self.profile_address_to_handle.read(profile_address)
         }
     }
 
@@ -88,9 +94,26 @@ mod HandleRegistry {
     // ************************************************************************* 
     #[generate_trait]
     impl Private of PrivateTrait {
-        fn _link(
-            ref self: ContractState, handle_id: u256, profile_address: ContractAddress
-        ) { // TODO
+        fn _link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
+            let owner = IERC721Dispatcher { contract_address: self.handle_address.read() }
+                .owner_of(handle_id);
+            let handle_to_profile = self.handle_to_profile_address.read(handle_id);
+
+            assert(profile_address == owner, Errors::INVALID_PROFILE);
+            assert(handle_to_profile.is_zero(), Errors::OWNER_NOT_ZERO);
+
+            self.handle_to_profile_address.write(handle_id, profile_address);
+            self.profile_address_to_handle.write(profile_address, handle_id);
+
+            self
+                .emit(
+                    HandleLinked {
+                        handle_id,
+                        profile_address,
+                        caller: get_caller_address(),
+                        timestamp: get_block_timestamp()
+                    }
+                )
         }
 
         fn _unlink(
@@ -98,7 +121,23 @@ mod HandleRegistry {
             handle_id: u256,
             profile_address: ContractAddress,
             caller: ContractAddress
-        ) { // TODO
+        ) {
+            let owner = IERC721Dispatcher { contract_address: self.handle_address.read() }
+                .owner_of(handle_id);
+            assert(caller == owner, Errors::INVALID_OWNER);
+
+            self.handle_to_profile_address.write(handle_id, contract_address_const::<0>());
+            self.profile_address_to_handle.write(profile_address, 0);
+
+            self
+                .emit(
+                    HandleUnlinked {
+                        handle_id,
+                        profile_address,
+                        caller: get_caller_address(),
+                        timestamp: get_block_timestamp()
+                    }
+                )
         }
     }
 }
