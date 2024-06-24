@@ -15,7 +15,6 @@ use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait
 use karst::karstnft::karstnft::KarstNFT;
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
 use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
-use karst::publication::publication::Publications;
 use karst::interfaces::IPublication::{
     IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
 };
@@ -66,8 +65,8 @@ fn __setup__() -> (
         .unwrap();
 
     // deploy publication
-    let publication_contract = declare("Publications").unwrap();
-    let mut publication_constructor_calldata = array![];
+    let publication_contract = declare("KarstPublication").unwrap();
+    let mut publication_constructor_calldata = array![HUB_ADDRESS];
     let (publication_contract_address, _) = publication_contract
         .deploy(@publication_constructor_calldata)
         .unwrap_syscall();

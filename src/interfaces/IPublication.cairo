@@ -7,18 +7,19 @@ use karst::base::types::{
 };
 
 #[starknet::interface]
-pub trait IKarstPublications<T> {
+pub trait IKarstPublications<TContractState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
+    fn initializer(ref self: TContractState, hub_address: ContractAddress);
     fn post(
-        ref self: T,
+        ref self: TContractState,
         contentURI: ByteArray,
         profile_address: ContractAddress,
         profile_contract_address: ContractAddress,
     ) -> u256;
     fn comment(
-        ref self: T,
+        ref self: TContractState,
         profile_address: ContractAddress,
         reference_pub_type: PublicationType,
         content_URI: ByteArray,
@@ -27,22 +28,26 @@ pub trait IKarstPublications<T> {
         profile_contract_address: ContractAddress,
     ) -> u256;
     fn quote(
-        ref self: T,
+        ref self: TContractState,
         reference_pub_type: PublicationType,
         quoteParams: QuoteParams,
         profile_contract_address: ContractAddress
     ) -> u256;
     fn mirror(
-        ref self: T, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
+        ref self: TContractState,
+        mirrorParams: MirrorParams,
+        profile_contract_address: ContractAddress
     ) -> u256;
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************
-    fn get_publication(self: @T, user: ContractAddress, pubIdAssigned: u256) -> Publication;
+    fn get_publication(
+        self: @TContractState, user: ContractAddress, pubIdAssigned: u256
+    ) -> Publication;
     fn get_publication_type(
-        self: @T, profile_address: ContractAddress, pub_id_assigned: u256
+        self: @TContractState, profile_address: ContractAddress, pub_id_assigned: u256
     ) -> PublicationType;
     fn get_publication_content_uri(
-        self: @T, profile_address: ContractAddress, pub_id: u256
+        self: @TContractState, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
 }
