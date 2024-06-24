@@ -17,6 +17,11 @@ const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'JOHN';
 const TEST_LOCAL_NAME: felt252 = 'user';
 
+const PROFILE_ADDRESS: felt252 = 'PROFILE';
+const HANDLE_ADDRESS: felt252 = 'HANDLE';
+const PROFILE_ID: u256 = 1234;
+const HANDLE_ID: u256 = 1234;
+
 fn __setup__() -> (ContractAddress, ContractAddress) {
     // deploy handle contract
     let handle_class_hash = declare("Handles").unwrap();
@@ -37,6 +42,43 @@ fn __setup__() -> (ContractAddress, ContractAddress) {
 // *************************************************************************
 //                              TEST
 // *************************************************************************
+
+#[test]
+#[should_panic(expected: ('Handle ID does not exist',))]
+fn test_cannot_resolve_if_handle_does_not_exist() {
+    let (handle_registry_contract_address, _) = __setup__();
+    let dispatcher = IHandleRegistryDispatcher {
+        contract_address: handle_registry_contract_address
+    };
+    dispatcher.resolve(1234);
+}
+
+#[test]
+fn test_resolve() {
+    let (handle_registry_contract_address, handle_contract_address) = __setup__();
+
+    // Initialize Dispatchers
+    let handle_registry_dispatcher = IHandleRegistryDispatcher {
+        contract_address: handle_registry_contract_address
+    };
+    let handle_dispatcher = IHandleDispatcher { contract_address: handle_contract_address };
+
+    // Mint Handle to USER_ONE
+    start_prank(
+        CheatTarget::One(handle_contract_address), ADMIN_ADDRESS.try_into().unwrap()
+    );
+    let token_id = handle_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+
+    // Link handle to USER_ONE
+    start_prank(
+        CheatTarget::One(handle_registry_contract_address), HUB_ADDRESS.try_into().unwrap()
+    );
+    handle_registry_dispatcher.link(token_id, USER_ONE.try_into().unwrap());
+
+    assert(
+        handle_registry_dispatcher.resolve(token_id) == USER_ONE.try_into().unwrap(), 'INCORRECT PROFILE ID'
+    );
+}
 
 #[test]
 fn test_link() {
