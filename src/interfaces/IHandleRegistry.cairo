@@ -12,6 +12,6 @@ pub trait IHandleRegistry<TState> {
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************
-    fn resolve(ref self: TState, handle_id: u256) -> ContractAddress;
+    fn resolve(self: @TState, handle_id: u256) -> ContractAddress;
     fn get_handle(self: @TState, profile_address: ContractAddress) -> u256;
 }

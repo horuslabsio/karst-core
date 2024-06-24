@@ -64,9 +64,7 @@ fn test_resolve() {
     let handle_dispatcher = IHandleDispatcher { contract_address: handle_contract_address };
 
     // Mint Handle to USER_ONE
-    start_prank(
-        CheatTarget::One(handle_contract_address), ADMIN_ADDRESS.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(handle_contract_address), ADMIN_ADDRESS.try_into().unwrap());
     let token_id = handle_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
     // Link handle to USER_ONE
@@ -76,7 +74,8 @@ fn test_resolve() {
     handle_registry_dispatcher.link(token_id, USER_ONE.try_into().unwrap());
 
     assert(
-        handle_registry_dispatcher.resolve(token_id) == USER_ONE.try_into().unwrap(), 'INCORRECT PROFILE ID'
+        handle_registry_dispatcher.resolve(token_id) == USER_ONE.try_into().unwrap(),
+        'INCORRECT PROFILE ID'
     );
 }
 
