@@ -184,8 +184,10 @@ mod Handles {
             self.local_names.read(token_id)
         }
 
-        fn get_handle(self: @ContractState, token_id: u256) -> ByteArray {
-            return "1234";
+        fn get_handle(self: @ContractState, token_id: u256) -> felt252 {
+            let local_name = self.get_local_name(token_id);
+            let handle = NAMESPACE + '@/' + local_name;
+            handle
         }
 
         fn exists(self: @ContractState, token_id: u256) -> bool {

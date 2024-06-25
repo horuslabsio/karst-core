@@ -18,6 +18,8 @@ const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'JOHN';
 const TEST_LOCAL_NAME: felt252 = 'Karst';
 const TEST_LOCAL_NAME_TWO: felt252 = 'KarstTwo';
+const TEST_LOCAL_NAME_THREE: felt252 = 'karstdoe';
+const TEST_LOCAL_NAME_FOUR: felt252 = 'karstdoetwo';
 const TEST_TOKEN_ID: u256 =
     2540877955141668895793685311412709713268096759973504917614769975982792961434;
 
@@ -30,9 +32,9 @@ fn __setup__() -> ContractAddress {
     let (handles_contract_address, _) = handles_class_hash.deploy(@calldata).unwrap_syscall();
     handles_contract_address
 }
-// *************************************************************************
+// *********************************************************************
 //                              TEST
-// *************************************************************************
+// *********************************************************************
 
 #[test]
 fn test_mint_handle() {
@@ -98,7 +100,6 @@ fn test_total_supply() {
 
     start_prank(CheatTarget::One(contract_address), ADMIN_ADDRESS.try_into().unwrap());
     let handle_id: u256 = dispatcher.mint_handle(USER_ONE.try_into().unwrap(), 'handle');
-
     let total_supply_after_mint: u256 = dispatcher.total_supply();
     assert(total_supply_after_mint == current_total_supply + 1, 'WRONG_TOTAL_SUPPLY');
 
@@ -143,3 +144,65 @@ fn test_cannot_burn_if_not_owner_of() {
     dispatcher.burn_handle(handle_id);
 }
 
+
+#[test]
+fn test_get_handle() {
+    let handles_contract_address = __setup__();
+
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+
+    let token_id = handles_dispatcher
+        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_THREE);
+
+    let handle: felt252 = handles_dispatcher.get_handle(token_id);
+
+    let namespace: felt252 = handles_dispatcher.get_namespace();
+
+    let test_handle: felt252 = namespace + '@/' + TEST_LOCAL_NAME_THREE;
+
+    assert(handle == test_handle, 'Invalid handle');
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
+
+
+#[test]
+fn test_get_handle_two() {
+    let handles_contract_address = __setup__();
+
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+
+    let token_id = handles_dispatcher
+        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_FOUR);
+
+    let handle: felt252 = handles_dispatcher.get_handle(token_id);
+
+    let namespace: felt252 = handles_dispatcher.get_namespace();
+
+    let test_handle: felt252 = namespace + '@/' + TEST_LOCAL_NAME_FOUR;
+
+    assert(handle == test_handle, 'Invalid handle');
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
+
+
+#[test]
+#[should_panic()]
+fn test_get_handle_should_panic() {
+    let handles_contract_address = __setup__();
+
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+
+    let invalid_handle: felt252 = handles_dispatcher.get_handle(TEST_TOKEN_ID);
+
+    assert(invalid_handle == 0, 'Expected an invalid handle');
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
