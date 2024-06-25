@@ -82,6 +82,9 @@ Check out the contract architecture below, and join our [working group](https://
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/EjembiEmmanuel"><img src="https://avatars.githubusercontent.com/u/83036156?v=4?s=100" width="100px;" alt="Oche"/><br /><sub><b>Oche</b></sub></a><br /><a href="#code-EjembiEmmanuel" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/kateberryd"><img src="https://avatars.githubusercontent.com/u/35270183?v=4?s=100" width="100px;" alt="Zintarh"/><br /><sub><b>Zintarh</b></sub></a><br /><a href="#code-kateberryd" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Gift-Naomi"><img src="https://avatars.githubusercontent.com/u/149405096?v=4?s=100" width="100px;" alt="Mystic"/><br /><sub><b>Mystic</b></sub></a><br /><a href="#code-Gift-Naomi" title="Code">💻</a></td>
+    </tr>
   </tbody>
 </table>
 
