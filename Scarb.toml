@@ -13,6 +13,7 @@ keywords = ["Karst", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
 starknet = "2.6.3"
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.11.0" }
 token_bound_accounts= { git = "https://github.com/Starknet-Africa-Edu/TBA", tag = "v0.3.0" }
+alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git", rev = "c1a604e" }
 
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.22.0" }

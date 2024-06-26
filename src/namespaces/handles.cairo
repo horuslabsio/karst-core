@@ -5,7 +5,9 @@ use openzeppelin::{
     token::erc721::{ERC721Component::{ERC721Metadata, ERC721Mixin, HasComponent}},
     introspection::src5::SRC5Component,
 };
-
+use alexandria_bytes::{Bytes, BytesTrait};
+// use alexandria_encoding::{ BytesTrait};
+// use starknet::ByteArray;
 
 #[starknet::interface]
 trait IERC721Metadata<TState> {
@@ -211,9 +213,25 @@ mod Handles {
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
             // TODO
-            return "TODO";
+            let bytes = BytesTrait::new();
+            bytes.append(local_name);
+            bytes.append(token_id);
+
+            let byte_array = bytes.read_u8();
+
+            let base64_encoded = alexandria_encoding::base64::encode(byte_array);
+
+            let mut result_byte_array = ByteArray::new();
+            for byte in base64_encoded {
+                result_byte_array.append_byte(byte);
+            }
+            let result_string = result_byte_array.to_string();
+
+            return result_string;
+            
         }
     }
+
 
     // *************************************************************************
     //                            PRIVATE FUNCTIONS
