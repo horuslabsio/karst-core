@@ -212,12 +212,17 @@ mod Handles {
         fn get_handle_token_uri(
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
-            // TODO
+            // TODO 
+            // add namespace
             let bytes = BytesTrait::new();
             bytes.append(local_name);
             bytes.append(token_id);
 
-            let byte_array = bytes.read_u8();
+            let byte_array = ByteArray::new();
+            
+            for byte in bytes {
+               byte_array.append(byte.read_u8())
+            }
 
             let base64_encoded = alexandria_encoding::base64::encode(byte_array);
 
@@ -227,8 +232,7 @@ mod Handles {
             }
             let result_string = result_byte_array.to_string();
 
-            return result_string;
-            
+            result_string 
         }
     }
 
