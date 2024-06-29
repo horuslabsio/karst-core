@@ -95,6 +95,11 @@ mod Handles {
     // *************************************************************************
     const MAX_LOCAL_NAME_LENGTH: u256 = 26;
     const NAMESPACE: felt252 = 'karst';
+    const ASCII_A: u8 = 97;
+    const ASCII_Z: u8 = 122;
+    const ASCII_0: u8 = 48;
+    const ASCII_9: u8 = 57;
+    const ASCII_UNDERSCORE: u8 = 95;
 
     // *************************************************************************
     //                            EVENTS
@@ -150,7 +155,7 @@ mod Handles {
         fn mint_handle(
             ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
-            // self._validate_local_name(local_name) - This is waiting for #17
+            self._validate_local_name(local_name);
             let token_id = self._mint_handle(address, local_name);
             token_id
         }
@@ -243,12 +248,32 @@ mod Handles {
             token_id
         }
 
-        fn _validate_local_name(ref self: ContractState, local_name: felt252) { // TODO
+        // Validates that a local name contains only [a-z,0-9,_] and does not begin with an underscore.
+        fn _validate_local_name(self: @ContractState, local_name: felt252) {
+            let mut value: u256 = local_name.into();
+
+            let mut last_char = 0_u8;
+            loop {
+                if value == 0 {
+                    break;
+                }
+                last_char = (value & 0xFF).try_into().unwrap();
+
+                assert(
+                    (self._is_alpha_numeric(last_char) || last_char == ASCII_UNDERSCORE),
+                    'Invalid local name'
+                );
+
+                value = value / 0x100;
+            };
+
+            // Note that for performance reason, the local_name is parsed in reverse order,
+            // so the first character is the last processed one.
+            assert(last_char != ASCII_UNDERSCORE.into(), 'Invalid local name');
         }
 
-        fn _is_alpha_numeric(self: @ContractState, char: felt252) -> bool {
-            // TODO
-            return false;
+        fn _is_alpha_numeric(self: @ContractState, char: u8) -> bool {
+            (char >= ASCII_A && char <= ASCII_Z) || (char >= ASCII_0 && char <= ASCII_9)
         }
     }
 }
