@@ -84,6 +84,7 @@ Check out the contract architecture below, and join our [working group](https://
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Gift-Naomi"><img src="https://avatars.githubusercontent.com/u/149405096?v=4?s=100" width="100px;" alt="Mystic"/><br /><sub><b>Mystic</b></sub></a><br /><a href="#code-Gift-Naomi" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/Oshioke-Salaki"><img src="https://avatars.githubusercontent.com/u/105825121?v=4?s=100" width="100px;" alt="Oshioke Salaki"/><br /><sub><b>Oshioke Salaki</b></sub></a><br /><a href="#code-Oshioke-Salaki" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
