@@ -16,12 +16,16 @@ const HUB_ADDRESS: felt252 = 'HUB';
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'JOHN';
-const TEST_LOCAL_NAME: felt252 = 'Karst';
-const TEST_LOCAL_NAME_TWO: felt252 = 'KarstTwo';
-const TEST_LOCAL_NAME_THREE: felt252 = 'karstdoe';
-const TEST_LOCAL_NAME_FOUR: felt252 = 'karstdoetwo';
+const TEST_LOCAL_NAME: felt252 = 'karst';
+const TEST_LOCAL_NAME_TWO: felt252 = 'karst_two';
+const TEST_LOCAL_NAME_THREE: felt252 = 'karstdoe_';
+const TEST_LOCAL_NAME_FOUR: felt252 = 'karstdoe2';
+const TEST_BAD_LOCAL_NAME_1: felt252 = '_karst';
+const TEST_BAD_LOCAL_NAME_2: felt252 = 'Karst';
+const TEST_BAD_LOCAL_NAME_3: felt252 = 'karst-';
+
 const TEST_TOKEN_ID: u256 =
-    2540877955141668895793685311412709713268096759973504917614769975982792961434;
+    2821396919044486126129003092173544296283884532301009869065707438220168412703;
 
 
 fn __setup__() -> ContractAddress {
@@ -64,6 +68,36 @@ fn test_mint_handle_two() {
     assert(local_name == TEST_LOCAL_NAME_TWO, 'invalid local name two');
 
     stop_prank(CheatTarget::One(handles_contract_address));
+}
+
+#[test]
+#[should_panic(expected: ('Invalid local name',))]
+fn test_mint_handle_with_bad_local_name_1() {
+    let handles_contract_address = __setup__();
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_BAD_LOCAL_NAME_1);
+}
+
+#[test]
+#[should_panic(expected: ('Invalid local name',))]
+fn test_mint_handle_with_bad_local_name_2() {
+    let handles_contract_address = __setup__();
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_BAD_LOCAL_NAME_2);
+}
+
+#[test]
+#[should_panic(expected: ('Invalid local name',))]
+fn test_mint_handle_with_bad_local_name_3() {
+    let handles_contract_address = __setup__();
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_BAD_LOCAL_NAME_3);
 }
 
 #[test]
