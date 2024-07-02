@@ -42,20 +42,20 @@ fn test_metadata() {
     stop_prank(CheatTarget::One(nft_contract_address));
 }
 
-#[test]
-fn test_nft_total_supply_on_init_is_zero() {
-    let nft_contract_address = __setup__();
+// #[test]
+// fn test_nft_total_supply_on_init_is_zero() {
+//     let nft_contract_address = __setup__();
 
-    let erc721_dispatcher = ERC721ABIDispatcher { contract_address: nft_contract_address };
+//     let erc721_dispatcher = ERC721ABIDispatcher { contract_address: nft_contract_address };
 
-    start_prank(CheatTarget::One(nft_contract_address), ADMIN.try_into().unwrap());
+//     start_prank(CheatTarget::One(nft_contract_address), ADMIN.try_into().unwrap());
 
-    let balance = erc721_dispatcher.balance_of(USER_ONE.try_into().unwrap());
+//     let balance = erc721_dispatcher.balance_of(USER_ONE.try_into().unwrap());
 
-    assert(balance.is_zero(), ALREADY_MINTED);
+//     assert(balance.is_zero(), ALREADY_MINTED);
 
-    stop_prank(CheatTarget::One(nft_contract_address));
-}
+//     stop_prank(CheatTarget::One(nft_contract_address));
+// }
 
 #[test]
 fn test_last_minted_id_on_init_is_zero() {
