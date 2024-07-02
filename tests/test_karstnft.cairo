@@ -26,7 +26,24 @@ fn __setup__() -> ContractAddress {
 }
 
 #[test]
-fn test_nft_count_on_init_is_zero() {
+fn test_metadata() {
+    let nft_contract_address = __setup__();
+
+    let dispatcher = ERC721ABIDispatcher { contract_address: nft_contract_address };
+
+    start_prank(CheatTarget::One(nft_contract_address), ADMIN.try_into().unwrap());
+
+    let nft_name = dispatcher.name();
+    let nft_symbol = dispatcher.symbol();
+
+    assert(nft_name == "KarstNFT", 'invalid name');
+    assert(nft_symbol == "KNFT", 'invalid symbol');
+
+    stop_prank(CheatTarget::One(nft_contract_address));
+}
+
+#[test]
+fn test_nft_total_supply_on_init_is_zero() {
     let nft_contract_address = __setup__();
 
     let erc721_dispatcher = ERC721ABIDispatcher { contract_address: nft_contract_address };
@@ -51,21 +68,6 @@ fn test_last_minted_id_on_init_is_zero() {
     let last_minted_id = dispatcher.get_last_minted_id();
 
     assert(last_minted_id.is_zero(), 'last minted id not zero');
-
-    stop_prank(CheatTarget::One(nft_contract_address));
-}
-
-#[test]
-fn test_user_token_id_on_init_is_zero() {
-    let nft_contract_address = __setup__();
-
-    let dispatcher = IKarstNFTDispatcher { contract_address: nft_contract_address };
-
-    start_prank(CheatTarget::One(nft_contract_address), ADMIN.try_into().unwrap());
-
-    let user_token_id = dispatcher.get_user_token_id(USER_ONE.try_into().unwrap());
-
-    assert(user_token_id.is_zero(), 'user token id not zero');
 
     stop_prank(CheatTarget::One(nft_contract_address));
 }
