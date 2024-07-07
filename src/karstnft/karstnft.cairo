@@ -118,6 +118,8 @@ pub mod KarstNFT {
 
     #[abi(embed_v0)]
     impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
+        /// @notice mints the karst NFT
+        /// @param address address of user trying to mint the karst NFT
         fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
             let balance = self.erc721.balance_of(address);
             assert(balance.is_zero(), ALREADY_MINTED);
@@ -129,10 +131,13 @@ pub mod KarstNFT {
             self.last_minted_id.write(token_id);
         }
 
+        /// @notice gets the token ID for a user address
+        /// @param user address of user to retrieve token ID for
         fn get_user_token_id(self: @ContractState, user: ContractAddress) -> u256 {
             self.user_token_id.read(user)
         }
 
+        /// @notice gets the last minted NFT
         fn get_last_minted_id(self: @ContractState) -> u256 {
             self.last_minted_id.read()
         }
