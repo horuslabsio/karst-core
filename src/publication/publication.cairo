@@ -20,15 +20,10 @@ pub mod PublicationComponent {
     use karst::base::errors::Errors::{NOT_PROFILE_OWNER, BLOCKED_STATUS, UNSUPPORTED_PUB_TYPE};
     use karst::base::{hubrestricted::HubRestricted::hub_only};
     use karst::base::types::{
-        PostParams, 
-        Publication, 
-        PublicationType, 
-        ReferencePubParams, 
-        CommentParams, 
-        QuoteParams,
+        PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
         MirrorParams
     };
-    
+
     // *************************************************************************
     //                              STORAGE
     // *************************************************************************
@@ -94,7 +89,7 @@ pub mod PublicationComponent {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
-         /// @notice initialize publication component
+        /// @notice initialize publication component
         /// @param hub_address address of hub contract
         fn initializer(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
             self.karst_hub.write(hub_address);
@@ -264,7 +259,9 @@ pub mod PublicationComponent {
         /// @param profile_address the profile address to be queried
         /// @param pub_id_assigned the ID of the publication to be retrieved
         fn get_publication(
-            self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id_assigned: u256
+            self: @ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            pub_id_assigned: u256
         ) -> Publication {
             self.publication.read((profile_address, pub_id_assigned))
         }
@@ -429,12 +426,8 @@ pub mod PublicationComponent {
                         && self
                             ._blockedStatus(
                                 by_profile_address, profile_address
-                            )
-                        )
-                    )
-                ) { 
-                    // return; ERROR
-                }
+                            )))) { // return; ERROR
+            }
         }
 
         /// @notice validates pointed publication

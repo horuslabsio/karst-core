@@ -137,11 +137,7 @@ mod Handles {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        admin: ContractAddress,
-        hub_address: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, admin: ContractAddress, hub_address: ContractAddress) {
         self.admin.write(admin);
         self.karst_hub.write(hub_address);
         self.erc721.initializer("KARST HANDLES", "KARST", "");
@@ -291,7 +287,7 @@ mod Handles {
 
             // Note that for performance reason, the local_name is parsed in reverse order,
             // so the first character is the last processed one.
-            assert(last_char != ASCII_UNDERSCORE.into(), 'Invalid local name');
+            assert(last_char != ASCII_UNDERSCORE.into(), Errors::INVALID_LOCAL_NAME);
         }
 
         // @notice checks that a character is alpha numeric

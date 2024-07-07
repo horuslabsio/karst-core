@@ -15,5 +15,5 @@ pub mod Errors {
     pub const HANDLE_ALREADY_LINKED: felt252 = 'Karst: handle already linked!';
     pub const HADLE_DOES_NOT_EXIST: felt252 = 'Karst: handle does not exist!';
     pub const INVALID_LOCAL_NAME: felt252 = 'Karst: invalid local name!';
-    pub const UNSUPPORTED_PUB_TYPE: felt252 = 'Karst: unsupported pub type';
+    pub const UNSUPPORTED_PUB_TYPE: felt252 = 'Karst: unsupported pub type!';
 }
