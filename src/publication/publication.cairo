@@ -1,5 +1,3 @@
-//! Contract for Karst Publications V1
-// [Len Publication Contract](https://github.com/lens-protocol/core/blob/master/contracts/libraries/PublicationLib.sol)
 use starknet::{ContractAddress, get_caller_address};
 use karst::base::types::{
     PostParams, PublicationType, CommentParams, ReferencePubParams, Publication, MirrorParams,
@@ -15,30 +13,30 @@ pub mod PublicationComponent {
     // *************************************************************************
     //                              IMPORTS
     // *************************************************************************
+    use core::option::OptionTrait;
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
+    use karst::interfaces::IPublication::IKarstPublications;
+    use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
+    use karst::base::errors::Errors::{NOT_PROFILE_OWNER, BLOCKED_STATUS, UNSUPPORTED_PUB_TYPE};
+    use karst::base::{hubrestricted::HubRestricted::hub_only};
     use karst::base::types::{
         PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
         MirrorParams
     };
-    use karst::interfaces::IPublication::IKarstPublications;
-    use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
-    use karst::base::errors::Errors::{NOT_PROFILE_OWNER, BLOCKED_STATUS};
-    use karst::base::{hubrestricted::HubRestricted::hub_only};
-    use core::option::OptionTrait;
+
     // *************************************************************************
     //                              STORAGE
     // *************************************************************************
-
     #[storage]
     struct Storage {
         publication: LegacyMap<(ContractAddress, u256), Publication>,
         blocked_profile_address: LegacyMap<(ContractAddress, ContractAddress), bool>,
         karst_hub: ContractAddress
     }
+
     // *************************************************************************
     //                              EVENTS
     // *************************************************************************
-
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
@@ -47,10 +45,6 @@ pub mod PublicationComponent {
         MirrorCreated: MirrorCreated,
         QuoteCreated: QuoteCreated,
     }
-
-    // *************************************************************************
-    //                              STRUCTS
-    // *************************************************************************
 
     #[derive(Drop, starknet::Event)]
     pub struct Post {
@@ -88,7 +82,6 @@ pub mod PublicationComponent {
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
     // *************************************************************************
-
     #[embeddable_as(KarstPublication)]
     impl PublicationsImpl<
         TContractState, +HasComponent<TContractState>
@@ -96,22 +89,26 @@ pub mod PublicationComponent {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
-
+        /// @notice initialize publication component
+        /// @param hub_address address of hub contract
         fn initializer(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
             self.karst_hub.write(hub_address);
         }
 
+        /// @notice performs post action
+        /// @param contentURI uri of the content to be posted
+        /// @param profile_address address of profile performing the post action
         fn post(
             ref self: ComponentState<TContractState>,
             contentURI: ByteArray,
             profile_address: ContractAddress,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            // assert that the person that created the profile can make a post
             let profile_owner = IProfileDispatcher { contract_address: profile_contract_address }
                 .get_profile(profile_address)
                 .profile_owner;
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
+
             let pubIdAssigned = IProfileDispatcher { contract_address: profile_contract_address }
                 .increment_publication_count(profile_address);
             let new_post = Publication {
@@ -122,9 +119,16 @@ pub mod PublicationComponent {
                 root_profile_address: 0.try_into().unwrap(),
                 root_pub_id: 0
             };
+
             self.publication.write((profile_address, pubIdAssigned), new_post);
             pubIdAssigned
         }
+
+        /// @notice performs comment action
+        /// @param profile_address address of profile performing the comment action
+        /// @param reference_pub_type publication type
+        /// @param pointed_profile_address profile address comment points too
+        /// @param pointed_pub_id ID of initial publication comment points too
         fn comment(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -135,8 +139,7 @@ pub mod PublicationComponent {
             profile_contract_address: ContractAddress
         ) -> u256 {
             let reference_pub_type = self._as_reference_pub_params(reference_pub_type);
-
-            assert(reference_pub_type == PublicationType::Comment, 'Unsupported publication type');
+            assert(reference_pub_type == PublicationType::Comment, UNSUPPORTED_PUB_TYPE);
 
             let pub_id_assigned = self
                 ._createReferencePublication(
@@ -160,29 +163,19 @@ pub mod PublicationComponent {
             pub_id_assigned
         }
 
-        // /**
-        // * @notice Publishes a mirror to a given profile.
-        // *
-        // * @param mirrorParams the MirrorParams struct reference types.cairo to know MirrorParams.
-        // *
-        // * @return uint256 The created publication's pubId.
-        // */
+        /// @notice performs the mirror function
+        /// @param mirrorParams the MirrorParams struct
         fn mirror(
             ref self: ComponentState<TContractState>,
             mirrorParams: MirrorParams,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            assert!(
-                profile_contract_address.into() != 0, "Contract Profile Address cannot be zero"
-            );
-
             self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
             self
                 .validateNotBlocked(
                     mirrorParams.profile_address, mirrorParams.pointed_profile_address, false
                 );
             let ref_mirrorParams = mirrorParams.clone();
-            // _processMirrorIfNeeded is not needed 
             let profileDispatcher = IProfileDispatcher {
                 contract_address: profile_contract_address
             };
@@ -200,6 +193,7 @@ pub mod PublicationComponent {
                     PublicationType::Mirror,
                     profile_contract_address,
                 );
+
             self
                 .emit(
                     MirrorCreated {
@@ -213,6 +207,9 @@ pub mod PublicationComponent {
             pub_id_assigned
         }
 
+        /// @notice performs the quote function
+        /// @param reference_pub_type publication type
+        /// @param quoteParams the quoteParams struct
         fn quote(
             ref self: ComponentState<TContractState>,
             reference_pub_type: PublicationType,
@@ -221,8 +218,7 @@ pub mod PublicationComponent {
         ) -> u256 {
             let ref_quoteParams = quoteParams.clone();
             let reference_pub_type = self._as_reference_pub_params(reference_pub_type);
-
-            assert(reference_pub_type == PublicationType::Quote, 'Unsupported publication type');
+            assert(reference_pub_type == PublicationType::Quote, UNSUPPORTED_PUB_TYPE);
 
             let pub_id_assigned = self
                 ._createReferencePublication(
@@ -245,21 +241,34 @@ pub mod PublicationComponent {
                 );
             pub_id_assigned
         }
+
         // *************************************************************************
         //                              GETTERS
         // *************************************************************************
+
+        /// @notice gets the publication's content URI
+        /// @param profile_address the profile address to be queried
+        /// @param pub_id the ID of the publication to be queried
         fn get_publication_content_uri(
             self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) -> ByteArray {
             self._getContentURI(profile_address, pub_id)
         }
 
+        /// @notice retrieves a publication
+        /// @param profile_address the profile address to be queried
+        /// @param pub_id_assigned the ID of the publication to be retrieved
         fn get_publication(
-            self: @ComponentState<TContractState>, user: ContractAddress, pubIdAssigned: u256
+            self: @ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            pub_id_assigned: u256
         ) -> Publication {
-            self.publication.read((user, pubIdAssigned))
+            self.publication.read((profile_address, pub_id_assigned))
         }
 
+        /// @notice retrieves a publication type
+        /// @param profile_address the profile address to be queried
+        /// @param pub_id_assigned the ID of the publication whose type is to be retrieved
         fn get_publication_type(
             self: @ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -275,6 +284,10 @@ pub mod PublicationComponent {
     impl InternalImpl<
         TContractState, +HasComponent<TContractState>
     > of InternalTrait<TContractState> {
+        /// @notice fill root of publication
+        /// @param profile_address the profile address creating the publication
+        /// @param pointed_profile_address the profile address being pointed to by this publication
+        /// @param pointed_pub_id the ID of the publication being pointed to by this publication
         fn _fillRootOfPublicationInStorage(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -302,6 +315,13 @@ pub mod PublicationComponent {
             let publication: Publication = self.publication.read((profile_address, pointed_pub_id));
             publication.root_profile_address
         }
+
+        /// @notice fill reference publication
+        /// @param profile_address the profile address creating the publication
+        /// @param content_URI uri of the publication content
+        /// @param pointed_profile_address the profile address being pointed to by this publication
+        /// @param pointed_pub_id the ID of the publication being pointed to by this publication
+        // @param reference_pub_type reference publication type
         fn _fillRefeferencePublicationStorage(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -332,6 +352,12 @@ pub mod PublicationComponent {
             (pub_id_assigned, root_profile_address)
         }
 
+        /// @notice create reference publication
+        /// @param profile_address the profile address creating the publication
+        /// @param content_URI uri of the publication content
+        /// @param pointed_profile_address the profile address being pointed to by this publication
+        /// @param pointed_pub_id the ID of the publication being pointed to by this publication
+        // @param reference_pub_type reference publication type
         fn _createReferencePublication(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -359,6 +385,8 @@ pub mod PublicationComponent {
             pub_id_assigned
         }
 
+        /// @notice returns the publication type
+        // @param reference_pub_type reference publication type
         fn _as_reference_pub_params(
             ref self: ComponentState<TContractState>, reference_pub_type: PublicationType
         ) -> PublicationType {
@@ -369,6 +397,9 @@ pub mod PublicationComponent {
             }
         }
 
+        /// @notice fill reference publication
+        /// @param profile_address the blocked profile address
+        /// @param by_profile_address the profile address that performed the blocking
         fn _blockedStatus(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -379,6 +410,10 @@ pub mod PublicationComponent {
             status
         }
 
+        /// @notice check a profile is not blocked
+        /// @param profile_address the blocked profile address
+        /// @param by_profile_address the profile address that performed the blocking
+        /// unidirectional_check specifies if check should be one-way or both ways
         fn validateNotBlocked(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -395,10 +430,13 @@ pub mod PublicationComponent {
             }
         }
 
+        /// @notice validates pointed publication
+        /// @param profile_address the profile address that created the publication
+        /// @param pub_id the publication ID of the publication to be checked
         fn _validatePointedPub(
             ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) {
-            // If it is pointing to itself it will fail because it will return a non-existent type.
+            // If it points to itself, it fails because type will be non existent.
             let pointedPubType = self._getPublicationType(profile_address, pub_id);
             if pointedPubType == PublicationType::Nonexistent
                 || pointedPubType == PublicationType::Mirror {
@@ -406,6 +444,9 @@ pub mod PublicationComponent {
             }
         }
 
+        /// @notice gets the publication type
+        /// @param profile_address the profile address that created the publication
+        /// @param pub_id_assigned the publication ID of the publication to be queried
         fn _getPublicationType(
             self: @ComponentState<TContractState>,
             profile_address: ContractAddress,
@@ -424,6 +465,9 @@ pub mod PublicationComponent {
             }
         }
 
+        /// @notice gets the publication content URI
+        /// @param profile_address the profile address that created the publication
+        /// @param pub_id the publication ID of the publication to be queried
         fn _getContentURI(
             self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) -> ByteArray {

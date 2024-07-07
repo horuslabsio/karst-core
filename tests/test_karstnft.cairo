@@ -75,7 +75,7 @@ fn test_mint_karst_nft() {
 }
 
 #[test]
-#[should_panic(expected: ('USER_ALREADY_MINTED',))]
+#[should_panic(expected: ('Karst: user already minted!',))]
 fn test_mint_karst_nft_twice_for_the_same_user() {
     let nft_contract_address = __setup__();
 

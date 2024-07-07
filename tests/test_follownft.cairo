@@ -39,7 +39,7 @@ fn test_follower_count_on_init_is_zero() {
 }
 
 #[test]
-#[should_panic(expected: ('CALLER_IS_NOT_HUB',))]
+#[should_panic(expected: ('Karst: caller is not Hub!',))]
 fn test_cannot_call_follow_if_not_hub() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -49,7 +49,7 @@ fn test_cannot_call_follow_if_not_hub() {
 }
 
 #[test]
-#[should_panic(expected: ('CALLER_IS_NOT_HUB',))]
+#[should_panic(expected: ('Karst: caller is not Hub!',))]
 fn test_cannot_call_unfollow_if_not_hub() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -59,7 +59,7 @@ fn test_cannot_call_unfollow_if_not_hub() {
 }
 
 #[test]
-#[should_panic(expected: ('USER_ALREADY_FOLLOWING',))]
+#[should_panic(expected: ('Karst: user already following!',))]
 fn test_cannot_follow_if_already_following() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -147,7 +147,7 @@ fn test_unfollow() {
 }
 
 #[test]
-#[should_panic(expected: ('USER_NOT_FOLLOWING',))]
+#[should_panic(expected: ('Karst: user not following!',))]
 fn test_cannot_unfollow_if_not_following() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };

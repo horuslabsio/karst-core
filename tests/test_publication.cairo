@@ -263,7 +263,7 @@ fn test_comment() {
 }
 
 #[test]
-#[should_panic(expected: ('Unsupported publication type',))]
+#[should_panic(expected: ('Karst: unsupported pub type!',))]
 fn test_with_as_reference_pub_params() {
     let (
         _,
@@ -376,7 +376,7 @@ fn test_quote() {
 }
 
 #[test]
-#[should_panic(expected: ('Unsupported publication type',))]
+#[should_panic(expected: ('Karst: unsupported pub type!',))]
 fn test_quote_as_reference_pub_params() {
     let (
         _,

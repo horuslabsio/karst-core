@@ -42,7 +42,7 @@ pub trait IKarstPublications<TContractState> {
     //                              GETTERS
     // *************************************************************************
     fn get_publication(
-        self: @TContractState, user: ContractAddress, pubIdAssigned: u256
+        self: @TContractState, profile_address: ContractAddress, pub_id_assigned: u256
     ) -> Publication;
     fn get_publication_type(
         self: @TContractState, profile_address: ContractAddress, pub_id_assigned: u256

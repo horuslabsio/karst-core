@@ -67,11 +67,17 @@ mod HandleRegistry {
     // *************************************************************************
     #[abi(embed_v0)]
     impl HandleRegistryImpl of IHandleRegistry<ContractState> {
+        /// @notice links a profile address to a handle
+        /// @param handle_id ID of handle to be linked
+        /// @param profile_address address of profile to be linked
         fn link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
             hub_only(self.karst_hub.read());
             self._link(handle_id, profile_address);
         }
 
+        /// @notice unlinks a profile address from a handle
+        /// @param handle_id ID of handle to be unlinked
+        /// @param profile_address address of profile to be unlinked
         fn unlink(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
             let caller = get_caller_address();
             self._unlink(handle_id, profile_address, caller);
@@ -80,13 +86,18 @@ mod HandleRegistry {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
+
+        /// @notice resolves a handle to a profile address
+        /// @param handle_id ID of handle to be resolved
         fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
             let it_exists = IHandleDispatcher { contract_address: self.handle_address.read() }
                 .exists(handle_id);
-            assert(it_exists, 'Handle ID does not exist');
+            assert(it_exists, Errors::HADLE_DOES_NOT_EXIST);
             self.handle_to_profile_address.read(handle_id)
         }
 
+        /// @notice returns the handle linked to a profile address
+        /// @param profile_address address of profile to be queried
         fn get_handle(self: @ContractState, profile_address: ContractAddress) -> u256 {
             self.profile_address_to_handle.read(profile_address)
         }
@@ -97,13 +108,16 @@ mod HandleRegistry {
     // ************************************************************************* 
     #[generate_trait]
     impl Private of PrivateTrait {
+        /// @notice internal function to link a profile address to a handle
+        /// @param handle_id ID of handle to be linked
+        /// @param profile_address address of profile to be linked
         fn _link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
             let owner = IERC721Dispatcher { contract_address: self.handle_address.read() }
                 .owner_of(handle_id);
             let handle_to_profile = self.handle_to_profile_address.read(handle_id);
 
             assert(profile_address == owner, Errors::INVALID_PROFILE);
-            assert(handle_to_profile.is_zero(), Errors::OWNER_NOT_ZERO);
+            assert(handle_to_profile.is_zero(), Errors::HANDLE_ALREADY_LINKED);
 
             self.handle_to_profile_address.write(handle_id, profile_address);
             self.profile_address_to_handle.write(profile_address, handle_id);
@@ -119,6 +133,10 @@ mod HandleRegistry {
                 )
         }
 
+        /// @notice internal function to unlink a profile address from a handle
+        /// @param handle_id ID of handle to be unlinked
+        /// @param profile_address address of profile to be unlinked
+        /// @param caller address of user calling this function
         fn _unlink(
             ref self: ContractState,
             handle_id: u256,

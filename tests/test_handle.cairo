@@ -71,7 +71,7 @@ fn test_mint_handle_two() {
 }
 
 #[test]
-#[should_panic(expected: ('Invalid local name',))]
+#[should_panic(expected: ('Karst: invalid local name!',))]
 fn test_mint_handle_with_bad_local_name_1() {
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
@@ -81,7 +81,7 @@ fn test_mint_handle_with_bad_local_name_1() {
 }
 
 #[test]
-#[should_panic(expected: ('Invalid local name',))]
+#[should_panic(expected: ('Karst: invalid local name!',))]
 fn test_mint_handle_with_bad_local_name_2() {
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
@@ -91,7 +91,7 @@ fn test_mint_handle_with_bad_local_name_2() {
 }
 
 #[test]
-#[should_panic(expected: ('Invalid local name',))]
+#[should_panic(expected: ('Karst: invalid local name!',))]
 fn test_mint_handle_with_bad_local_name_3() {
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
@@ -163,7 +163,7 @@ fn test_burn() {
 }
 
 #[test]
-#[should_panic(expected: ('CALLER_NOT_OWNER',))]
+#[should_panic(expected: ('Karst: caller is not owner!',))]
 fn test_cannot_burn_if_not_owner_of() {
     let contract_address = __setup__();
     let dispatcher = IHandleDispatcher { contract_address };

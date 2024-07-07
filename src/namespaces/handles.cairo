@@ -137,11 +137,7 @@ mod Handles {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        admin: ContractAddress, // to perform upgrade
-        hub_address: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, admin: ContractAddress, hub_address: ContractAddress) {
         self.admin.write(admin);
         self.karst_hub.write(hub_address);
         self.erc721.initializer("KARST HANDLES", "KARST", "");
@@ -152,6 +148,9 @@ mod Handles {
     // *************************************************************************
     #[abi(embed_v0)]
     impl HandlesImpl of IHandle<ContractState> {
+        /// @notice mints a handle to a profile address
+        /// @param address profile address to mint handle to
+        /// @param local_name username to be minted
         fn mint_handle(
             ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
@@ -160,6 +159,8 @@ mod Handles {
             token_id
         }
 
+        /// @notice burns a handle previously minted
+        /// @param token_id ID of handle to be burnt
         fn burn_handle(ref self: ContractState, token_id: u256) {
             assert(get_caller_address() == self.erc721.owner_of(token_id), Errors::INVALID_OWNER);
             let current_supply = self.total_supply.read();
@@ -181,28 +182,39 @@ mod Handles {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
+
+        /// @notice returns Karst namespace
         fn get_namespace(self: @ContractState) -> felt252 {
             return NAMESPACE;
         }
 
+        /// @notice returns the local name for a user
+        /// @param token_id ID of handle who's local name should be returned
         fn get_local_name(self: @ContractState, token_id: u256) -> felt252 {
             self.local_names.read(token_id)
         }
 
+        /// @notice returns the full handle of a user
+        /// @param token_id ID of handle to retrieve
         fn get_handle(self: @ContractState, token_id: u256) -> felt252 {
             let local_name = self.get_local_name(token_id);
             let handle = NAMESPACE + '@/' + local_name;
             handle
         }
 
+        /// @notice checks if a handle exists
+        /// @param token_id ID of handle to be queried
         fn exists(self: @ContractState, token_id: u256) -> bool {
             self.erc721._exists(token_id)
         }
 
+        /// @notice returns no. of handles minted
         fn total_supply(self: @ContractState) -> u256 {
             self.total_supply.read()
         }
 
+        /// @notice returns the handle ID for a given local name
+        /// @param local_name local name to be queried
         fn get_token_id(self: @ContractState, local_name: felt252) -> u256 {
             let hash: u256 = PoseidonTrait::new()
                 .update_with(local_name)
@@ -212,6 +224,9 @@ mod Handles {
             hash
         }
 
+        /// @notice returns the token URI of a particular handle
+        /// @param token_id ID of handle to be queried
+        /// @param local_name local name of handle to be queried
         fn get_handle_token_uri(
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
@@ -225,6 +240,9 @@ mod Handles {
     // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
+        /// @notice internal function that mints a handle to a profile
+        /// @param address profile address to mint handle to
+        /// @param local_name username to be minted
         fn _mint_handle(
             ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
@@ -248,20 +266,20 @@ mod Handles {
             token_id
         }
 
-        // Validates that a local name contains only [a-z,0-9,_] and does not begin with an underscore.
+        /// @notice validates that a local name contains only [a-z,0-9,_] and does not begin with an underscore.
+        /// @param local_name username to be minted
         fn _validate_local_name(self: @ContractState, local_name: felt252) {
             let mut value: u256 = local_name.into();
-
             let mut last_char = 0_u8;
+
             loop {
                 if value == 0 {
                     break;
                 }
                 last_char = (value & 0xFF).try_into().unwrap();
-
                 assert(
                     (self._is_alpha_numeric(last_char) || last_char == ASCII_UNDERSCORE),
-                    'Invalid local name'
+                    Errors::INVALID_LOCAL_NAME
                 );
 
                 value = value / 0x100;
@@ -269,9 +287,11 @@ mod Handles {
 
             // Note that for performance reason, the local_name is parsed in reverse order,
             // so the first character is the last processed one.
-            assert(last_char != ASCII_UNDERSCORE.into(), 'Invalid local name');
+            assert(last_char != ASCII_UNDERSCORE.into(), Errors::INVALID_LOCAL_NAME);
         }
 
+        // @notice checks that a character is alpha numeric
+        // @param char character to be validated
         fn _is_alpha_numeric(self: @ContractState, char: u8) -> bool {
             (char >= ASCII_A && char <= ASCII_Z) || (char >= ASCII_0 && char <= ASCII_9)
         }

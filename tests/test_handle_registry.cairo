@@ -44,7 +44,7 @@ fn __setup__() -> (ContractAddress, ContractAddress) {
 // *************************************************************************
 
 #[test]
-#[should_panic(expected: ('Handle ID does not exist',))]
+#[should_panic(expected: ('Karst: handle does not exist!',))]
 fn test_cannot_resolve_if_handle_does_not_exist() {
     let (handle_registry_contract_address, _) = __setup__();
     let dispatcher = IHandleRegistryDispatcher {
@@ -106,7 +106,7 @@ fn test_link() {
 }
 
 #[test]
-#[should_panic(expected: ('PROFILE_IS_NOT_OWNER',))]
+#[should_panic(expected: ('Karst: profile is not owner!',))]
 fn test_linking_fails_if_profile_address_is_not_owner() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
@@ -129,7 +129,7 @@ fn test_linking_fails_if_profile_address_is_not_owner() {
 }
 
 #[test]
-#[should_panic(expected: ('HANDLE_HAS_ALREADY_BEEN_LINKED',))]
+#[should_panic(expected: ('Karst: handle already linked!',))]
 fn test_does_not_link_twice_for_same_handle() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
@@ -187,7 +187,7 @@ fn test_unlink() {
 
 
 #[test]
-#[should_panic(expected: ('CALLER_NOT_OWNER',))]
+#[should_panic(expected: ('Karst: caller is not owner!',))]
 fn test_unlink_fails_if_caller_is_not_owner() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
