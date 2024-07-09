@@ -25,6 +25,6 @@ pub trait IProfile<TState> {
     //                              GETTERS
     // *************************************************************************
     fn get_profile_metadata(self: @TState, profile_address: ContractAddress) -> ByteArray;
-    fn get_profile(ref self: TState, profile_address: ContractAddress) -> Profile;
+    fn get_profile(self: @TState, profile_address: ContractAddress) -> Profile;
     fn get_user_publication_count(self: @TState, profile_address: ContractAddress) -> u256;
 }
