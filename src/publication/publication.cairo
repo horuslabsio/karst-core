@@ -108,9 +108,7 @@ use core::option::OptionTrait;
             profile_address: ContractAddress,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            let profile_owner = get_dep_component!(@self,Profile).get_profile(profile_address).profile_owner;
-            let profile_address = get_dep_component!(@self,Profile).get_profile(profile_address).profile_address;
-            
+            let profile_owner = get_dep_component!(@self,Profile).get_profile(profile_address).profile_owner;            
             let mut profile_instance = get_dep_component_mut!(ref self,Profile);
             let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
