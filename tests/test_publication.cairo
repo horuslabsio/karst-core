@@ -52,7 +52,6 @@ fn __setup__() -> (
     let registry_class_hash = declare("Registry").unwrap();
     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
 
-
     // deploy publication
     let publication_contract = declare("KarstPublication").unwrap();
     let mut publication_constructor_calldata = array![HUB_ADDRESS];
@@ -68,8 +67,7 @@ fn __setup__() -> (
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let user_one_profile_address = publication_dispatcher
         .create_profile(
@@ -79,7 +77,7 @@ fn __setup__() -> (
             2478,
             USER_ONE.try_into().unwrap()
         );
-        publication_dispatcher
+    publication_dispatcher
         .set_profile_metadata_uri(
             user_one_profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
@@ -87,13 +85,10 @@ fn __setup__() -> (
     let contentURI: ByteArray = "ipfs://helloworld";
     let user_one_first_post_pointed_pub_id = publication_dispatcher
         .post(contentURI, user_one_profile_address, publication_contract_address);
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_TWO.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_TWO.try_into().unwrap()
     );
     let user_two_profile_address = publication_dispatcher
         .create_profile(
@@ -103,20 +98,17 @@ fn __setup__() -> (
             2479,
             USER_TWO.try_into().unwrap()
         );
-        publication_dispatcher
+    publication_dispatcher
         .set_profile_metadata_uri(
             user_two_profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
         );
     let contentURI: ByteArray = "ipfs://helloworld";
     publication_dispatcher.post(contentURI, user_two_profile_address, publication_contract_address);
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, ]),
-        USER_THREE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address,]), USER_THREE.try_into().unwrap()
     );
     let user_three_profile_address = publication_dispatcher
         .create_profile(
@@ -126,16 +118,15 @@ fn __setup__() -> (
             2480,
             USER_THREE.try_into().unwrap()
         );
-        publication_dispatcher
+    publication_dispatcher
         .set_profile_metadata_uri(
             user_three_profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
         );
     let contentURI: ByteArray = "ipfs://helloworld";
-    publication_dispatcher.post(contentURI, user_three_profile_address, publication_contract_address);
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    publication_dispatcher
+        .post(contentURI, user_three_profile_address, publication_contract_address);
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     return (
         nft_contract_address,
@@ -172,17 +163,14 @@ fn test_post() {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
     assert(publication_type == PublicationType::Post, 'invalid pub_type');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 }
 
 #[test]
@@ -203,8 +191,7 @@ fn test_comment() {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let user_one_comment_on_his_post_content_URI =
         "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
@@ -242,9 +229,7 @@ fn test_comment() {
     assert(publication_type == PublicationType::Comment, 'invalid pub_type');
     assert(user_one_publication_root_id == user_two_comment_publication_root_id, 'Invalid root_id');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 }
 
 #[test]
@@ -302,8 +287,7 @@ fn test_quote() {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
 
@@ -321,13 +305,10 @@ fn test_quote() {
         .get_publication_type(user_two_profile_address, quote_pub_id);
     assert(publication_type == PublicationType::Quote, 'invalid pub_type');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_TWO.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_TWO.try_into().unwrap()
     );
     let user_two_quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/";
 
@@ -339,7 +320,7 @@ fn test_quote() {
     };
     // user 2 publish quote to user 3 profile
     let user_two_quote_pub_id = publication_dispatcher
-        .quote(PublicationType::Quote, user_two_quote_params,publication_contract_address);
+        .quote(PublicationType::Quote, user_two_quote_params, publication_contract_address);
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_three_profile_address, user_two_quote_pub_id);
@@ -353,9 +334,7 @@ fn test_quote() {
         .root_profile_address;
     assert(user_one_publication_root_id == user_two_publication_root_id, 'Invalid root_id');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 }
 
 #[test]
@@ -388,7 +367,8 @@ fn test_quote_as_reference_pub_params() {
         pointed_pub_id: user_one_first_post_pointed_pub_id
     };
 
-    publication_dispatcher.quote(PublicationType::Mirror, quote_params, publication_contract_address);
+    publication_dispatcher
+        .quote(PublicationType::Mirror, quote_params, publication_contract_address);
 
     stop_prank(CheatTarget::One(publication_contract_address),);
 }
@@ -411,8 +391,7 @@ fn test_quote_pointed_profile_address() {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
 
@@ -424,9 +403,12 @@ fn test_quote_pointed_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let publicationDispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    let publicationDispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
 
-    publication_dispatcher.quote(PublicationType::Quote, quote_params, publication_contract_address);
+    publication_dispatcher
+        .quote(PublicationType::Quote, quote_params, publication_contract_address);
 
     let pointed_profile = publicationDispatcher.get_profile(user_one_profile_address);
 
@@ -466,10 +448,13 @@ fn test_publish_mirror() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let publicationDispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    let publicationDispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
 
-    let pub_id_assigned = publicationDispatcher.get_user_publication_count(user_one_profile_address);
-    let pub_assign_id = publication_dispatcher.mirror(mirror_params,publication_contract_address);
+    let pub_id_assigned = publicationDispatcher
+        .get_user_publication_count(user_one_profile_address);
+    let pub_assign_id = publication_dispatcher.mirror(mirror_params, publication_contract_address);
 
     assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
 
@@ -603,7 +588,7 @@ fn test_mirror_root_profile_address() {
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     // let componentDispatcher = IComposableDispatcher { contract_address: publication_contract_address };
 
-    publication_dispatcher.mirror(mirror_params,publication_contract_address);
+    publication_dispatcher.mirror(mirror_params, publication_contract_address);
 
     let pointed_profile = publication_dispatcher.get_profile(user_two_profile_address);
 

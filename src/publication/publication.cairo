@@ -14,7 +14,7 @@ pub mod PublicationComponent {
     //                              IMPORTS
     // *************************************************************************
     use karst::interfaces::IProfile::IProfile;
-use core::option::OptionTrait;
+    use core::option::OptionTrait;
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::interfaces::IPublication::IKarstPublications;
     use karst::base::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE};
@@ -85,7 +85,8 @@ use core::option::OptionTrait;
     // *************************************************************************
     #[embeddable_as(KarstPublication)]
     impl PublicationsImpl<
-        TContractState, +HasComponent<TContractState>,
+        TContractState,
+        +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Profile: ProfileComponent::HasComponent<TContractState>
     > of IKarstPublications<ComponentState<TContractState>> {
@@ -107,8 +108,10 @@ use core::option::OptionTrait;
             profile_address: ContractAddress,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            let profile_owner:ContractAddress = get_dep_component!(@self,Profile).get_profile(profile_address).profile_owner;            
-            let mut profile_instance = get_dep_component_mut!(ref self,Profile);
+            let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
+                .get_profile(profile_address)
+                .profile_owner;
+            let mut profile_instance = get_dep_component_mut!(ref self, Profile);
             let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
             let new_post = Publication {
@@ -172,7 +175,8 @@ use core::option::OptionTrait;
         ) -> u256 {
             self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
             let ref_mirrorParams = mirrorParams.clone();
-            let pub_id_assigned = get_dep_component!(@self,Profile).get_user_publication_count(mirrorParams.profile_address);
+            let pub_id_assigned = get_dep_component!(@self, Profile)
+                .get_user_publication_count(mirrorParams.profile_address);
             let publication = self
                 .get_publication(mirrorParams.pointed_profile_address, mirrorParams.pointed_pub_id);
 
@@ -274,7 +278,8 @@ use core::option::OptionTrait;
     // *************************************************************************
     #[generate_trait]
     impl InternalImpl<
-        TContractState, +HasComponent<TContractState>,
+        TContractState,
+        +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Profile: ProfileComponent::HasComponent<TContractState>
     > of InternalTrait<TContractState> {
@@ -325,7 +330,7 @@ use core::option::OptionTrait;
             referencePubType: PublicationType,
             profile_contract_address: ContractAddress
         ) -> (u256, ContractAddress) {
-            let mut profile_instance = get_dep_component_mut!(ref self,Profile);
+            let mut profile_instance = get_dep_component_mut!(ref self, Profile);
             let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
             let root_profile_address = self
                 ._fillRootOfPublicationInStorage(
@@ -387,7 +392,6 @@ use core::option::OptionTrait;
                 _ => PublicationType::Nonexistent,
             }
         }
-
 
 
         /// @notice validates pointed publication

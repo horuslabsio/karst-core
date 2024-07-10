@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::types::{Profile, PublicationType,Publication,MirrorParams, QuoteParams};
+use karst::base::types::{Profile, PublicationType, Publication, MirrorParams, QuoteParams};
 // *************************************************************************
 //                              INTERFACE of KARST PROFILE
 // *************************************************************************
@@ -28,11 +28,11 @@ pub trait IComposable<TState> {
     fn get_profile(self: @TState, profile_address: ContractAddress) -> Profile;
     fn get_user_publication_count(self: @TState, profile_address: ContractAddress) -> u256;
 
-        // // *************************************************************************
+    // // *************************************************************************
     //                             PUBLICATION
     // *************************************************************************
 
-     // *************************************************************************
+    // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
     fn initialize(ref self: TState, hub_address: ContractAddress);
@@ -58,9 +58,7 @@ pub trait IComposable<TState> {
         profile_contract_address: ContractAddress
     ) -> u256;
     fn mirror(
-        ref self: TState,
-        mirrorParams: MirrorParams,
-        profile_contract_address: ContractAddress
+        ref self: TState, mirrorParams: MirrorParams, profile_contract_address: ContractAddress
     ) -> u256;
     // *************************************************************************
     //                              GETTERS
