@@ -11,7 +11,7 @@ pub trait IKarstPublications<TContractState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
-    fn initializer(ref self: TContractState, hub_address: ContractAddress);
+    fn initialize(ref self: TContractState, hub_address: ContractAddress);
     fn post(
         ref self: TContractState,
         contentURI: ByteArray,

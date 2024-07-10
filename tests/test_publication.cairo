@@ -13,11 +13,7 @@ use token_bound_accounts::presets::account::Account;
 use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
-use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
-use karst::interfaces::IPublication::{
-    IKarstPublicationsDispatcher, IKarstPublicationsDispatcherTrait
-};
+use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
 use karst::base::types::{
     PostParams, MirrorParams, ReferencePubParams, PublicationType, QuoteParams
 };
@@ -31,7 +27,6 @@ const USER_THREE: felt252 = 'ROB';
 //                              SETUP 
 // *************************************************************************
 fn __setup__() -> (
-    ContractAddress,
     ContractAddress,
     ContractAddress,
     ContractAddress,
@@ -57,13 +52,6 @@ fn __setup__() -> (
     let registry_class_hash = declare("Registry").unwrap();
     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
 
-    // deploy profile
-    let profile_contract = declare("KarstProfile").unwrap();
-    let mut karst_profile_constructor_calldata = array![HUB_ADDRESS];
-    let (profile_contract_address, _) = profile_contract
-        .deploy(@karst_profile_constructor_calldata)
-        .unwrap();
-
     // deploy publication
     let publication_contract = declare("KarstPublication").unwrap();
     let mut publication_constructor_calldata = array![HUB_ADDRESS];
@@ -75,15 +63,13 @@ fn __setup__() -> (
     let account_class_hash = declare("Account").unwrap();
 
     // ///// Deploying karst account for USER AND USE
-    let profile_dispatcher = IProfileDispatcher { contract_address: profile_contract_address };
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
-    let user_one_profile_address = profile_dispatcher
+    let user_one_profile_address = publication_dispatcher
         .create_profile(
             nft_contract_address,
             registry_class_hash.class_hash.into(),
@@ -91,23 +77,20 @@ fn __setup__() -> (
             2478,
             USER_ONE.try_into().unwrap()
         );
-    profile_dispatcher
+    publication_dispatcher
         .set_profile_metadata_uri(
             user_one_profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
         );
     let contentURI: ByteArray = "ipfs://helloworld";
     let user_one_first_post_pointed_pub_id = publication_dispatcher
-        .post(contentURI, user_one_profile_address, profile_contract_address);
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+        .post(contentURI, user_one_profile_address, publication_contract_address);
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_TWO.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_TWO.try_into().unwrap()
     );
-    let user_two_profile_address = profile_dispatcher
+    let user_two_profile_address = publication_dispatcher
         .create_profile(
             nft_contract_address,
             registry_class_hash.class_hash.into(),
@@ -115,22 +98,19 @@ fn __setup__() -> (
             2479,
             USER_TWO.try_into().unwrap()
         );
-    profile_dispatcher
+    publication_dispatcher
         .set_profile_metadata_uri(
             user_two_profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
         );
     let contentURI: ByteArray = "ipfs://helloworld";
-    publication_dispatcher.post(contentURI, user_two_profile_address, profile_contract_address);
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+    publication_dispatcher.post(contentURI, user_two_profile_address, publication_contract_address);
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_THREE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address,]), USER_THREE.try_into().unwrap()
     );
-    let user_three_profile_address = profile_dispatcher
+    let user_three_profile_address = publication_dispatcher
         .create_profile(
             nft_contract_address,
             registry_class_hash.class_hash.into(),
@@ -138,21 +118,19 @@ fn __setup__() -> (
             2480,
             USER_THREE.try_into().unwrap()
         );
-    profile_dispatcher
+    publication_dispatcher
         .set_profile_metadata_uri(
             user_three_profile_address.try_into().unwrap(),
             "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4ga/"
         );
     let contentURI: ByteArray = "ipfs://helloworld";
-    publication_dispatcher.post(contentURI, user_three_profile_address, profile_contract_address);
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+    publication_dispatcher
+        .post(contentURI, user_three_profile_address, publication_contract_address);
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     return (
         nft_contract_address,
         registry_contract_address,
-        profile_contract_address,
         publication_contract_address,
         registry_class_hash.class_hash.into(),
         account_class_hash.class_hash.into(),
@@ -172,7 +150,6 @@ fn test_post() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -182,21 +159,18 @@ fn test_post() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
     assert(publication_type == PublicationType::Post, 'invalid pub_type');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 }
 
 #[test]
@@ -204,7 +178,6 @@ fn test_comment() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -214,12 +187,11 @@ fn test_comment() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let user_one_comment_on_his_post_content_URI =
         "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
@@ -234,7 +206,7 @@ fn test_comment() {
             user_one_comment_on_his_post_content_URI,
             user_one_profile_address,
             user_one_first_post_pointed_pub_id,
-            profile_contract_address
+            publication_contract_address
         );
     // user two comment on user_one_post
     let user_two_comment_on_user_one_assigned_pub_id_2 = publication_dispatcher
@@ -244,7 +216,7 @@ fn test_comment() {
             user_two_comment_one_user_one_post_content_URI,
             user_one_profile_address,
             user_one_first_post_pointed_pub_id,
-            profile_contract_address
+            publication_contract_address
         );
     let user_one_publication_root_id = publication_dispatcher
         .get_publication(user_one_profile_address, user_one_comment_assigned_pub_id_1)
@@ -257,9 +229,7 @@ fn test_comment() {
     assert(publication_type == PublicationType::Comment, 'invalid pub_type');
     assert(user_one_publication_root_id == user_two_comment_publication_root_id, 'Invalid root_id');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 }
 
 #[test]
@@ -268,7 +238,6 @@ fn test_with_as_reference_pub_params() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -278,7 +247,7 @@ fn test_with_as_reference_pub_params() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
@@ -294,7 +263,7 @@ fn test_with_as_reference_pub_params() {
             user_one_comment_on_his_post_content_URI,
             user_one_profile_address,
             user_one_first_post_pointed_pub_id,
-            profile_contract_address
+            publication_contract_address
         );
 
     stop_prank(CheatTarget::One(publication_contract_address),);
@@ -305,7 +274,6 @@ fn test_quote() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -315,12 +283,11 @@ fn test_quote() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
 
@@ -332,19 +299,16 @@ fn test_quote() {
     };
     // user one publish quote to user 2 profile
     let quote_pub_id = publication_dispatcher
-        .quote(PublicationType::Quote, quote_params, profile_contract_address);
+        .quote(PublicationType::Quote, quote_params, publication_contract_address);
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_two_profile_address, quote_pub_id);
     assert(publication_type == PublicationType::Quote, 'invalid pub_type');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_TWO.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_TWO.try_into().unwrap()
     );
     let user_two_quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/";
 
@@ -356,7 +320,7 @@ fn test_quote() {
     };
     // user 2 publish quote to user 3 profile
     let user_two_quote_pub_id = publication_dispatcher
-        .quote(PublicationType::Quote, user_two_quote_params, profile_contract_address);
+        .quote(PublicationType::Quote, user_two_quote_params, publication_contract_address);
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_three_profile_address, user_two_quote_pub_id);
@@ -370,9 +334,7 @@ fn test_quote() {
         .root_profile_address;
     assert(user_one_publication_root_id == user_two_publication_root_id, 'Invalid root_id');
 
-    stop_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-    );
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 }
 
 #[test]
@@ -381,7 +343,6 @@ fn test_quote_as_reference_pub_params() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -391,7 +352,7 @@ fn test_quote_as_reference_pub_params() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
 
@@ -406,7 +367,8 @@ fn test_quote_as_reference_pub_params() {
         pointed_pub_id: user_one_first_post_pointed_pub_id
     };
 
-    publication_dispatcher.quote(PublicationType::Mirror, quote_params, profile_contract_address);
+    publication_dispatcher
+        .quote(PublicationType::Mirror, quote_params, publication_contract_address);
 
     stop_prank(CheatTarget::One(publication_contract_address),);
 }
@@ -416,7 +378,6 @@ fn test_quote_pointed_profile_address() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -426,12 +387,11 @@ fn test_quote_pointed_profile_address() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
     start_prank(
-        CheatTarget::Multiple(array![publication_contract_address, profile_contract_address]),
-        USER_ONE.try_into().unwrap()
+        CheatTarget::Multiple(array![publication_contract_address]), USER_ONE.try_into().unwrap()
     );
     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
 
@@ -443,11 +403,14 @@ fn test_quote_pointed_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
+    let publicationDispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
 
-    publication_dispatcher.quote(PublicationType::Quote, quote_params, profile_contract_address);
+    publication_dispatcher
+        .quote(PublicationType::Quote, quote_params, publication_contract_address);
 
-    let pointed_profile = profileDispatcher.get_profile(user_one_profile_address);
+    let pointed_profile = publicationDispatcher.get_profile(user_one_profile_address);
 
     assert(
         pointed_profile.profile_address == user_one_profile_address,
@@ -462,7 +425,6 @@ fn test_publish_mirror() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -472,7 +434,7 @@ fn test_publish_mirror() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
 
@@ -486,10 +448,13 @@ fn test_publish_mirror() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
+    let publicationDispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
 
-    let pub_id_assigned = profileDispatcher.get_user_publication_count(user_one_profile_address);
-    let pub_assign_id = publication_dispatcher.mirror(mirror_params, profile_contract_address);
+    let pub_id_assigned = publicationDispatcher
+        .get_user_publication_count(user_one_profile_address);
+    let pub_assign_id = publication_dispatcher.mirror(mirror_params, publication_contract_address);
 
     assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
 
@@ -501,7 +466,6 @@ fn test_two_publish_mirror() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -512,11 +476,9 @@ fn test_two_publish_mirror() {
     ) =
         __setup__();
 
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
-
-    let profile_dispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
 
@@ -530,7 +492,7 @@ fn test_two_publish_mirror() {
         pointed_pub_id: user_one_first_post_pointed_pub_id,
     };
 
-    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+    publication_dispatcher.mirror(mirror_params, publication_contract_address);
 
     stop_prank(CheatTarget::One(publication_contract_address),);
 
@@ -543,9 +505,9 @@ fn test_two_publish_mirror() {
         pointed_pub_id: user_one_first_post_pointed_pub_id,
     };
 
-    publication_dispatcher.mirror(mirror_params_1, profile_contract_address);
+    publication_dispatcher.mirror(mirror_params_1, publication_contract_address);
 
-    let pointed_profile_three = profile_dispatcher.get_profile(user_three_profile_address);
+    let pointed_profile_three = publication_dispatcher.get_profile(user_three_profile_address);
 
     assert(
         pointed_profile_three.profile_address == user_three_profile_address,
@@ -560,7 +522,6 @@ fn test_mirror_pointed_profile_address() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -570,7 +531,7 @@ fn test_mirror_pointed_profile_address() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
 
@@ -584,11 +545,10 @@ fn test_mirror_pointed_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
-    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+    publication_dispatcher.mirror(mirror_params, publication_contract_address);
 
-    let pointed_profile = profileDispatcher.get_profile(user_one_profile_address);
+    let pointed_profile = publication_dispatcher.get_profile(user_one_profile_address);
 
     assert(
         pointed_profile.profile_address == user_one_profile_address,
@@ -603,7 +563,6 @@ fn test_mirror_root_profile_address() {
     let (
         _,
         _,
-        profile_contract_address,
         publication_contract_address,
         _,
         _,
@@ -613,7 +572,7 @@ fn test_mirror_root_profile_address() {
         user_one_first_post_pointed_pub_id,
     ) =
         __setup__();
-    let publication_dispatcher = IKarstPublicationsDispatcher {
+    let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
 
@@ -627,11 +586,11 @@ fn test_mirror_root_profile_address() {
     };
 
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
+    // let componentDispatcher = IComposableDispatcher { contract_address: publication_contract_address };
 
-    publication_dispatcher.mirror(mirror_params, profile_contract_address);
+    publication_dispatcher.mirror(mirror_params, publication_contract_address);
 
-    let pointed_profile = profileDispatcher.get_profile(user_two_profile_address);
+    let pointed_profile = publication_dispatcher.get_profile(user_two_profile_address);
 
     assert(
         pointed_profile.profile_address == user_two_profile_address, 'Invalid Root Profile Address'

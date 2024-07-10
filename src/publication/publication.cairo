@@ -13,16 +13,18 @@ pub mod PublicationComponent {
     // *************************************************************************
     //                              IMPORTS
     // *************************************************************************
+    use karst::interfaces::IProfile::IProfile;
     use core::option::OptionTrait;
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::interfaces::IPublication::IKarstPublications;
-    use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
-    use karst::base::errors::Errors::{NOT_PROFILE_OWNER, BLOCKED_STATUS, UNSUPPORTED_PUB_TYPE};
+    use karst::base::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE};
     use karst::base::{hubrestricted::HubRestricted::hub_only};
     use karst::base::types::{
         PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
         MirrorParams
     };
+    use karst::profile::profile::ProfileComponent;
+
 
     // *************************************************************************
     //                              STORAGE
@@ -30,7 +32,6 @@ pub mod PublicationComponent {
     #[storage]
     struct Storage {
         publication: LegacyMap<(ContractAddress, u256), Publication>,
-        blocked_profile_address: LegacyMap<(ContractAddress, ContractAddress), bool>,
         karst_hub: ContractAddress
     }
 
@@ -84,14 +85,17 @@ pub mod PublicationComponent {
     // *************************************************************************
     #[embeddable_as(KarstPublication)]
     impl PublicationsImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Profile: ProfileComponent::HasComponent<TContractState>
     > of IKarstPublications<ComponentState<TContractState>> {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
         /// @notice initialize publication component
         /// @param hub_address address of hub contract
-        fn initializer(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
+        fn initialize(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
             self.karst_hub.write(hub_address);
         }
 
@@ -104,13 +108,12 @@ pub mod PublicationComponent {
             profile_address: ContractAddress,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            let profile_owner = IProfileDispatcher { contract_address: profile_contract_address }
+            let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(profile_address)
                 .profile_owner;
+            let mut profile_instance = get_dep_component_mut!(ref self, Profile);
+            let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
-
-            let pubIdAssigned = IProfileDispatcher { contract_address: profile_contract_address }
-                .increment_publication_count(profile_address);
             let new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),
                 pointed_pub_id: 0,
@@ -120,8 +123,8 @@ pub mod PublicationComponent {
                 root_pub_id: 0
             };
 
-            self.publication.write((profile_address, pubIdAssigned), new_post);
-            pubIdAssigned
+            self.publication.write((profile_address, pub_id_assigned), new_post);
+            pub_id_assigned
         }
 
         /// @notice performs comment action
@@ -171,15 +174,8 @@ pub mod PublicationComponent {
             profile_contract_address: ContractAddress
         ) -> u256 {
             self._validatePointedPub(mirrorParams.profile_address, mirrorParams.pointed_pub_id);
-            self
-                .validateNotBlocked(
-                    mirrorParams.profile_address, mirrorParams.pointed_profile_address, false
-                );
             let ref_mirrorParams = mirrorParams.clone();
-            let profileDispatcher = IProfileDispatcher {
-                contract_address: profile_contract_address
-            };
-            let pub_id_assigned = profileDispatcher
+            let pub_id_assigned = get_dep_component!(@self, Profile)
                 .get_user_publication_count(mirrorParams.profile_address);
             let publication = self
                 .get_publication(mirrorParams.pointed_profile_address, mirrorParams.pointed_pub_id);
@@ -282,7 +278,10 @@ pub mod PublicationComponent {
     // *************************************************************************
     #[generate_trait]
     impl InternalImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Profile: ProfileComponent::HasComponent<TContractState>
     > of InternalTrait<TContractState> {
         /// @notice fill root of publication
         /// @param profile_address the profile address creating the publication
@@ -331,8 +330,8 @@ pub mod PublicationComponent {
             referencePubType: PublicationType,
             profile_contract_address: ContractAddress
         ) -> (u256, ContractAddress) {
-            let pub_id_assigned = IProfileDispatcher { contract_address: profile_contract_address }
-                .increment_publication_count(profile_address);
+            let mut profile_instance = get_dep_component_mut!(ref self, Profile);
+            let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
             let root_profile_address = self
                 ._fillRootOfPublicationInStorage(
                     profile_address,
@@ -369,7 +368,7 @@ pub mod PublicationComponent {
         ) -> u256 {
             self._validatePointedPub(pointed_profile_address, pointed_pub_id);
 
-            let (pub_id_assigned, root_profile_address) = self
+            let (pub_id_assigned, _root_profile_address) = self
                 ._fillRefeferencePublicationStorage(
                     profile_address,
                     content_URI,
@@ -379,9 +378,6 @@ pub mod PublicationComponent {
                     profile_contract_address
                 );
 
-            if (root_profile_address != pointed_profile_address) {
-                self.validateNotBlocked(profile_address, pointed_profile_address, false);
-            }
             pub_id_assigned
         }
 
@@ -397,38 +393,6 @@ pub mod PublicationComponent {
             }
         }
 
-        /// @notice fill reference publication
-        /// @param profile_address the blocked profile address
-        /// @param by_profile_address the profile address that performed the blocking
-        fn _blockedStatus(
-            ref self: ComponentState<TContractState>,
-            profile_address: ContractAddress,
-            by_profile_address: ContractAddress,
-        ) -> bool {
-            self.blocked_profile_address.write((profile_address, by_profile_address), false);
-            let status = self.blocked_profile_address.read((profile_address, by_profile_address));
-            status
-        }
-
-        /// @notice check a profile is not blocked
-        /// @param profile_address the blocked profile address
-        /// @param by_profile_address the profile address that performed the blocking
-        /// unidirectional_check specifies if check should be one-way or both ways
-        fn validateNotBlocked(
-            ref self: ComponentState<TContractState>,
-            profile_address: ContractAddress,
-            by_profile_address: ContractAddress,
-            unidirectional_check: bool
-        ) {
-            if (profile_address != by_profile_address
-                && (self._blockedStatus(profile_address, by_profile_address)
-                    || (!unidirectional_check
-                        && self
-                            ._blockedStatus(
-                                by_profile_address, profile_address
-                            )))) { // return; ERROR
-            }
-        }
 
         /// @notice validates pointed publication
         /// @param profile_address the profile address that created the publication
