@@ -128,7 +128,7 @@ mod ProfileComponent {
         // @notice returns the Profile struct of a profile address
         // @params profile_address the targeted profile address
         fn get_profile(
-            self: @ComponentState<TContractState>, profile_address: ContractAddress
+             self: @ComponentState<TContractState>, profile_address: ContractAddress
         ) -> Profile {
             self.profile.read(profile_address)
         }

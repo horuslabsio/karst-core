@@ -17,7 +17,6 @@ pub mod PublicationComponent {
 use core::option::OptionTrait;
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::interfaces::IPublication::IKarstPublications;
-    // use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
     use karst::base::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE};
     use karst::base::{hubrestricted::HubRestricted::hub_only};
     use karst::base::types::{
@@ -108,7 +107,7 @@ use core::option::OptionTrait;
             profile_address: ContractAddress,
             profile_contract_address: ContractAddress
         ) -> u256 {
-            let profile_owner = get_dep_component!(@self,Profile).get_profile(profile_address).profile_owner;            
+            let profile_owner:ContractAddress = get_dep_component!(@self,Profile).get_profile(profile_address).profile_owner;            
             let mut profile_instance = get_dep_component_mut!(ref self,Profile);
             let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
