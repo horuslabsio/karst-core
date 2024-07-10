@@ -13,7 +13,7 @@ use token_bound_accounts::presets::account::Account;
 use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
-use karst::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
+use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
 use karst::base::types::{
     PostParams, MirrorParams, ReferencePubParams, PublicationType, QuoteParams
 };
