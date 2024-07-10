@@ -66,9 +66,7 @@ fn __setup__() -> (
     let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let user_one_profile_address = publication_dispatcher
         .create_profile(
             nft_contract_address,
@@ -82,9 +80,7 @@ fn __setup__() -> (
         .post(contentURI, user_one_profile_address, publication_contract_address);
     stop_prank(CheatTarget::One(publication_contract_address),);
 
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
     let user_two_profile_address = publication_dispatcher
         .create_profile(
             nft_contract_address,
@@ -97,9 +93,7 @@ fn __setup__() -> (
     publication_dispatcher.post(contentURI, user_two_profile_address, publication_contract_address);
     stop_prank(CheatTarget::One(publication_contract_address),);
 
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
     let user_three_profile_address = publication_dispatcher
         .create_profile(
             nft_contract_address,
@@ -147,9 +141,7 @@ fn test_post() {
     let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
 
     let publication_type = publication_dispatcher
         .get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
@@ -175,9 +167,7 @@ fn test_comment() {
     let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let user_one_comment_on_his_post_content_URI =
         "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
     let user_two_comment_one_user_one_post_content_URI =
@@ -271,9 +261,7 @@ fn test_quote() {
     let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
 
     let quote_params = QuoteParams {
@@ -292,9 +280,7 @@ fn test_quote() {
 
     stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
 
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
     let user_two_quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/";
 
     let user_two_quote_params = QuoteParams {
@@ -375,9 +361,7 @@ fn test_quote_pointed_profile_address() {
     let publication_dispatcher = IComposableDispatcher {
         contract_address: publication_contract_address
     };
-    start_prank(
-        CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap()
-    );
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
 
     let quote_params = QuoteParams {
