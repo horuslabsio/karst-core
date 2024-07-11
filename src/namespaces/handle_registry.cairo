@@ -92,7 +92,7 @@ mod HandleRegistry {
         fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
             let it_exists = IHandleDispatcher { contract_address: self.handle_address.read() }
                 .exists(handle_id);
-            assert(it_exists, Errors::HADLE_DOES_NOT_EXIST);
+            assert(it_exists, Errors::HANDLE_DOES_NOT_EXIST);
             self.handle_to_profile_address.read(handle_id)
         }
 
