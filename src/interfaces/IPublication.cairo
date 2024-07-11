@@ -2,7 +2,7 @@
 //                              INTERFACE of KARST PUBLICATIONS
 // *************************************************************************
 use starknet::ContractAddress;
-use karst::base::types::{
+use karst::base::constants::types::{
     PostParams, MirrorParams, ReferencePubParams, PublicationType, Publication, QuoteParams
 };
 

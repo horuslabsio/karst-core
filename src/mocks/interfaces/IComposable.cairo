@@ -1,5 +1,7 @@
 use starknet::ContractAddress;
-use karst::base::types::{Profile, PublicationType, Publication, MirrorParams, QuoteParams};
+use karst::base::constants::types::{
+    Profile, PublicationType, Publication, MirrorParams, QuoteParams
+};
 // *************************************************************************
 //                              INTERFACE of KARST PROFILE
 // *************************************************************************

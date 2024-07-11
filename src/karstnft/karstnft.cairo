@@ -40,7 +40,9 @@ pub mod KarstNFT {
     use starknet::{ContractAddress, get_caller_address};
     use core::num::traits::zero::Zero;
     use karst::interfaces::IKarstNFT;
-    use karst::base::{hubrestricted::HubRestricted::hub_only, errors::Errors::ALREADY_MINTED};
+    use karst::base::{
+        utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors::ALREADY_MINTED
+    };
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{

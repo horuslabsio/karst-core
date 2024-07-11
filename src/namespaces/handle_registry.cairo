@@ -10,9 +10,8 @@ mod HandleRegistry {
     };
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::base::{hubrestricted::HubRestricted::hub_only};
+    use karst::base::{utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors};
     use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
-    use karst::base::errors::Errors;
 
     // *************************************************************************
     //                            STORAGE

@@ -7,7 +7,7 @@ use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_pr
 use openzeppelin::{token::erc721::interface::{ERC721ABIDispatcher, ERC721ABIDispatcherTrait}};
 
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-use karst::base::{errors::Errors::ALREADY_MINTED};
+use karst::base::constants::errors::Errors::ALREADY_MINTED;
 
 const ADMIN: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';

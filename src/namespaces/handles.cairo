@@ -38,7 +38,7 @@ mod Handles {
     //                            IMPORT
     // *************************************************************************
     use core::num::traits::zero::Zero;
-use core::traits::TryInto;
+    use core::traits::TryInto;
     use core::poseidon::PoseidonTrait;
     use core::hash::{HashStateTrait, HashStateExTrait};
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
@@ -49,9 +49,10 @@ use core::traits::TryInto;
         },
         introspection::{src5::SRC5Component}
     };
-    use karst::base::{errors::Errors, utils::FeltTryIntoByteArray};
-    use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-    use karst::interfaces::IHandle::IHandle;
+    use karst::base::{constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray};
+    use karst::interfaces::{
+        IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait}, IHandle::IHandle
+    };
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);

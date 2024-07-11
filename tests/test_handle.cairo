@@ -186,8 +186,7 @@ fn test_get_handle() {
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
 
-    let token_id = handles_dispatcher
-        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+    let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
     let handle: ByteArray = handles_dispatcher.get_handle(token_id);
     assert(handle == "karst.kst", 'Invalid handle');

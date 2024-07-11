@@ -1,5 +1,5 @@
 use starknet::{ContractAddress, get_caller_address};
-use karst::base::types::{
+use karst::base::constants::types::{
     PostParams, PublicationType, CommentParams, ReferencePubParams, Publication, MirrorParams,
     QuoteParams
 };
@@ -17,12 +17,15 @@ pub mod PublicationComponent {
     use core::option::OptionTrait;
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::interfaces::IPublication::IKarstPublications;
-    use karst::base::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE};
-    use karst::base::{hubrestricted::HubRestricted::hub_only};
-    use karst::base::types::{
-        PostParams, Publication, PublicationType, ReferencePubParams, CommentParams, QuoteParams,
-        MirrorParams
+    use karst::base::{
+        constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE},
+        utils::hubrestricted::HubRestricted::hub_only,
+        constants::types::{
+            PostParams, Publication, PublicationType, ReferencePubParams, CommentParams,
+            QuoteParams, MirrorParams
+        }
     };
+
     use karst::profile::profile::ProfileComponent;
 
 
