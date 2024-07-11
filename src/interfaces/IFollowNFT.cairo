@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::types::FollowData;
+use karst::base::constants::types::FollowData;
 
 // *************************************************************************
 //                              INTERFACE of FollowNFT 

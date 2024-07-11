@@ -10,9 +10,8 @@ mod HandleRegistry {
     };
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::base::{hubrestricted::HubRestricted::hub_only};
+    use karst::base::{utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors};
     use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
-    use karst::base::errors::Errors;
 
     // *************************************************************************
     //                            STORAGE
@@ -92,7 +91,7 @@ mod HandleRegistry {
         fn resolve(self: @ContractState, handle_id: u256) -> ContractAddress {
             let it_exists = IHandleDispatcher { contract_address: self.handle_address.read() }
                 .exists(handle_id);
-            assert(it_exists, Errors::HADLE_DOES_NOT_EXIST);
+            assert(it_exists, Errors::HANDLE_DOES_NOT_EXIST);
             self.handle_to_profile_address.read(handle_id)
         }
 

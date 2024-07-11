@@ -7,8 +7,10 @@ mod Follow {
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use core::num::traits::zero::Zero;
     use karst::interfaces::{IFollowNFT::IFollowNFT};
-    use karst::base::{errors::Errors, hubrestricted::HubRestricted::hub_only};
-    use karst::base::types::FollowData;
+    use karst::base::{
+        constants::{errors::Errors, types::FollowData},
+        utils::hubrestricted::HubRestricted::hub_only
+    };
 
     // *************************************************************************
     //                            STORAGE

@@ -37,6 +37,7 @@ mod Handles {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
+    use core::num::traits::zero::Zero;
     use core::traits::TryInto;
     use core::poseidon::PoseidonTrait;
     use core::hash::{HashStateTrait, HashStateExTrait};
@@ -48,9 +49,10 @@ mod Handles {
         },
         introspection::{src5::SRC5Component}
     };
-    use karst::base::errors::Errors;
-    use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-    use karst::interfaces::IHandle::IHandle;
+    use karst::base::{constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray};
+    use karst::interfaces::{
+        IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait}, IHandle::IHandle
+    };
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -94,7 +96,7 @@ mod Handles {
     //                            CONSTANTS
     // *************************************************************************
     const MAX_LOCAL_NAME_LENGTH: u256 = 26;
-    const NAMESPACE: felt252 = 'karst';
+    const NAMESPACE: felt252 = 'kst';
     const ASCII_A: u8 = 97;
     const ASCII_Z: u8 = 122;
     const ASCII_0: u8 = 48;
@@ -196,9 +198,12 @@ mod Handles {
 
         /// @notice returns the full handle of a user
         /// @param token_id ID of handle to retrieve
-        fn get_handle(self: @ContractState, token_id: u256) -> felt252 {
+        fn get_handle(self: @ContractState, token_id: u256) -> ByteArray {
             let local_name = self.get_local_name(token_id);
-            let handle = NAMESPACE + '@/' + local_name;
+            assert(local_name.is_non_zero(), Errors::HANDLE_DOES_NOT_EXIST);
+            let local_name_in_byte_array: ByteArray = local_name.try_into().unwrap();
+            let namespace_in_byte_array: ByteArray = NAMESPACE.try_into().unwrap();
+            let handle = local_name_in_byte_array + "." + namespace_in_byte_array;
             handle
         }
 
@@ -213,7 +218,7 @@ mod Handles {
             self.total_supply.read()
         }
 
-        /// @notice returns the handle ID for a given local name
+        /// @notice returns the token ID for a given local name
         /// @param local_name local name to be queried
         fn get_token_id(self: @ContractState, local_name: felt252) -> u256 {
             let hash: u256 = PoseidonTrait::new()

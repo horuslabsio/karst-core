@@ -9,7 +9,7 @@ use snforge_std::{
 
 use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
 use karst::follownft::follownft::Follow;
-use karst::base::types::FollowData;
+use karst::base::constants::types::FollowData;
 
 const HUB_ADDRESS: felt252 = 24205;
 const FOLLOWED_ADDRESS: felt252 = 1234;

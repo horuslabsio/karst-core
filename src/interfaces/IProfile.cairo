@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::types::Profile;
+use karst::base::constants::types::Profile;
 // *************************************************************************
 //                              INTERFACE of KARST PROFILE
 // *************************************************************************

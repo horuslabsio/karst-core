@@ -13,9 +13,10 @@ mod ProfileComponent {
     };
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::interfaces::IProfile::IProfile;
-    use karst::base::types::Profile;
-    use karst::base::errors::Errors::NOT_PROFILE_OWNER;
-    use karst::base::{hubrestricted::HubRestricted::hub_only};
+    use karst::base::{
+        constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,
+        utils::hubrestricted::HubRestricted::hub_only
+    };
 
     // *************************************************************************
     //                              STORAGE

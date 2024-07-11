@@ -15,7 +15,7 @@ pub trait IHandle<TState> {
     // *************************************************************************
     fn get_namespace(self: @TState) -> felt252;
     fn get_local_name(self: @TState, token_id: u256) -> felt252;
-    fn get_handle(self: @TState, token_id: u256) -> felt252;
+    fn get_handle(self: @TState, token_id: u256) -> ByteArray;
     fn exists(self: @TState, token_id: u256) -> bool;
     fn total_supply(self: @TState) -> u256;
     fn get_token_id(self: @TState, local_name: felt252) -> u256;

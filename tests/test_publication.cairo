@@ -14,7 +14,7 @@ use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
 use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
-use karst::base::types::{
+use karst::base::constants::types::{
     PostParams, MirrorParams, ReferencePubParams, PublicationType, QuoteParams
 };
 

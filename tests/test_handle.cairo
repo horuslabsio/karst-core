@@ -178,7 +178,6 @@ fn test_cannot_burn_if_not_owner_of() {
     dispatcher.burn_handle(handle_id);
 }
 
-
 #[test]
 fn test_get_handle() {
     let handles_contract_address = __setup__();
@@ -187,46 +186,16 @@ fn test_get_handle() {
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
 
-    let token_id = handles_dispatcher
-        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_THREE);
+    let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
-    let handle: felt252 = handles_dispatcher.get_handle(token_id);
-
-    let namespace: felt252 = handles_dispatcher.get_namespace();
-
-    let test_handle: felt252 = namespace + '@/' + TEST_LOCAL_NAME_THREE;
-
-    assert(handle == test_handle, 'Invalid handle');
+    let handle: ByteArray = handles_dispatcher.get_handle(token_id);
+    assert(handle == "karst.kst", 'Invalid handle');
 
     stop_prank(CheatTarget::One(handles_contract_address));
 }
 
-
 #[test]
-fn test_get_handle_two() {
-    let handles_contract_address = __setup__();
-
-    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
-
-    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-
-    let token_id = handles_dispatcher
-        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME_FOUR);
-
-    let handle: felt252 = handles_dispatcher.get_handle(token_id);
-
-    let namespace: felt252 = handles_dispatcher.get_namespace();
-
-    let test_handle: felt252 = namespace + '@/' + TEST_LOCAL_NAME_FOUR;
-
-    assert(handle == test_handle, 'Invalid handle');
-
-    stop_prank(CheatTarget::One(handles_contract_address));
-}
-
-
-#[test]
-#[should_panic()]
+#[should_panic(expected: ('Karst: handle does not exist!',))]
 fn test_get_handle_should_panic() {
     let handles_contract_address = __setup__();
 
@@ -234,9 +203,6 @@ fn test_get_handle_should_panic() {
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
 
-    let invalid_handle: felt252 = handles_dispatcher.get_handle(TEST_TOKEN_ID);
-
-    assert(invalid_handle == 0, 'Expected an invalid handle');
-
+    handles_dispatcher.get_handle(TEST_TOKEN_ID);
     stop_prank(CheatTarget::One(handles_contract_address));
 }
