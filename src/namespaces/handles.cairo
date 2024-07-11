@@ -49,7 +49,10 @@ mod Handles {
         },
         introspection::{src5::SRC5Component}
     };
-    use karst::base::{constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray};
+    use karst::base::{
+        constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray,
+        token_uris::handle_token_uri::HandleTokenUri,
+    };
     use karst::interfaces::{
         IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait}, IHandle::IHandle
     };
@@ -184,7 +187,6 @@ mod Handles {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
-
         /// @notice returns Karst namespace
         fn get_namespace(self: @ContractState) -> felt252 {
             return NAMESPACE;
@@ -235,8 +237,7 @@ mod Handles {
         fn get_handle_token_uri(
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
-            // TODO
-            return "TODO";
+            HandleTokenUri::get_token_uri(token_id, local_name, NAMESPACE)
         }
     }
 
