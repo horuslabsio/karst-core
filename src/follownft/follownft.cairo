@@ -9,7 +9,7 @@ mod Follow {
     use karst::interfaces::{IFollowNFT::IFollowNFT};
     use karst::base::{
         constants::{errors::Errors, types::FollowData},
-        utils::hubrestricted::HubRestricted::hub_only
+        utils::hubrestricted::HubRestricted::hub_only, token_uris::follow_token_uri::FollowTokenUri,
     };
 
     // *************************************************************************
@@ -177,8 +177,10 @@ mod Follow {
             return "KFL";
         }
         fn token_uri(self: @ContractState, follow_id: u256) -> ByteArray {
-            // TODO: return token uri for follower contract
-            return "TODO";
+            let follow_data = self.follow_data_by_follow_id.read(follow_id);
+            let timestamp = follow_data.follow_timestamp;
+            let followed_profile_address = self.followed_profile_address.read();
+            FollowTokenUri::get_token_uri(follow_id, followed_profile_address, timestamp)
         }
     }
 

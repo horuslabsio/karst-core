@@ -37,11 +37,13 @@ pub mod KarstNFT {
     // *************************************************************************
     //                             IMPORTS
     // *************************************************************************
-    use starknet::{ContractAddress, get_caller_address};
+    use openzeppelin::token::erc721::interface::IERC721Metadata;
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use core::num::traits::zero::Zero;
     use karst::interfaces::IKarstNFT;
     use karst::base::{
-        utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors::ALREADY_MINTED
+        utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors::ALREADY_MINTED,
+        token_uris::profile_token_uri::ProfileTokenUri,
     };
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
@@ -64,9 +66,7 @@ pub mod KarstNFT {
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
     #[abi(embed_v0)]
     impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
-    // allow to query name of nft collection
-    #[abi(embed_v0)]
-    impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
+
     // add an owner
     #[abi(embed_v0)]
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
@@ -86,6 +86,7 @@ pub mod KarstNFT {
         ownable: OwnableComponent::Storage,
         admin: ContractAddress,
         last_minted_id: u256,
+        mint_timestamp: LegacyMap<u256, u64>,
         user_token_id: LegacyMap<ContractAddress, u256>,
     }
 
@@ -120,6 +121,9 @@ pub mod KarstNFT {
 
     #[abi(embed_v0)]
     impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
+        // *************************************************************************
+        //                            EXTERNAL 
+        // *************************************************************************
         /// @notice mints the karst NFT
         /// @param address address of user trying to mint the karst NFT
         fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
@@ -128,20 +132,48 @@ pub mod KarstNFT {
 
             let mut token_id = self.last_minted_id.read() + 1;
             self.erc721._mint(address, token_id);
+            let timestamp: u64 = get_block_timestamp();
 
             self.user_token_id.write(address, token_id);
             self.last_minted_id.write(token_id);
+            self.mint_timestamp.write(token_id, timestamp);
         }
 
+        // *************************************************************************
+        //                            GETTERS
+        // *************************************************************************
         /// @notice gets the token ID for a user address
         /// @param user address of user to retrieve token ID for
         fn get_user_token_id(self: @ContractState, user: ContractAddress) -> u256 {
             self.user_token_id.read(user)
         }
 
+        fn get_token_mint_timestamp(self: @ContractState, token_id: u256) -> u64 {
+            self.mint_timestamp.read(token_id)
+        }
+
         /// @notice gets the last minted NFT
         fn get_last_minted_id(self: @ContractState) -> u256 {
             self.last_minted_id.read()
+        }
+
+        // *************************************************************************
+        //                            METADATA
+        // *************************************************************************
+        /// @notice returns the collection name
+        fn name(self: @ContractState) -> ByteArray {
+            self.erc721.name()
+        }
+
+        /// @notice returns the collection symbol
+        fn symbol(self: @ContractState) -> ByteArray {
+            self.erc721.symbol()
+        }
+
+        /// @notice returns the token_uri for a particular token_id
+        fn token_uri(self: @ContractState, token_id: u256) -> ByteArray {
+            let mint_timestamp: u64 = self.get_token_mint_timestamp(token_id);
+            ProfileTokenUri::get_token_uri(token_id, mint_timestamp)
         }
     }
 }
