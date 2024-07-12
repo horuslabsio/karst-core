@@ -27,6 +27,7 @@ pub mod PublicationComponent {
     };
 
     use karst::profile::profile::ProfileComponent;
+    use karst::profile::profile::ProfileComponent::PrivateTrait;
 
 
     // *************************************************************************
@@ -114,8 +115,8 @@ pub mod PublicationComponent {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(profile_address)
                 .profile_owner;
-            let mut profile_instance = get_dep_component_mut!(ref self, Profile);
-            let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
+            let mut profile_component = get_dep_component_mut!(ref self, Profile);
+            let pub_id_assigned = profile_component.increment_publication_count(profile_address);
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
             let new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),

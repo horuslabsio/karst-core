@@ -6,7 +6,7 @@ mod ProfileComponent {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address};
+    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IRegistry::{
         IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
@@ -24,7 +24,7 @@ mod ProfileComponent {
     #[storage]
     struct Storage {
         profile: LegacyMap<ContractAddress, Profile>,
-        karst_hub: ContractAddress,
+        karst_nft_address: ContractAddress,
     }
 
     // *************************************************************************
@@ -33,16 +33,17 @@ mod ProfileComponent {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
-        CreateProfile: CreateProfile
+        CreatedProfile: CreatedProfile
     }
 
     #[derive(Drop, starknet::Event)]
-    struct CreateProfile {
+    struct CreatedProfile {
         #[key]
         owner: ContractAddress,
         #[key]
         profile_address: ContractAddress,
         token_id: u256,
+        timestamp: u64
     }
 
     // *************************************************************************
@@ -53,8 +54,8 @@ mod ProfileComponent {
         TContractState, +HasComponent<TContractState>
     > of IProfile<ComponentState<TContractState>> {
         /// @notice initialize profile component
-        fn initializer(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
-            self.karst_hub.write(hub_address);
+        fn initializer(ref self: ComponentState<TContractState>, karst_nft_address: ContractAddress) {
+            self.karst_nft_address.write(karst_nft_address);
         }
         /// @notice creates karst profile
         /// @param karstnft_contract_address address of karstnft
@@ -66,9 +67,9 @@ mod ProfileComponent {
             karstnft_contract_address: ContractAddress,
             registry_hash: felt252,
             implementation_hash: felt252,
-            salt: felt252,
-            recipient: ContractAddress
+            salt: felt252
         ) -> ContractAddress {
+            let recipient = get_caller_address();
             let owns_karstnft = IERC721Dispatcher { contract_address: karstnft_contract_address }
                 .balance_of(recipient);
             if owns_karstnft == 0 {
@@ -82,11 +83,20 @@ mod ProfileComponent {
                 class_hash: registry_hash.try_into().unwrap()
             }
                 .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
+
             let new_profile = Profile {
                 profile_address, profile_owner: recipient, pub_count: 0, metadata_URI: "",
             };
+
             self.profile.write(profile_address, new_profile);
-            self.emit(CreateProfile { owner: recipient, profile_address, token_id });
+            self.emit(
+                CreatedProfile { 
+                    owner: recipient, 
+                    profile_address, 
+                    token_id, 
+                    timestamp: get_block_timestamp() 
+                }
+            );
             profile_address
         }
 
@@ -100,26 +110,9 @@ mod ProfileComponent {
         ) {
             let mut profile: Profile = self.profile.read(profile_address);
             assert(get_caller_address() == profile.profile_owner, NOT_PROFILE_OWNER);
+
             profile.metadata_URI = metadata_uri;
             self.profile.write(profile_address, profile);
-        }
-
-        /// @notice increments user's publication count
-        /// @params profile_address the targeted profile address
-        fn increment_publication_count(
-            ref self: ComponentState<TContractState>, profile_address: ContractAddress
-        ) -> u256 {
-            // hub_only(self.karst_hub.read());
-            let mut profile: Profile = self.profile.read(profile_address);
-            let updated_profile = Profile {
-                profile_address: profile.profile_address,
-                profile_owner: profile.profile_owner,
-                pub_count: profile.pub_count + 1,
-                metadata_URI: profile.metadata_URI,
-            };
-
-            self.profile.write(profile_address, updated_profile);
-            profile.pub_count
         }
 
         // *************************************************************************
@@ -150,6 +143,30 @@ mod ProfileComponent {
         ) -> u256 {
             let profile: Profile = self.profile.read(profile_address);
             profile.pub_count
+        }
+    }
+
+    #[generate_trait]
+    impl Private<
+        TContractState,
+        +HasComponent<TContractState>
+    > of PrivateTrait<TContractState>  {
+        /// @notice increments user's publication count
+        /// @params profile_address the targeted profile address
+        fn increment_publication_count(
+            ref self: ComponentState<TContractState>, profile_address: ContractAddress
+        ) -> u256 {
+            let mut profile: Profile = self.profile.read(profile_address);
+            let new_pub_count = profile.pub_count + 1;
+            let updated_profile = Profile {
+                profile_address: profile.profile_address,
+                profile_owner: profile.profile_owner,
+                pub_count: new_pub_count,
+                metadata_URI: profile.metadata_URI,
+            };
+
+            self.profile.write(profile_address, updated_profile);
+            new_pub_count
         }
     }
 }
