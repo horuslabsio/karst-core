@@ -141,6 +141,11 @@ pub mod PublicationComponent {
             ref self: ComponentState<TContractState>,
             comment_params: CommentParams
         ) -> u256 {
+            let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
+                .get_profile(comment_params.profile_address)
+                .profile_owner;
+            assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
+
             let ref_comment_params = comment_params.clone();
             let reference_pub_type = self._as_reference_pub_params(comment_params.reference_pub_type);
             assert(reference_pub_type == PublicationType::Comment, UNSUPPORTED_PUB_TYPE);
@@ -170,18 +175,23 @@ pub mod PublicationComponent {
         /// @param mirrorParams the MirrorParams struct
         fn mirror(
             ref self: ComponentState<TContractState>,
-            mirrorParams: MirrorParams
+            mirror_params: MirrorParams
         ) -> u256 {
-            let ref_mirrorParams = mirrorParams.clone();
+            let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
+                .get_profile(mirror_params.profile_address)
+                .profile_owner;
+            assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
+
+            let ref_mirrorParams = mirror_params.clone();
             let publication = self
-                .get_publication(mirrorParams.pointed_profile_address, mirrorParams.pointed_pub_id);
+                .get_publication(mirror_params.pointed_profile_address, mirror_params.pointed_pub_id);
 
             let pub_id_assigned = self
                 ._create_reference_publication(
-                    mirrorParams.profile_address,
+                    mirror_params.profile_address,
                     publication.content_URI,
-                    mirrorParams.pointed_profile_address,
-                    mirrorParams.pointed_pub_id,
+                    mirror_params.pointed_profile_address,
+                    mirror_params.pointed_pub_id,
                     PublicationType::Mirror
                 );
 
@@ -190,7 +200,7 @@ pub mod PublicationComponent {
                     MirrorCreated {
                         mirrorParams: ref_mirrorParams,
                         publication_id: pub_id_assigned,
-                        transaction_executor: mirrorParams.profile_address,
+                        transaction_executor: mirror_params.profile_address,
                         block_timestamp: get_block_timestamp(),
                     }
                 );
@@ -203,18 +213,23 @@ pub mod PublicationComponent {
         /// @param quoteParams the quoteParams struct
         fn quote(
             ref self: ComponentState<TContractState>,
-            quoteParams: QuoteParams
+            quote_params: QuoteParams
         ) -> u256 {
-            let ref_quoteParams = quoteParams.clone();
-            let reference_pub_type = self._as_reference_pub_params(quoteParams.reference_pub_type);
+            let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
+                .get_profile(quote_params.profile_address)
+                .profile_owner;
+            assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
+
+            let ref_quoteParams = quote_params.clone();
+            let reference_pub_type = self._as_reference_pub_params(quote_params.reference_pub_type);
             assert(reference_pub_type == PublicationType::Quote, UNSUPPORTED_PUB_TYPE);
 
             let pub_id_assigned = self
                 ._create_reference_publication(
-                    quoteParams.profile_address,
-                    quoteParams.content_URI,
-                    quoteParams.pointed_profile_address,
-                    quoteParams.pointed_pub_id,
+                    quote_params.profile_address,
+                    quote_params.content_URI,
+                    quote_params.pointed_profile_address,
+                    quote_params.pointed_pub_id,
                     reference_pub_type
                 );
 
@@ -223,7 +238,7 @@ pub mod PublicationComponent {
                     QuoteCreated {
                         quoteParams: ref_quoteParams,
                         publication_id: pub_id_assigned,
-                        transaction_executor: quoteParams.profile_address,
+                        transaction_executor: quote_params.profile_address,
                         block_timestamp: get_block_timestamp(),
                     }
                 );

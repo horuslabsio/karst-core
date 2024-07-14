@@ -22,11 +22,11 @@ pub trait IKarstPublications<TState> {
     ) -> u256;
     fn quote(
         ref self: TState,
-        quoteParams: QuoteParams
+        quote_params: QuoteParams
     ) -> u256;
     fn mirror(
         ref self: TState,
-        mirrorParams: MirrorParams
+        mirror_params: MirrorParams
     ) -> u256;
     // *************************************************************************
     //                              GETTERS

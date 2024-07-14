@@ -157,9 +157,41 @@ fn test_post() {
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let publication_type = dispatcher
         .get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
+
     assert(publication_type == PublicationType::Post, 'invalid pub_type');
     assert(user_one_first_post_pointed_pub_id == 1_u256, 'invalid pub id');
     stop_prank(CheatTarget::One(publication_contract_address));
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not profile owner!',))]
+fn test_posting_should_fail_if_not_profile_owner() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    let content_URI =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+    dispatcher.post(
+        PostParams {
+            content_URI: content_URI,
+            profile_address: user_one_profile_address
+        }
+    );
+    stop_prank(CheatTarget::One(publication_contract_address),);
 }
 
 #[test]
@@ -197,6 +229,9 @@ fn test_comment() {
                 reference_pub_type: PublicationType::Comment
             }
         );
+    stop_prank(CheatTarget::One(publication_contract_address),);
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
     // user two comment on user_one_post
     let user_two_comment_on_user_one_assigned_pub_id_2 = dispatcher
         .comment(
@@ -208,379 +243,406 @@ fn test_comment() {
                 reference_pub_type: PublicationType::Comment
             }
         );
+    stop_prank(CheatTarget::One(publication_contract_address),);
 
     let user_one_comment = dispatcher
         .get_publication(user_one_profile_address, user_one_comment_assigned_pub_id_1);
     let user_two_comment = dispatcher
         .get_publication(user_two_profile_address, user_two_comment_on_user_one_assigned_pub_id_2);
-    let publication_type_1 = dispatcher
-        .get_publication_type(user_one_profile_address, user_one_comment_assigned_pub_id_1);
-    let publication_type_2 = dispatcher
-        .get_publication_type(user_two_profile_address, user_two_comment_on_user_one_assigned_pub_id_2);
 
-    assert(publication_type_1 == PublicationType::Comment, 'invalid pub_type');
-    assert(publication_type_2 == PublicationType::Comment, 'invalid pub_type');
-    // assert(user_one_publication_root_id == user_two_comment_publication_root_id, 'Invalid root_id');
+    assert(user_one_comment.pointed_profile_address == user_one_profile_address, 'invalid pointed profile address');
+    assert(user_one_comment.pointed_pub_id == user_one_first_post_pointed_pub_id, 'invalid pointed publication ID');
+    assert(user_one_comment.content_URI == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/", 'invalid content URI');
+    assert(user_one_comment.pub_Type == PublicationType::Comment, 'invalid pub_type');
+    assert(user_one_comment.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_one_comment.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+
+    assert(user_two_comment.pointed_profile_address == user_one_profile_address, 'invalid pointed profile address');
+    assert(user_two_comment.pointed_pub_id == user_one_first_post_pointed_pub_id, 'invalid pointed publication ID');
+    assert(user_two_comment.content_URI == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/", 'invalid content URI');
+    assert(user_two_comment.pub_Type == PublicationType::Comment, 'invalid pub_type');
+    assert(user_two_comment.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_two_comment.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+}
+
+#[test]
+fn test_nested_comments() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_three_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =__setup__();
+
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    let content_URI_1 =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+    let content_URI_2 =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
+    let content_URI_3 =
+        "ipfs://VmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewUhje/";
+
+    // user 2 comments on post
+    let user_two_comment_assigned_pub_id = dispatcher
+        .comment(
+            CommentParams {
+                profile_address: user_two_profile_address,
+                content_URI: content_URI_1,
+                pointed_profile_address: user_one_profile_address,
+                pointed_pub_id: user_one_first_post_pointed_pub_id,
+                reference_pub_type: PublicationType::Comment
+            }
+        );
+    stop_prank(CheatTarget::One(publication_contract_address),);
+
+    // user three comments under user one's comment
+    start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
+    let user_three_comment_assigned_pub_id = dispatcher
+        .comment(
+            CommentParams {
+                profile_address: user_three_profile_address,
+                content_URI: content_URI_2,
+                pointed_profile_address: user_two_profile_address,
+                pointed_pub_id: user_two_comment_assigned_pub_id,
+                reference_pub_type: PublicationType::Comment
+            }
+        );
+    stop_prank(CheatTarget::One(publication_contract_address),);
+
+    // user one comments under user three's comment
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let user_one_comment_assigned_pub_id = dispatcher
+        .comment(
+            CommentParams {
+                profile_address: user_one_profile_address,
+                content_URI: content_URI_3,
+                pointed_profile_address: user_three_profile_address,
+                pointed_pub_id: user_three_comment_assigned_pub_id,
+                reference_pub_type: PublicationType::Comment
+            }
+        );
+    stop_prank(CheatTarget::One(publication_contract_address),);
+
+    let user_two_comment = dispatcher
+        .get_publication(user_two_profile_address, user_two_comment_assigned_pub_id);
+    let user_three_comment = dispatcher
+        .get_publication(user_three_profile_address, user_three_comment_assigned_pub_id);
+    let user_one_comment = dispatcher
+        .get_publication(user_one_profile_address, user_one_comment_assigned_pub_id);
+
+    assert(user_two_comment.pointed_profile_address == user_one_profile_address, 'invalid pointed profile address');
+    assert(user_two_comment.pointed_pub_id == user_one_first_post_pointed_pub_id, 'invalid pointed publication ID');
+    assert(user_two_comment.content_URI == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/", 'invalid content URI');
+    assert(user_two_comment.pub_Type == PublicationType::Comment, 'invalid pub_type');
+    assert(user_two_comment.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_two_comment.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+
+    assert(user_three_comment.pointed_profile_address == user_two_profile_address, 'invalid pointed profile address');
+    assert(user_three_comment.pointed_pub_id == user_two_comment_assigned_pub_id, 'invalid pointed publication ID');
+    assert(user_three_comment.content_URI == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/", 'invalid content URI');
+    assert(user_three_comment.pub_Type == PublicationType::Comment, 'invalid pub_type');
+    assert(user_three_comment.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_three_comment.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+
+    assert(user_one_comment.pointed_profile_address == user_three_profile_address, 'invalid pointed profile address');
+    assert(user_one_comment.pointed_pub_id == user_three_comment_assigned_pub_id, 'invalid pointed publication ID');
+    assert(user_one_comment.content_URI == "ipfs://VmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewUhje/", 'invalid content URI');
+    assert(user_one_comment.pub_Type == PublicationType::Comment, 'invalid pub_type');
+    assert(user_one_comment.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_one_comment.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not profile owner!',))]
+fn test_commenting_should_fail_if_not_profile_owner() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    let content_URI =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+    dispatcher.comment(
+        CommentParams {
+            profile_address: user_one_profile_address,
+            content_URI: content_URI,
+            pointed_profile_address: user_one_profile_address,
+            pointed_pub_id: user_one_first_post_pointed_pub_id,
+            reference_pub_type: PublicationType::Comment
+        }
+    );
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+fn test_quote() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        user_three_profile_address,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    // user two quotes user one
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
+    let quote_params = QuoteParams {
+        profile_address: user_two_profile_address,
+        content_URI: quote_content_URI,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+        reference_pub_type: PublicationType::Quote
+    };
+    let quote_pub_id_one = dispatcher.quote(quote_params);
+    stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
+
+    // user three quotes user two
+    start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
+    let user_two_quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/";
+    let user_two_quote_params = QuoteParams {
+        profile_address: user_three_profile_address,
+        content_URI: user_two_quote_content_URI,
+        pointed_profile_address: user_two_profile_address,
+        pointed_pub_id: quote_pub_id_one,
+        reference_pub_type: PublicationType::Quote
+    };
+    let quote_pub_id_two = dispatcher
+        .quote(user_two_quote_params);
+    stop_prank(CheatTarget::One(publication_contract_address));
+
+    // get both publications
+    let user_two_quote = dispatcher
+        .get_publication(user_two_profile_address, quote_pub_id_one);
+    let user_three_quote = dispatcher
+        .get_publication(user_three_profile_address, quote_pub_id_two);
+
+    assert(user_two_quote.pointed_profile_address == user_one_profile_address, 'invalid pointed profile address');
+    assert(user_two_quote.pointed_pub_id == user_one_first_post_pointed_pub_id, 'invalid pointed publication ID');
+    assert(user_two_quote.content_URI == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/", 'invalid content URI');
+    assert(user_two_quote.pub_Type == PublicationType::Quote, 'invalid pub_type');
+    assert(user_two_quote.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_two_quote.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+
+    assert(user_three_quote.pointed_profile_address == user_two_profile_address, 'invalid pointed profile address');
+    assert(user_three_quote.pointed_pub_id == quote_pub_id_one, 'invalid pointed publication ID');
+    assert(user_three_quote.content_URI == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/", 'invalid content URI');
+    assert(user_three_quote.pub_Type == PublicationType::Quote, 'invalid pub_type');
+    assert(user_three_quote.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_three_quote.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not profile owner!',))]
+fn test_quoting_should_fail_if_not_profile_owner() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    let content_URI: ByteArray =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+    dispatcher.quote(
+        QuoteParams {
+            profile_address: user_two_profile_address,
+            content_URI: content_URI,
+            pointed_profile_address: user_one_profile_address,
+            pointed_pub_id: user_one_first_post_pointed_pub_id,
+            reference_pub_type: PublicationType::Quote
+        }
+    );
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: unsupported pub type!',))]
+fn test_as_reference_pub_params_should_fail_on_wrong_pub_type() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+
+    let content_URI =
+        "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+
+    // user comments on his own post
+    dispatcher
+        .comment(
+            CommentParams {
+                profile_address: user_one_profile_address,
+                content_URI: content_URI,
+                pointed_profile_address: user_one_profile_address,
+                pointed_pub_id: user_one_first_post_pointed_pub_id,
+                reference_pub_type: PublicationType::Mirror
+            }
+        );
 
     stop_prank(CheatTarget::One(publication_contract_address),);
 }
 
-// #[test]
-// #[should_panic(expected: ('Karst: unsupported pub type!',))]
-// fn test_with_as_reference_pub_params() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         _,
-//         _,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
 
-//     let user_one_comment_on_his_post_content_URI =
-//         "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaryrga/";
+#[test]
+fn test_mirror() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id,
+    ) =
+        __setup__();
 
-//     // user comment on his own post
-//     publication_dispatcher
-//         .comment(
-//             user_one_profile_address,
-//             PublicationType::Mirror,
-//             user_one_comment_on_his_post_content_URI,
-//             user_one_profile_address,
-//             user_one_first_post_pointed_pub_id,
-//             publication_contract_address
-//         );
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+    let mirror_params = MirrorParams {
+        profile_address: user_two_profile_address,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
 
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    let pub_assigned_id = dispatcher.mirror(mirror_params);
+    stop_prank(CheatTarget::One(publication_contract_address),);
 
-// #[test]
-// fn test_quote() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         user_three_profile_address,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-//     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
+    // get the mirror publication
+    let user_mirror = dispatcher
+        .get_publication(user_two_profile_address, pub_assigned_id);
 
-//     let quote_params = QuoteParams {
-//         profile_address: user_two_profile_address,
-//         content_URI: quote_content_URI,
-//         pointed_profile_address: user_one_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id
-//     };
-//     // user one publish quote to user 2 profile
-//     let quote_pub_id = publication_dispatcher
-//         .quote(PublicationType::Quote, quote_params, publication_contract_address);
+    assert(user_mirror.pointed_profile_address == user_one_profile_address, 'invalid pointed profile address');
+    assert(user_mirror.pointed_pub_id == user_one_first_post_pointed_pub_id, 'invalid pointed publication ID');
+    assert(user_mirror.content_URI == "ipfs://helloworld", 'invalid content URI');
+    assert(user_mirror.pub_Type == PublicationType::Mirror, 'invalid pub_type');
+    assert(user_mirror.root_profile_address == user_one_profile_address, 'invalid root profile address');
+    assert(user_mirror.root_pub_id == user_one_first_post_pointed_pub_id, 'invalid root publication ID');
+}
 
-//     let publication_type = publication_dispatcher
-//         .get_publication_type(user_two_profile_address, quote_pub_id);
-//     assert(publication_type == PublicationType::Quote, 'invalid pub_type');
+#[test]
+#[should_panic(expected: ('Karst: not profile owner!',))]
+fn test_mirroring_should_fail_if_not_profile_owner() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        user_two_profile_address,
+        _,
+        user_one_first_post_pointed_pub_id
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
+    let mirror_params = MirrorParams {
+        profile_address: user_two_profile_address,
+        pointed_profile_address: user_one_profile_address,
+        pointed_pub_id: user_one_first_post_pointed_pub_id,
+    };
 
-//     stop_prank(CheatTarget::Multiple(array![publication_contract_address]),);
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
+    dispatcher.mirror(mirror_params);
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
 
-//     start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
-//     let user_two_quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysdjbezo/";
+#[test]
+fn test_get_publication_content_uri() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
 
-//     let user_two_quote_params = QuoteParams {
-//         profile_address: user_three_profile_address,
-//         content_URI: user_two_quote_content_URI,
-//         pointed_profile_address: user_one_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id
-//     };
-//     // user 2 publish quote to user 3 profile
-//     let user_two_quote_pub_id = publication_dispatcher
-//         .quote(PublicationType::Quote, user_two_quote_params, publication_contract_address);
+    let content_uri = dispatcher.get_publication_content_uri(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    assert(content_uri == "ipfs://helloworld", 'invalid uri');
+}
 
-//     let publication_type = publication_dispatcher
-//         .get_publication_type(user_three_profile_address, user_two_quote_pub_id);
-//     assert(publication_type == PublicationType::Quote, 'invalid pub_type');
+#[test]
+fn test_get_publication_type() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher {
+        contract_address: publication_contract_address
+    };
 
-//     let user_one_publication_root_id = publication_dispatcher
-//         .get_publication(user_two_profile_address, quote_pub_id)
-//         .root_profile_address;
-//     let user_two_publication_root_id = publication_dispatcher
-//         .get_publication(user_three_profile_address, user_two_quote_pub_id)
-//         .root_profile_address;
-//     assert(user_one_publication_root_id == user_two_publication_root_id, 'Invalid root_id');
-
-//     stop_prank(CheatTarget::One(publication_contract_address));
-// }
-
-// #[test]
-// #[should_panic(expected: ('Karst: unsupported pub type!',))]
-// fn test_quote_as_reference_pub_params() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         _,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-
-//     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
-
-//     let quote_params = QuoteParams {
-//         profile_address: user_two_profile_address,
-//         content_URI: quote_content_URI,
-//         pointed_profile_address: user_one_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id
-//     };
-
-//     publication_dispatcher
-//         .quote(PublicationType::Mirror, quote_params, publication_contract_address);
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
-
-// #[test]
-// fn test_quote_pointed_profile_address() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         _,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-//     let quote_content_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddefzp/";
-
-//     let quote_params = QuoteParams {
-//         profile_address: user_two_profile_address,
-//         content_URI: quote_content_URI,
-//         pointed_profile_address: user_one_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id
-//     };
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-//     let publicationDispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     publication_dispatcher
-//         .quote(PublicationType::Quote, quote_params, publication_contract_address);
-
-//     let pointed_profile = publicationDispatcher.get_profile(user_one_profile_address);
-
-//     assert(
-//         pointed_profile.profile_address == user_one_profile_address,
-//         'Invalid Pointed Profile Address'
-//     );
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
-
-// #[test]
-// fn test_publish_mirror() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         _,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
-
-//     let mirror_params = MirrorParams {
-//         profile_address: user_one_profile_address,
-//         metadata_URI: metadata_URI,
-//         pointed_profile_address: user_two_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id,
-//     };
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-//     let publicationDispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     let pub_id_assigned = publicationDispatcher
-//         .get_user_publication_count(user_one_profile_address);
-//     let pub_assign_id = publication_dispatcher.mirror(mirror_params, publication_contract_address);
-
-//     assert(pub_id_assigned == pub_assign_id, 'Invalid publication id assign');
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
-
-// #[test]
-// fn test_two_publish_mirror() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         user_three_profile_address,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
-
-//     let metadata_URI_1 = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
-//     let mirror_params = MirrorParams {
-//         profile_address: user_one_profile_address,
-//         metadata_URI: metadata_URI,
-//         pointed_profile_address: user_two_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id,
-//     };
-
-//     publication_dispatcher.mirror(mirror_params, publication_contract_address);
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
-
-//     let mirror_params_1 = MirrorParams {
-//         profile_address: user_one_profile_address,
-//         metadata_URI: metadata_URI_1,
-//         pointed_profile_address: user_three_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id,
-//     };
-
-//     publication_dispatcher.mirror(mirror_params_1, publication_contract_address);
-
-//     let pointed_profile_three = publication_dispatcher.get_profile(user_three_profile_address);
-
-//     assert(
-//         pointed_profile_three.profile_address == user_three_profile_address,
-//         'Invalid publication id assign'
-//     );
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
-
-// #[test]
-// fn test_mirror_pointed_profile_address() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         _,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
-
-//     let mirror_params = MirrorParams {
-//         profile_address: user_one_profile_address,
-//         metadata_URI: metadata_URI,
-//         pointed_profile_address: user_two_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id,
-//     };
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-
-//     publication_dispatcher.mirror(mirror_params, publication_contract_address);
-
-//     let pointed_profile = publication_dispatcher.get_profile(user_one_profile_address);
-
-//     assert(
-//         pointed_profile.profile_address == user_one_profile_address,
-//         'Invalid Pointed Profile Address'
-//     );
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
-
-// #[test]
-// fn test_mirror_root_profile_address() {
-//     let (
-//         _,
-//         _,
-//         publication_contract_address,
-//         _,
-//         _,
-//         user_one_profile_address,
-//         user_two_profile_address,
-//         _,
-//         user_one_first_post_pointed_pub_id,
-//     ) =
-//         __setup__();
-//     let publication_dispatcher = IComposableDispatcher {
-//         contract_address: publication_contract_address
-//     };
-
-//     let metadata_URI = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZysddewga/";
-
-//     let mirror_params = MirrorParams {
-//         profile_address: user_one_profile_address,
-//         metadata_URI: metadata_URI,
-//         pointed_profile_address: user_two_profile_address,
-//         pointed_pub_id: user_one_first_post_pointed_pub_id,
-//     };
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
-
-//     publication_dispatcher.mirror(mirror_params, publication_contract_address);
-
-//     let pointed_profile = publication_dispatcher.get_profile(user_two_profile_address);
-
-//     assert(
-//         pointed_profile.profile_address == user_two_profile_address, 'Invalid Root Profile Address'
-//     );
-
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
+    let pub_type = dispatcher.get_publication_type(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    assert(pub_type == PublicationType::Post, 'invalid pub type');
+}
