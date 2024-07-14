@@ -85,7 +85,6 @@ fn test_profile_creation() {
             registry_class_hash,
             account_class_hash,
             2456,
-            USER.try_into().unwrap()
         );
 
     // test a new karst nft is minted
@@ -120,8 +119,7 @@ fn test_profile_metadata() {
             nft_contract_address,
             registry_class_hash,
             account_class_hash,
-            2456,
-            USER.try_into().unwrap()
+            2456
         );
 
     profileDispatcher
