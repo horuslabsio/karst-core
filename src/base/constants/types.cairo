@@ -16,18 +16,6 @@ pub struct FollowData {
     follow_timestamp: u64
 }
 
-// /**
-// * @notice A struct containing the parameters supplied to the post method
-// *
-// * @param contentURI URI pointing to the post content
-// * @param profile_address profile address that owns the post
-// */
-#[derive(Drop, Serde, starknet::Store)]
-pub struct PostParams {
-    contentURI: ByteArray,
-    profile_address: ContractAddress,
-}
-
 // * @notice A struct containing profile data.
 // * profile_address The profile ID of a karst profile 
 // * profile_owner The address that created the profile_address
@@ -74,13 +62,25 @@ pub struct Publication {
 // * @param Mirror A mirror, having a pointer to another publication, but no URI.
 // * @param Quote A quote, having an URI, and a pointer to another publication.
 // */
-#[derive(Debug, Drop, Serde, starknet::Store, PartialEq)]
+#[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 enum PublicationType {
     Nonexistent,
     Post,
     Comment,
     Mirror,
     Quote
+}
+
+// /**
+// * @notice A struct containing the parameters supplied to the post method
+// *
+// * @param contentURI URI pointing to the post content
+// * @param profile_address profile address that owns the post
+// */
+#[derive(Drop, Serde, starknet::Store, Clone)]
+pub struct PostParams {
+    content_URI: ByteArray,
+    profile_address: ContractAddress,
 }
 
 // /**
@@ -91,12 +91,13 @@ enum PublicationType {
 // * @param pointed_profile_address profile address of the referenced publication/comment
 // * @param pointed_pub_id ID of the pointed publication
 // */
-#[derive(Drop, Serde, starknet::Store)]
+#[derive(Drop, Serde, starknet::Store, Clone)]
 struct CommentParams {
     profile_address: ContractAddress,
-    contentURI: ByteArray,
+    content_URI: ByteArray,
     pointed_profile_address: ContractAddress,
     pointed_pub_id: u256,
+    reference_pub_type: PublicationType
 }
 
 
@@ -119,7 +120,6 @@ pub struct ReferencePubParams {
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct MirrorParams {
     profile_address: ContractAddress,
-    metadata_URI: ByteArray,
     pointed_profile_address: ContractAddress,
     pointed_pub_id: u256
 }
@@ -137,5 +137,6 @@ pub struct QuoteParams {
     profile_address: ContractAddress,
     content_URI: ByteArray,
     pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256
+    pointed_pub_id: u256,
+    reference_pub_type: PublicationType
 }
