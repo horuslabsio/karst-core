@@ -80,12 +80,7 @@ fn test_profile_creation() {
         USER.try_into().unwrap()
     );
     let profile_address = profileDispatcher
-        .create_profile(
-            nft_contract_address,
-            registry_class_hash,
-            account_class_hash,
-            2456,
-        );
+        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456,);
 
     // test a new karst nft is minted
     let last_minted_id = karstNFTDispatcher.get_last_minted_id();
@@ -115,12 +110,7 @@ fn test_profile_metadata() {
         USER.try_into().unwrap()
     );
     let profile_address = profileDispatcher
-        .create_profile(
-            nft_contract_address,
-            registry_class_hash,
-            account_class_hash,
-            2456
-        );
+        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
     profileDispatcher
         .set_profile_metadata_uri(

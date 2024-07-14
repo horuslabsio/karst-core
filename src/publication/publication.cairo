@@ -97,10 +97,7 @@ pub mod PublicationComponent {
         /// @notice performs post action
         /// @param contentURI uri of the content to be posted
         /// @param profile_address address of profile performing the post action
-        fn post(
-            ref self: ComponentState<TContractState>,
-            post_params: PostParams
-        ) -> u256 {
+        fn post(ref self: ComponentState<TContractState>, post_params: PostParams) -> u256 {
             let ref_post_params = post_params.clone();
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(post_params.profile_address)
@@ -108,7 +105,8 @@ pub mod PublicationComponent {
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
 
             let mut profile_component = get_dep_component_mut!(ref self, Profile);
-            let pub_id_assigned = profile_component.increment_publication_count(post_params.profile_address);
+            let pub_id_assigned = profile_component
+                .increment_publication_count(post_params.profile_address);
 
             let new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),
@@ -138,8 +136,7 @@ pub mod PublicationComponent {
         /// @param pointed_profile_address profile address comment points too
         /// @param pointed_pub_id ID of initial publication comment points too
         fn comment(
-            ref self: ComponentState<TContractState>,
-            comment_params: CommentParams
+            ref self: ComponentState<TContractState>, comment_params: CommentParams
         ) -> u256 {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(comment_params.profile_address)
@@ -147,7 +144,8 @@ pub mod PublicationComponent {
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
 
             let ref_comment_params = comment_params.clone();
-            let reference_pub_type = self._as_reference_pub_params(comment_params.reference_pub_type);
+            let reference_pub_type = self
+                ._as_reference_pub_params(comment_params.reference_pub_type);
             assert(reference_pub_type == PublicationType::Comment, UNSUPPORTED_PUB_TYPE);
 
             let pub_id_assigned = self
@@ -173,10 +171,7 @@ pub mod PublicationComponent {
 
         /// @notice performs the mirror function
         /// @param mirrorParams the MirrorParams struct
-        fn mirror(
-            ref self: ComponentState<TContractState>,
-            mirror_params: MirrorParams
-        ) -> u256 {
+        fn mirror(ref self: ComponentState<TContractState>, mirror_params: MirrorParams) -> u256 {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(mirror_params.profile_address)
                 .profile_owner;
@@ -184,7 +179,9 @@ pub mod PublicationComponent {
 
             let ref_mirrorParams = mirror_params.clone();
             let publication = self
-                .get_publication(mirror_params.pointed_profile_address, mirror_params.pointed_pub_id);
+                .get_publication(
+                    mirror_params.pointed_profile_address, mirror_params.pointed_pub_id
+                );
 
             let pub_id_assigned = self
                 ._create_reference_publication(
@@ -211,10 +208,7 @@ pub mod PublicationComponent {
         /// @notice performs the quote function
         /// @param reference_pub_type publication type
         /// @param quoteParams the quoteParams struct
-        fn quote(
-            ref self: ComponentState<TContractState>,
-            quote_params: QuoteParams
-        ) -> u256 {
+        fn quote(ref self: ComponentState<TContractState>, quote_params: QuoteParams) -> u256 {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(quote_params.profile_address)
                 .profile_owner;
@@ -307,7 +301,9 @@ pub mod PublicationComponent {
             let cloned_reference_pub_type = reference_pub_type.clone();
             let mut profile_instance = get_dep_component_mut!(ref self, Profile);
             let pub_id_assigned = profile_instance.increment_publication_count(profile_address);
-            let pointed_pub: Publication = self.publication.read((pointed_profile_address, pointed_pub_id));
+            let pointed_pub: Publication = self
+                .publication
+                .read((pointed_profile_address, pointed_pub_id));
 
             let mut root_profile_address: ContractAddress = 0.try_into().unwrap();
             let mut root_pub_id: u256 = 0.try_into().unwrap();
@@ -317,19 +313,17 @@ pub mod PublicationComponent {
                     root_pub_id = 0.try_into().unwrap();
                     root_profile_address = 0.try_into().unwrap();
                 },
-                PublicationType::Mirror | PublicationType::Quote | PublicationType::Comment => {
+                PublicationType::Mirror | PublicationType::Quote |
+                PublicationType::Comment => {
                     if (pointed_pub.root_pub_id == 0) {
                         root_pub_id = pointed_pub_id;
                         root_profile_address = pointed_profile_address;
-                    }
-                    else {
+                    } else {
                         root_pub_id = pointed_pub.root_pub_id;
-                        root_profile_address = pointed_pub.root_profile_address; 
+                        root_profile_address = pointed_pub.root_profile_address;
                     }
                 },
-                PublicationType::Nonexistent => { 
-                    return 0.try_into().unwrap(); 
-                }
+                PublicationType::Nonexistent => { return 0.try_into().unwrap(); }
             };
 
             let updated_reference = Publication {
@@ -376,8 +370,7 @@ pub mod PublicationComponent {
         /// @notice returns the publication type
         // @param reference_pub_type reference publication type
         fn _as_reference_pub_params(
-            ref self: ComponentState<TContractState>, 
-            reference_pub_type: PublicationType
+            ref self: ComponentState<TContractState>, reference_pub_type: PublicationType
         ) -> PublicationType {
             match reference_pub_type {
                 PublicationType::Quote => PublicationType::Quote,

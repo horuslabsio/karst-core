@@ -1,12 +1,6 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{ 
-    Profile, 
-    PostParams, 
-    MirrorParams, 
-    CommentParams, 
-    PublicationType, 
-    Publication, 
-    QuoteParams 
+use karst::base::constants::types::{
+    Profile, PostParams, MirrorParams, CommentParams, PublicationType, Publication, QuoteParams
 };
 
 // *************************************************************************
@@ -14,7 +8,7 @@ use karst::base::constants::types::{
 // *************************************************************************
 #[starknet::interface]
 pub trait IHub<TState> {
-     // *************************************************************************
+    // *************************************************************************
     //                              PROFILE
     // *************************************************************************
     fn create_profile(
@@ -25,11 +19,9 @@ pub trait IHub<TState> {
         salt: felt252,
         recipient: ContractAddress
     ) -> ContractAddress;
-    
+
     fn set_profile_metadata_uri(
-        ref self: TState, 
-        profile_address: ContractAddress, 
-        metadata_uri: ByteArray
+        ref self: TState, profile_address: ContractAddress, metadata_uri: ByteArray
     );
 
     fn get_profile_metadata(self: @TState, profile_address: ContractAddress) -> ByteArray;
@@ -41,25 +33,13 @@ pub trait IHub<TState> {
     // *************************************************************************
     //                            PUBLICATION
     // *************************************************************************
-    fn post(
-        ref self: TState,
-        post_params: PostParams
-    ) -> u256;
+    fn post(ref self: TState, post_params: PostParams) -> u256;
 
-    fn comment(
-        ref self: TState,
-        comment_params: CommentParams
-    ) -> u256;
+    fn comment(ref self: TState, comment_params: CommentParams) -> u256;
 
-    fn quote(
-        ref self: TState,
-        quote_params: QuoteParams
-    ) -> u256;
+    fn quote(ref self: TState, quote_params: QuoteParams) -> u256;
 
-    fn mirror(
-        ref self: TState,
-        mirror_params: MirrorParams
-    ) -> u256;
+    fn mirror(ref self: TState, mirror_params: MirrorParams) -> u256;
 
     fn get_publication(
         self: @TState, profile_address: ContractAddress, pub_id_assigned: u256
@@ -72,8 +52,7 @@ pub trait IHub<TState> {
     fn get_publication_content_uri(
         self: @TState, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
-
-    // *************************************************************************
-    //                            PROFILE INTERACTIONS
-    // *************************************************************************
+// *************************************************************************
+//                            PROFILE INTERACTIONS
+// *************************************************************************
 }

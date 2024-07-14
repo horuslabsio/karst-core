@@ -54,7 +54,9 @@ mod ProfileComponent {
         TContractState, +HasComponent<TContractState>
     > of IProfile<ComponentState<TContractState>> {
         /// @notice initialize profile component
-        fn initializer(ref self: ComponentState<TContractState>, karst_nft_address: ContractAddress) {
+        fn initializer(
+            ref self: ComponentState<TContractState>, karst_nft_address: ContractAddress
+        ) {
             self.karst_nft_address.write(karst_nft_address);
         }
         /// @notice creates karst profile
@@ -89,14 +91,15 @@ mod ProfileComponent {
             };
 
             self.profile.write(profile_address, new_profile);
-            self.emit(
-                CreatedProfile { 
-                    owner: recipient, 
-                    profile_address, 
-                    token_id, 
-                    timestamp: get_block_timestamp() 
-                }
-            );
+            self
+                .emit(
+                    CreatedProfile {
+                        owner: recipient,
+                        profile_address,
+                        token_id,
+                        timestamp: get_block_timestamp()
+                    }
+                );
             profile_address
         }
 
@@ -147,10 +150,7 @@ mod ProfileComponent {
     }
 
     #[generate_trait]
-    impl Private<
-        TContractState,
-        +HasComponent<TContractState>
-    > of PrivateTrait<TContractState>  {
+    impl Private<TContractState, +HasComponent<TContractState>> of PrivateTrait<TContractState> {
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
         fn increment_publication_count(
