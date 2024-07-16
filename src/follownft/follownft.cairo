@@ -1,3 +1,36 @@
+// *************************************************************************
+//                            OZ ERC721
+// *************************************************************************
+use openzeppelin::{
+    token::erc721::{ERC721Component::{ERC721Metadata, ERC721Mixin, HasComponent}},
+    introspection::src5::SRC5Component,
+};
+
+
+#[starknet::interface]
+trait IERC721Metadata<TState> {
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+}
+
+#[starknet::embeddable]
+impl IERC721MetadataImpl<
+    TContractState,
+    +HasComponent<TContractState>,
+    +SRC5Component::HasComponent<TContractState>,
+    +Drop<TContractState>
+> of IERC721Metadata<TContractState> {
+    fn name(self: @TContractState) -> ByteArray {
+        let component = HasComponent::get_component(self);
+        ERC721Metadata::name(component)
+    }
+
+    fn symbol(self: @TContractState) -> ByteArray {
+        let component = HasComponent::get_component(self);
+        ERC721Metadata::symbol(component)
+    }
+}
+
 #[starknet::contract]
 mod Follow {
     // *************************************************************************
@@ -12,11 +45,45 @@ mod Follow {
         utils::hubrestricted::HubRestricted::hub_only, token_uris::follow_token_uri::FollowTokenUri,
     };
 
+    use openzeppelin::{
+        account, access::ownable::OwnableComponent,
+        token::erc721::{
+            ERC721Component, erc721::ERC721Component::InternalTrait as ERC721InternalTrait
+        },
+        introspection::{src5::SRC5Component}
+    };
+
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: SRC5Component, storage: src5, event: SRC5Event);
+    component!(path: ERC721Component, storage: erc721, event: ERC721Event);
+
+    // allow to check what interface is supported
+    #[abi(embed_v0)]
+    impl SRC5Impl = SRC5Component::SRC5Impl<ContractState>;
+    impl SRC5InternalImpl = SRC5Component::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
+    #[abi(embed_v0)]
+    impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
+
+    // add an owner
+    #[abi(embed_v0)]
+    impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
+    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
+
     // *************************************************************************
     //                            STORAGE
     // *************************************************************************
     #[storage]
     struct Storage {
+        #[substorage(v0)]
+        erc721: ERC721Component::Storage,
+        #[substorage(v0)]
+        src5: SRC5Component::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        admin: ContractAddress,
         followed_profile_address: ContractAddress,
         follower_count: u256,
         follow_id_by_follower_profile_address: LegacyMap<ContractAddress, u256>,
@@ -31,6 +98,12 @@ mod Follow {
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
+        #[flat]
+        ERC721Event: ERC721Component::Event,
+        #[flat]
+        SRC5Event: SRC5Component::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
         Followed: Followed,
         Unfollowed: Unfollowed,
         FollowerBlocked: FollowerBlocked,
@@ -170,12 +243,18 @@ mod Follow {
         // *************************************************************************
         //                            METADATA
         // *************************************************************************
+        /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
             return "KARST:FOLLOWER";
         }
+
+        /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
             return "KFL";
         }
+
+        /// @notice returns the token URI of a particular follow NFT
+        /// @param follow_id ID of NFT to be queried
         fn token_uri(self: @ContractState, follow_id: u256) -> ByteArray {
             let follow_data = self.follow_data_by_follow_id.read(follow_id);
             let timestamp = follow_data.follow_timestamp;
