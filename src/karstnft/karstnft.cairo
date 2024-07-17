@@ -1,5 +1,4 @@
 use starknet::ContractAddress;
-
 // *************************************************************************
 //                             OZ IMPORTS
 // *************************************************************************
@@ -52,6 +51,10 @@ pub mod KarstNFT {
         },
         introspection::{src5::SRC5Component}
     };
+
+    use karst::profile::profile::ProfileComponent;
+    component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
+
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
@@ -84,6 +87,8 @@ pub mod KarstNFT {
         src5: SRC5Component::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        profile: ProfileComponent::Storage,
         admin: ContractAddress,
         last_minted_id: u256,
         mint_timestamp: LegacyMap<u256, u64>,
@@ -102,6 +107,8 @@ pub mod KarstNFT {
         SRC5Event: SRC5Component::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        ProfileEvent: ProfileComponent::Event
     }
 
     // *************************************************************************
@@ -173,7 +180,10 @@ pub mod KarstNFT {
         /// @notice returns the token_uri for a particular token_id
         fn token_uri(self: @ContractState, token_id: u256) -> ByteArray {
             let mint_timestamp: u64 = self.get_token_mint_timestamp(token_id);
-            ProfileTokenUri::get_token_uri(token_id, mint_timestamp)
+
+            let profile = self.profile.get_profile(get_caller_address());
+
+            ProfileTokenUri::get_token_uri(token_id, mint_timestamp, profile)
         }
     }
 }
