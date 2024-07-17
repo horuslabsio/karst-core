@@ -10,7 +10,7 @@ mod HandleRegistry {
     };
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::base::{utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors};
+    use karst::base::{constants::errors::Errors};
     use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 
     // *************************************************************************
@@ -18,7 +18,6 @@ mod HandleRegistry {
     // *************************************************************************
     #[storage]
     struct Storage {
-        karst_hub: ContractAddress,
         handle_address: ContractAddress,
         handle_to_profile_address: LegacyMap::<u256, ContractAddress>,
         profile_address_to_handle: LegacyMap::<ContractAddress, u256>,
@@ -55,9 +54,8 @@ mod HandleRegistry {
     // *************************************************************************
     #[constructor]
     fn constructor(
-        ref self: ContractState, hub_address: ContractAddress, handle_address: ContractAddress
+        ref self: ContractState, handle_address: ContractAddress
     ) {
-        self.karst_hub.write(hub_address);
         self.handle_address.write(handle_address);
     }
 
@@ -70,7 +68,6 @@ mod HandleRegistry {
         /// @param handle_id ID of handle to be linked
         /// @param profile_address address of profile to be linked
         fn link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
-            hub_only(self.karst_hub.read());
             self._link(handle_id, profile_address);
         }
 

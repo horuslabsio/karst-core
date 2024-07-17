@@ -90,7 +90,6 @@ mod Handles {
         admin: ContractAddress,
         total_supply: u256,
         local_names: LegacyMap::<u256, felt252>,
-        karst_hub: ContractAddress,
     }
 
     // *************************************************************************
@@ -140,9 +139,8 @@ mod Handles {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(ref self: ContractState, admin: ContractAddress, hub_address: ContractAddress) {
+    fn constructor(ref self: ContractState, admin: ContractAddress) {
         self.admin.write(admin);
-        self.karst_hub.write(hub_address);
         self.erc721.initializer("Karst Handles", "KARST", "");
     }
 
