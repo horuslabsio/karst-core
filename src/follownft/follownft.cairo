@@ -88,7 +88,6 @@ mod Follow {
         follower_count: u256,
         follow_id_by_follower_profile_address: LegacyMap<ContractAddress, u256>,
         follow_data_by_follow_id: LegacyMap<u256, FollowData>,
-        initialized: bool,
         karst_hub: ContractAddress,
     }
 
@@ -146,8 +145,11 @@ mod Follow {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(ref self: ContractState, hub: ContractAddress) {
+    fn constructor(ref self: ContractState, hub: ContractAddress, profile_address: ContractAddress, admin: ContractAddress) {
+        self.admin.write(admin);
+        self.erc721.initializer("KARST:FOLLOWER", "KFL", "");
         self.karst_hub.write(hub);
+        self.followed_profile_address.write(profile_address);
     }
 
     // *************************************************************************
@@ -155,14 +157,6 @@ mod Follow {
     // *************************************************************************
     #[abi(embed_v0)]
     impl FollowImpl of IFollowNFT<ContractState> {
-        /// @notice initialize follow contract
-        /// @param profile_address address of profile to initialize contract for
-        fn initialize(ref self: ContractState, profile_address: ContractAddress) {
-            assert(!self.initialized.read(), Errors::INITIALIZED);
-            self.initialized.write(true);
-            self.followed_profile_address.write(profile_address);
-        }
-
         /// @notice performs the follow action
         /// @param follower_profile_address address of the user trying to perform the follow action
         fn follow(ref self: ContractState, follower_profile_address: ContractAddress) -> u256 {

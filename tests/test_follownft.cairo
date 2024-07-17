@@ -12,6 +12,7 @@ use karst::follownft::follownft::Follow;
 use karst::base::constants::types::FollowData;
 
 const HUB_ADDRESS: felt252 = 24205;
+const ADMIN: felt252 = 13245;
 const FOLLOWED_ADDRESS: felt252 = 1234;
 const FOLLOWER1: felt252 = 53453;
 const FOLLOWER2: felt252 = 24252;
@@ -20,7 +21,7 @@ const FOLLOWER4: felt252 = 24262;
 
 fn __setup__() -> ContractAddress {
     let follow_nft_contract = declare("Follow").unwrap();
-    let mut follow_nft_constructor_calldata = array![HUB_ADDRESS];
+    let mut follow_nft_constructor_calldata = array![HUB_ADDRESS, FOLLOWED_ADDRESS, ADMIN];
     let (follow_nft_contract_address, _) = follow_nft_contract
         .deploy(@follow_nft_constructor_calldata)
         .unwrap();
@@ -120,13 +121,21 @@ fn test_follow_data() {
     let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
     let follow_data = dispatcher.get_follow_data(follow_id);
     let data = FollowData {
-        follower_profile_address: FOLLOWER1.try_into().unwrap(), follow_timestamp: 100
+        followed_profile_address: FOLLOWED_ADDRESS.try_into().unwrap(),
+        follower_profile_address: FOLLOWER1.try_into().unwrap(),
+        follow_timestamp: 100,
+        block_status: false
     };
+    assert(
+        follow_data.followed_profile_address == data.followed_profile_address,
+        'invalid followed profile'
+    );
     assert(
         follow_data.follower_profile_address == data.follower_profile_address,
         'invalid follower profile'
     );
     assert(follow_data.follow_timestamp == data.follow_timestamp, 'invalid follow timestamp');
+    assert(follow_data.block_status == data.block_status, 'invalid block status');
     stop_prank(CheatTarget::One(follow_nft_contract_address));
     stop_warp(CheatTarget::One(follow_nft_contract_address));
 }
@@ -163,8 +172,22 @@ fn test_process_block() {
     start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
     dispatcher.follow(FOLLOWER1.try_into().unwrap());
     dispatcher.process_block(FOLLOWER1.try_into().unwrap());
-    let is_following = dispatcher.is_following(FOLLOWER1.try_into().unwrap());
-    assert(is_following == false, 'block operation failed');
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+    let follow_data = dispatcher.get_follow_data(follow_id);
+    assert(follow_data.block_status == true, 'block operation failed');
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
+}
+
+#[test]
+fn test_process_unblock() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    dispatcher.process_unblock(FOLLOWER1.try_into().unwrap());
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+    let follow_data = dispatcher.get_follow_data(follow_id);
+    assert(follow_data.block_status == false, 'unblock operation failed');
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
 
