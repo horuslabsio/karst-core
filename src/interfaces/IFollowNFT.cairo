@@ -13,6 +13,7 @@ pub trait IFollowNFT<TState> {
     fn follow(ref self: TState, follower_profile_address: ContractAddress) -> u256;
     fn unfollow(ref self: TState, unfollower_profile_address: ContractAddress);
     fn process_block(ref self: TState, follower_profile_address: ContractAddress) -> bool;
+    fn process_unblock(ref self: TState, follower_profile_address: ContractAddress) -> bool;
     // *************************************************************************
     //                            GETTERS
     // *************************************************************************

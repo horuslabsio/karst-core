@@ -7,13 +7,17 @@ use starknet::ContractAddress;
 // /**
 // * @notice A struct containing token follow-related data.
 // *
-// * @param follower_profile_address The ID of the profile using the token to follow.
+// * @param followed_profile_address The ID of the profile being followed.
+// * @param follower_profile_address The ID of the profile following.
 // * @param followTimestamp The timestamp of the current follow, if a profile is using the token to follow.
+// * @param block_status true if follower is blocked, false otherwise
 // */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct FollowData {
+    followed_profile_address: ContractAddress,
     follower_profile_address: ContractAddress,
-    follow_timestamp: u64
+    follow_timestamp: u64,
+    block_status: bool,
 }
 
 // * @notice A struct containing profile data.

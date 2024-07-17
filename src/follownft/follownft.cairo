@@ -107,6 +107,7 @@ mod Follow {
         Followed: Followed,
         Unfollowed: Unfollowed,
         FollowerBlocked: FollowerBlocked,
+        FollowerUnblocked: FollowerUnblocked
     }
 
     #[derive(Drop, starknet::Event)]
@@ -129,6 +130,14 @@ mod Follow {
     struct FollowerBlocked {
         followed_address: ContractAddress,
         blocked_follower: ContractAddress,
+        follow_id: u256,
+        timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    struct FollowerUnblocked {
+        followed_address: ContractAddress,
+        unblocked_follower: ContractAddress,
         follow_id: u256,
         timestamp: u64,
     }
@@ -176,22 +185,67 @@ mod Follow {
             self._unfollow(unfollower_profile_address, follow_id);
         }
 
-        /// @notice performs the block action
+        /// @notice performs the blocking action
         /// @param follower_profile_address address of the user to be blocked
         fn process_block(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
-            hub_only(self.karst_hub.read());
+             hub_only(self.karst_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);
             assert(follow_id.is_non_zero(), Errors::NOT_FOLLOWING);
-            self._unfollow(follower_profile_address, follow_id);
+            let follow_data = self.follow_data_by_follow_id.read(follow_id);
+            self
+                .follow_data_by_follow_id
+                .write(
+                    follow_id,
+                    FollowData {
+                        followed_profile_address: follow_data.followed_profile_address,
+                        follower_profile_address: follow_data.follower_profile_address,
+                        follow_timestamp: follow_data.follow_timestamp,
+                        block_status: true,
+                    }
+                );
             self
                 .emit(
                     FollowerBlocked {
                         followed_address: self.followed_profile_address.read(),
                         blocked_follower: follower_profile_address,
+                        follow_id: follow_id,
+                        timestamp: get_block_timestamp()
+                    }
+                );
+            return true;
+        }
+
+        /// @notice performs the unblocking action
+        /// @param follower_profile_address address of the user to be blocked
+        fn process_unblock(
+            ref self: ContractState, follower_profile_address: ContractAddress
+        ) -> bool {
+             hub_only(self.karst_hub.read());
+            let follow_id = self
+                .follow_id_by_follower_profile_address
+                .read(follower_profile_address);
+            assert(follow_id.is_non_zero(), Errors::NOT_FOLLOWING);
+            let follow_data = self.follow_data_by_follow_id.read(follow_id);
+            self
+                .follow_data_by_follow_id
+                .write(
+                    follow_id,
+                    FollowData {
+                        followed_profile_address: follow_data.followed_profile_address,
+                        follower_profile_address: follow_data.follower_profile_address,
+                        follow_timestamp: follow_data.follow_timestamp,
+                        block_status: false,
+                    }
+                );
+            self
+                .emit(
+                    FollowerUnblocked {
+                        followed_address: self.followed_profile_address.read(),
+                        unblocked_follower: follower_profile_address,
                         follow_id: follow_id,
                         timestamp: get_block_timestamp()
                     }
@@ -274,8 +328,10 @@ mod Follow {
             let new_follower_id = self.follower_count.read() + 1;
             let follow_timestamp: u64 = get_block_timestamp();
             let follow_data = FollowData {
+                followed_profile_address: self.followed_profile_address.read(),
                 follower_profile_address: follower_profile_address,
-                follow_timestamp: follow_timestamp
+                follow_timestamp: follow_timestamp,
+                block_status: false,
             };
 
             self
@@ -305,7 +361,10 @@ mod Follow {
                 .write(
                     follow_id,
                     FollowData {
-                        follower_profile_address: 0.try_into().unwrap(), follow_timestamp: 0
+                        followed_profile_address: 0.try_into().unwrap(),
+                        follower_profile_address: 0.try_into().unwrap(),
+                        follow_timestamp: 0,
+                        block_status: false,
                     }
                 );
             self.follower_count.write(self.follower_count.read() - 1);
