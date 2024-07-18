@@ -53,7 +53,6 @@ fn test_mint_handle() {
 
 
 fn test_mint_handle_two() {
-    // TODO: test total supply
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 

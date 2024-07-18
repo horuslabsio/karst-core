@@ -201,6 +201,5 @@ fn test_metadata() {
     assert(nft_symbol == "KFL", 'invalid symbol');
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
-// TODO: test for emitted events
 
 
