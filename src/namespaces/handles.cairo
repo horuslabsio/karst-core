@@ -243,9 +243,7 @@ mod Handles {
         /// @notice returns the token URI of a particular handle
         /// @param token_id ID of handle to be queried
         /// @param local_name local name of handle to be queried
-        fn token_uri(
-            self: @ContractState, token_id: u256, local_name: felt252
-        ) -> ByteArray {
+        fn token_uri(self: @ContractState, token_id: u256, local_name: felt252) -> ByteArray {
             HandleTokenUri::get_token_uri(token_id, local_name, NAMESPACE)
         }
     }

@@ -202,4 +202,3 @@ fn test_metadata() {
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
 
-

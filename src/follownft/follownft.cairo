@@ -145,7 +145,12 @@ mod Follow {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(ref self: ContractState, hub: ContractAddress, profile_address: ContractAddress, admin: ContractAddress) {
+    fn constructor(
+        ref self: ContractState,
+        hub: ContractAddress,
+        profile_address: ContractAddress,
+        admin: ContractAddress
+    ) {
         self.admin.write(admin);
         self.erc721.initializer("KARST:FOLLOWER", "KFL", "");
         self.karst_hub.write(hub);
@@ -184,7 +189,7 @@ mod Follow {
         fn process_block(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
-             hub_only(self.karst_hub.read());
+            hub_only(self.karst_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);
@@ -218,7 +223,7 @@ mod Follow {
         fn process_unblock(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
-             hub_only(self.karst_hub.read());
+            hub_only(self.karst_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);

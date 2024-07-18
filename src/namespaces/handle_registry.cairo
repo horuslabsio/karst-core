@@ -53,9 +53,7 @@ mod HandleRegistry {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(
-        ref self: ContractState, handle_address: ContractAddress
-    ) {
+    fn constructor(ref self: ContractState, handle_address: ContractAddress) {
         self.handle_address.write(handle_address);
     }
 
