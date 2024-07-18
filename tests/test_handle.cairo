@@ -11,8 +11,6 @@ use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use karst::namespaces::handles::Handles;
 
-
-const HUB_ADDRESS: felt252 = 'HUB';
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'JOHN';
@@ -32,7 +30,6 @@ fn __setup__() -> ContractAddress {
     // deploy handles contract
     let handles_class_hash = declare("Handles").unwrap();
     let mut calldata: Array<felt252> = array![ADMIN_ADDRESS];
-    HUB_ADDRESS.serialize(ref calldata);
     let (handles_contract_address, _) = handles_class_hash.deploy(@calldata).unwrap_syscall();
     handles_contract_address
 }
@@ -56,7 +53,6 @@ fn test_mint_handle() {
 
 
 fn test_mint_handle_two() {
-    // TODO: test total supply
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 

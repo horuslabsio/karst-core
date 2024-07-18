@@ -19,5 +19,10 @@ pub trait IHandle<TState> {
     fn exists(self: @TState, token_id: u256) -> bool;
     fn total_supply(self: @TState) -> u256;
     fn get_token_id(self: @TState, local_name: felt252) -> u256;
-    fn get_handle_token_uri(self: @TState, token_id: u256, local_name: felt252) -> ByteArray;
+    // *************************************************************************
+    //                              METADATA 
+    // *************************************************************************
+    fn name(self: @TState) -> ByteArray;
+    fn symbol(self: @TState) -> ByteArray;
+    fn token_uri(self: @TState, token_id: u256, local_name: felt252) -> ByteArray;
 }

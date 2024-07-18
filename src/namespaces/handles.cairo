@@ -70,8 +70,6 @@ mod Handles {
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
     #[abi(embed_v0)]
     impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
-    #[abi(embed_v0)]
-    impl ERC721MetadataImpl = ERC721Component::ERC721MetadataImpl<ContractState>;
 
     // add an owner
     #[abi(embed_v0)]
@@ -92,7 +90,6 @@ mod Handles {
         admin: ContractAddress,
         total_supply: u256,
         local_names: LegacyMap::<u256, felt252>,
-        karst_hub: ContractAddress,
     }
 
     // *************************************************************************
@@ -142,10 +139,9 @@ mod Handles {
     //                            CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(ref self: ContractState, admin: ContractAddress, hub_address: ContractAddress) {
+    fn constructor(ref self: ContractState, admin: ContractAddress) {
         self.admin.write(admin);
-        self.karst_hub.write(hub_address);
-        self.erc721.initializer("KARST HANDLES", "KARST", "");
+        self.erc721.initializer("Karst Handles", "KARST", "");
     }
 
     // *************************************************************************
@@ -231,12 +227,23 @@ mod Handles {
             hash
         }
 
+        // *************************************************************************
+        //                            METADATA
+        // *************************************************************************
+        /// @notice returns the collection name
+        fn name(self: @ContractState) -> ByteArray {
+            return "Karst Handles";
+        }
+
+        /// @notice returns the collection symbol
+        fn symbol(self: @ContractState) -> ByteArray {
+            return "KARST";
+        }
+
         /// @notice returns the token URI of a particular handle
         /// @param token_id ID of handle to be queried
         /// @param local_name local name of handle to be queried
-        fn get_handle_token_uri(
-            self: @ContractState, token_id: u256, local_name: felt252
-        ) -> ByteArray {
+        fn token_uri(self: @ContractState, token_id: u256, local_name: felt252) -> ByteArray {
             HandleTokenUri::get_token_uri(token_id, local_name, NAMESPACE)
         }
     }
