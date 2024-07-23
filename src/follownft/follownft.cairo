@@ -9,9 +9,16 @@ mod Follow {
     use karst::interfaces::{IFollowNFT::IFollowNFT};
     use karst::base::{
         constants::{errors::Errors, types::FollowData},
-        utils::hubrestricted::HubRestricted::hub_only, token_uris::follow_token_uri::FollowTokenUri,
+        utils::hubrestricted::HubRestricted::hub_only,
+    //  token_uris::follow_token_uri::FollowTokenUri,
     };
 
+    use karst::base::token_uris::token_uris::TokenURIComponent;
+    component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);
+
+
+    #[abi(embed_v0)]
+    impl TokenURIImpl = TokenURIComponent::KarstTokenURI<ContractState>;
     // *************************************************************************
     //                            STORAGE
     // *************************************************************************
@@ -23,6 +30,8 @@ mod Follow {
         follow_data_by_follow_id: LegacyMap<u256, FollowData>,
         initialized: bool,
         karst_hub: ContractAddress,
+        #[substorage(v0)]
+        token_uri: TokenURIComponent::Storage,
     }
 
     // *************************************************************************
@@ -180,7 +189,9 @@ mod Follow {
             let follow_data = self.follow_data_by_follow_id.read(follow_id);
             let timestamp = follow_data.follow_timestamp;
             let followed_profile_address = self.followed_profile_address.read();
-            FollowTokenUri::get_token_uri(follow_id, followed_profile_address, timestamp)
+
+            // call token uri component
+            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile);
         }
     }
 

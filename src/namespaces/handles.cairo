@@ -50,12 +50,16 @@ mod Handles {
         introspection::{src5::SRC5Component}
     };
     use karst::base::{
-        constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray,
-        token_uris::handle_token_uri::HandleTokenUri,
+        constants::errors::Errors,
+        utils::byte_array_extra::FeltTryIntoByteArray, // token_uris::handle_token_uri::HandleTokenUri,
     };
     use karst::interfaces::{
         IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait}, IHandle::IHandle
     };
+
+    use karst::base::token_uris::token_uris::TokenURIComponent;
+    component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);
+
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -78,6 +82,9 @@ mod Handles {
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
+    #[abi(embed_v0)]
+    impl TokenURIImpl = TokenURIComponent::KarstTokenURI<ContractState>;
+
     // *************************************************************************
     //                            STORAGE
     // *************************************************************************
@@ -89,6 +96,8 @@ mod Handles {
         src5: SRC5Component::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        token_uri: TokenURIComponent::Storage,
         admin: ContractAddress,
         total_supply: u256,
         local_names: LegacyMap::<u256, felt252>,
@@ -148,7 +157,6 @@ mod Handles {
         self.erc721.initializer("KARST HANDLES", "KARST", "");
     }
 
-    // *************************************************************************
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
     #[abi(embed_v0)]
@@ -237,7 +245,8 @@ mod Handles {
         fn get_handle_token_uri(
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
-            HandleTokenUri::get_token_uri(token_id, local_name, NAMESPACE)
+            // call token uri component
+            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile);
         }
     }
 
