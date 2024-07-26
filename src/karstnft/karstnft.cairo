@@ -42,7 +42,7 @@ pub mod KarstNFT {
     use karst::interfaces::IKarstNFT;
     use karst::base::{
         utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors::ALREADY_MINTED,
-       //  token_uris::profile_token_uri::ProfileTokenUri,
+    //  token_uris::profile_token_uri::ProfileTokenUri,
     };
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
@@ -52,10 +52,10 @@ pub mod KarstNFT {
         introspection::{src5::SRC5Component}
     };
 
-    
+
     use karst::base::token_uris::token_uris::TokenURIComponent;
     component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);
-    
+
     use karst::profile::profile::ProfileComponent;
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
 
@@ -120,7 +120,7 @@ pub mod KarstNFT {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
-        ProfileEvent: ProfileComponent::Event
+        ProfileEvent: ProfileComponent::Event,
         #[flat]
         TokenUriEvent: TokenURIComponent::Event
     }
@@ -198,8 +198,7 @@ pub mod KarstNFT {
             let profile = self.profile.get_profile(get_caller_address());
 
             // call token uri component
-            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile); 
-            
+            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile);
         }
     }
 }
