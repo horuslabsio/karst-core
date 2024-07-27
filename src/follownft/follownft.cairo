@@ -282,6 +282,13 @@ mod Follow {
             self.follow_id_by_follower_profile_address.read(follower_profile_address) != 0
         }
 
+        /// @notice checks if a particular address is blocked by the followed profile
+        /// @param follower_profile_address address of the user to check
+        fn is_blocked(self: @ContractState, follower_profile_address: ContractAddress) -> bool {
+            let follow_id = self.follow_id_by_follower_profile_address.read(follower_profile_address);
+            self.follow_data_by_follow_id.read(follow_id).block_status
+        }
+
         /// @notice gets the follow ID for a follower_profile_address
         /// @param follower_profile_address address of the profile
         fn get_follow_id(self: @ContractState, follower_profile_address: ContractAddress) -> u256 {

@@ -58,7 +58,7 @@ pub trait IHub<TState> {
     // *************************************************************************
     fn follow(
         ref self: TState, follower_profile_address: ContractAddress, address_of_profiles_to_follow: Array<ContractAddress>
-    );
+    ) -> Array<u256>;
 
     fn unfollow(ref self: TState, address_of_profiles_to_unfollow: Array<ContractAddress>);
 
@@ -70,6 +70,10 @@ pub trait IHub<TState> {
     );
 
     fn is_following(
+        self: @TState, followed_profile_address: ContractAddress, follower_address: ContractAddress
+    ) -> bool;
+
+    fn is_blocked(
         self: @TState, followed_profile_address: ContractAddress, follower_address: ContractAddress
     ) -> bool;
 
