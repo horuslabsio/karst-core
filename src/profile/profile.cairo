@@ -5,11 +5,11 @@ mod ProfileComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
-    use core::{
-        traits::TryInto,
-        result::ResultTrait
+    use core::{traits::TryInto, result::ResultTrait};
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
+        syscalls::deploy_syscall, SyscallResultTrait
     };
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp, ClassHash, syscalls::deploy_syscall, SyscallResultTrait};
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IRegistry::{
         IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
@@ -61,7 +61,10 @@ mod ProfileComponent {
     > of IProfile<ComponentState<TContractState>> {
         /// @notice initialize profile component
         fn initializer(
-            ref self: ComponentState<TContractState>, karst_nft_address: ContractAddress, hub_address: ContractAddress, follow_nft_classhash: felt252
+            ref self: ComponentState<TContractState>,
+            karst_nft_address: ContractAddress,
+            hub_address: ContractAddress,
+            follow_nft_classhash: felt252
         ) {
             self.karst_nft_address.write(karst_nft_address);
             self.hub_address.write(hub_address);
@@ -98,22 +101,21 @@ mod ProfileComponent {
 
             // deploy follow nft contract
             let mut constructor_calldata: Array<felt252> = array![
-                self.hub_address.read().into(),
-                profile_address.into(),
-                recipient.into()
+                self.hub_address.read().into(), profile_address.into(), recipient.into()
             ];
             let (follow_nft_address, _) = deploy_syscall(
-                self.follow_nft_classhash.read(), 
+                self.follow_nft_classhash.read(),
                 profile_address.into(),
                 constructor_calldata.span(),
                 true
-            ).unwrap_syscall();
+            )
+                .unwrap_syscall();
 
             // create new Profile obj
             let new_profile = Profile {
-                profile_address, 
-                profile_owner: recipient, 
-                pub_count: 0, 
+                profile_address,
+                profile_owner: recipient,
+                pub_count: 0,
                 metadata_URI: "",
                 follow_nft: follow_nft_address,
             };

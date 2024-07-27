@@ -68,11 +68,12 @@ fn __setup__() -> (
 
     // create dispatcher, initialize profile contract
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-    dispatcher.initializer(
-        nft_contract_address, 
-        HUB_ADDRESS.try_into().unwrap(), 
-        follow_nft_classhash.class_hash.into()
-    );
+    dispatcher
+        .initializer(
+            nft_contract_address,
+            HUB_ADDRESS.try_into().unwrap(),
+            follow_nft_classhash.class_hash.into()
+        );
 
     // deploying karst Profile for USER 1
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());

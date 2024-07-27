@@ -57,7 +57,9 @@ pub trait IHub<TState> {
     //                            FOLLOW INTERACTIONS
     // *************************************************************************
     fn follow(
-        ref self: TState, follower_profile_address: ContractAddress, address_of_profiles_to_follow: Array<ContractAddress>
+        ref self: TState,
+        follower_profile_address: ContractAddress,
+        address_of_profiles_to_follow: Array<ContractAddress>
     ) -> Array<u256>;
 
     fn unfollow(ref self: TState, address_of_profiles_to_unfollow: Array<ContractAddress>);

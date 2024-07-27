@@ -285,7 +285,9 @@ mod Follow {
         /// @notice checks if a particular address is blocked by the followed profile
         /// @param follower_profile_address address of the user to check
         fn is_blocked(self: @ContractState, follower_profile_address: ContractAddress) -> bool {
-            let follow_id = self.follow_id_by_follower_profile_address.read(follower_profile_address);
+            let follow_id = self
+                .follow_id_by_follower_profile_address
+                .read(follower_profile_address);
             self.follow_data_by_follow_id.read(follow_id).block_status
         }
 
@@ -332,6 +334,8 @@ mod Follow {
         /// @param follower_profile_address address of profile performing the follow action
         fn _follow(ref self: ContractState, follower_profile_address: ContractAddress) -> u256 {
             let new_follower_id = self.follower_count.read() + 1;
+            self.erc721._mint(follower_profile_address, new_follower_id);
+
             let follow_timestamp: u64 = get_block_timestamp();
             let follow_data = FollowData {
                 followed_profile_address: self.followed_profile_address.read(),
@@ -361,6 +365,7 @@ mod Follow {
         /// @param unfollower address of user performing the unfollow action
         /// @param follow_id ID of the initial follow action
         fn _unfollow(ref self: ContractState, unfollower: ContractAddress, follow_id: u256) {
+            self.erc721._burn(follow_id);
             self.follow_id_by_follower_profile_address.write(unfollower, 0);
             self
                 .follow_data_by_follow_id

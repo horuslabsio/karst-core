@@ -51,7 +51,9 @@ fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractA
 
     // deploy profile
     let profile_contract = declare("KarstProfile").unwrap();
-    let mut karst_profile_constructor_calldata = array![nft_contract_address.into(), HUB_ADDRESS, follow_nft_classhash.class_hash.into()];
+    let mut karst_profile_constructor_calldata = array![
+        nft_contract_address.into(), HUB_ADDRESS, follow_nft_classhash.class_hash.into()
+    ];
     let (profile_contract_address, _) = profile_contract
         .deploy(@karst_profile_constructor_calldata)
         .unwrap();

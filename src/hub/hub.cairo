@@ -3,14 +3,11 @@ use starknet::ContractAddress;
 #[starknet::interface]
 trait IKarstHub<TState> {
     fn follow(
-        ref self: TState, 
-        follower_profile_address: ContractAddress, 
+        ref self: TState,
+        follower_profile_address: ContractAddress,
         address_of_profiles_to_follow: Array<ContractAddress>
     ) -> Array<u256>;
-    fn unfollow(
-        ref self: TState, 
-        address_of_profiles_to_unfollow: Array<ContractAddress>
-    );
+    fn unfollow(ref self: TState, address_of_profiles_to_unfollow: Array<ContractAddress>);
     fn set_block_status(
         ref self: TState,
         blocker_profile_address: ContractAddress,
@@ -18,36 +15,30 @@ trait IKarstHub<TState> {
         block_status: bool
     );
     fn is_following(
-        self: @TState, 
-        followed_profile_address: ContractAddress, 
-        follower_address: ContractAddress
+        self: @TState, followed_profile_address: ContractAddress, follower_address: ContractAddress
     ) -> bool;
     fn is_blocked(
-        self: @TState, 
-        followed_profile_address: ContractAddress, 
-        follower_address: ContractAddress
+        self: @TState, followed_profile_address: ContractAddress, follower_address: ContractAddress
     ) -> bool;
-    fn get_handle_id(
-        self: @TState, 
-        profile_address: ContractAddress
-    ) -> u256;
-    fn get_handle(
-        self: @TState, 
-        handle_id: u256
-    ) -> ByteArray;
+    fn get_handle_id(self: @TState, profile_address: ContractAddress) -> u256;
+    fn get_handle(self: @TState, handle_id: u256) -> ByteArray;
 }
 
 #[starknet::contract]
 mod KarstHub {
-    use starknet::{ ContractAddress, get_caller_address, get_contract_address };
+    use starknet::{ContractAddress, get_caller_address, get_contract_address};
     use core::num::traits::zero::Zero;
     use core::traits::TryInto;
     use karst::profile::profile::ProfileComponent;
     use karst::publication::publication::PublicationComponent;
-    use karst::interfaces::IFollowNFT::{ IFollowNFTDispatcher, IFollowNFTDispatcherTrait };
-    use karst::interfaces::IHandle::{ IHandleDispatcher, IHandleDispatcherTrait };
-    use karst::interfaces::IHandleRegistry::{ IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait };
-    use karst::base::constants::errors::Errors::{ BLOCKED_STATUS, INVALID_PROFILE_ADDRESS, SELF_FOLLOWING };
+    use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
+    use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+    use karst::interfaces::IHandleRegistry::{
+        IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait
+    };
+    use karst::base::constants::errors::Errors::{
+        BLOCKED_STATUS, INVALID_PROFILE_ADDRESS, SELF_FOLLOWING
+    };
 
     // *************************************************************************
     //                              COMPONENTS
@@ -93,7 +84,9 @@ mod KarstHub {
         handle_registry_contract_address: ContractAddress,
         follow_nft_classhash: felt252
     ) {
-        self.profile.initializer(karstnft_contract_address, get_contract_address(), follow_nft_classhash);
+        self
+            .profile
+            .initializer(karstnft_contract_address, get_contract_address(), follow_nft_classhash);
         self.handle_contract_address.write(handle_contract_address);
         self.handle_registry_contract_address.write(handle_registry_contract_address);
     }
@@ -104,8 +97,8 @@ mod KarstHub {
         //                            EXTERNAL FUNCTIONS
         // *************************************************************************
         fn follow(
-            ref self: ContractState, 
-            follower_profile_address: ContractAddress, 
+            ref self: ContractState,
+            follower_profile_address: ContractAddress,
             address_of_profiles_to_follow: Array<ContractAddress>
         ) -> Array<u256> {
             let addresses_to_follow = address_of_profiles_to_follow.span();
@@ -121,8 +114,10 @@ mod KarstHub {
 
             follow_ids
         }
-    
-        fn unfollow(ref self: ContractState, address_of_profiles_to_unfollow: Array<ContractAddress>) {
+
+        fn unfollow(
+            ref self: ContractState, address_of_profiles_to_unfollow: Array<ContractAddress>
+        ) {
             let addresses_to_unfollow = address_of_profiles_to_unfollow.span();
             let mut address_count = addresses_to_unfollow.len();
 
@@ -133,7 +128,7 @@ mod KarstHub {
                 address_count -= 1;
             };
         }
-    
+
         fn set_block_status(
             ref self: ContractState,
             blocker_profile_address: ContractAddress,
@@ -151,7 +146,9 @@ mod KarstHub {
         }
 
         fn is_following(
-            self: @ContractState, followed_profile_address: ContractAddress, follower_address: ContractAddress
+            self: @ContractState,
+            followed_profile_address: ContractAddress,
+            follower_address: ContractAddress
         ) -> bool {
             let profile = self.profile.get_profile(followed_profile_address);
             let dispatcher = IFollowNFTDispatcher { contract_address: profile.follow_nft };
@@ -159,7 +156,9 @@ mod KarstHub {
         }
 
         fn is_blocked(
-            self: @ContractState, followed_profile_address: ContractAddress, follower_address: ContractAddress
+            self: @ContractState,
+            followed_profile_address: ContractAddress,
+            follower_address: ContractAddress
         ) -> bool {
             let profile = self.profile.get_profile(followed_profile_address);
             let dispatcher = IFollowNFTDispatcher { contract_address: profile.follow_nft };
@@ -167,12 +166,16 @@ mod KarstHub {
         }
 
         fn get_handle_id(self: @ContractState, profile_address: ContractAddress) -> u256 {
-            let dispatcher = IHandleRegistryDispatcher { contract_address: self.handle_registry_contract_address.read() };
+            let dispatcher = IHandleRegistryDispatcher {
+                contract_address: self.handle_registry_contract_address.read()
+            };
             dispatcher.get_handle(profile_address)
         }
 
         fn get_handle(self: @ContractState, handle_id: u256) -> ByteArray {
-            let dispatcher = IHandleDispatcher { contract_address: self.handle_contract_address.read() };
+            let dispatcher = IHandleDispatcher {
+                contract_address: self.handle_contract_address.read()
+            };
             dispatcher.get_handle(handle_id)
         }
     }
@@ -180,8 +183,8 @@ mod KarstHub {
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _follow(
-            ref self: ContractState, 
-            follower_profile_address: ContractAddress, 
+            ref self: ContractState,
+            follower_profile_address: ContractAddress,
             followed_profile_address: ContractAddress
         ) -> u256 {
             // validate profile
@@ -200,8 +203,8 @@ mod KarstHub {
         }
 
         fn _unfollow(
-            ref self: ContractState, 
-            unfollower_profile_address: ContractAddress, 
+            ref self: ContractState,
+            unfollower_profile_address: ContractAddress,
             unfollowed_profile_address: ContractAddress
         ) {
             let profile = self.profile.get_profile(unfollowed_profile_address);
@@ -223,8 +226,7 @@ mod KarstHub {
             // perform blocking action
             if block_status == true {
                 dispatcher.process_block(address_to_block);
-            } 
-            else {
+            } else {
                 dispatcher.process_unblock(address_to_block);
             }
         }
