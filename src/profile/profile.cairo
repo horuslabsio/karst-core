@@ -5,14 +5,18 @@ mod ProfileComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
-    use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use core::{traits::TryInto, result::ResultTrait};
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
+        syscalls::deploy_syscall, SyscallResultTrait
+    };
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IRegistry::{
         IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
     };
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::interfaces::IProfile::IProfile;
+    use karst::interfaces::{IFollowNFT::IFollowNFT};
     use karst::base::{
         constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,
         utils::hubrestricted::HubRestricted::hub_only
@@ -25,6 +29,8 @@ mod ProfileComponent {
     struct Storage {
         profile: LegacyMap<ContractAddress, Profile>,
         karst_nft_address: ContractAddress,
+        hub_address: ContractAddress,
+        follow_nft_classhash: ClassHash
     }
 
     // *************************************************************************
@@ -55,9 +61,14 @@ mod ProfileComponent {
     > of IProfile<ComponentState<TContractState>> {
         /// @notice initialize profile component
         fn initializer(
-            ref self: ComponentState<TContractState>, karst_nft_address: ContractAddress
+            ref self: ComponentState<TContractState>,
+            karst_nft_address: ContractAddress,
+            hub_address: ContractAddress,
+            follow_nft_classhash: felt252
         ) {
             self.karst_nft_address.write(karst_nft_address);
+            self.hub_address.write(hub_address);
+            self.follow_nft_classhash.write(follow_nft_classhash.try_into().unwrap());
         }
         /// @notice creates karst profile
         /// @param karstnft_contract_address address of karstnft
@@ -71,6 +82,7 @@ mod ProfileComponent {
             implementation_hash: felt252,
             salt: felt252
         ) -> ContractAddress {
+            // mint karst nft
             let recipient = get_caller_address();
             let owns_karstnft = IERC721Dispatcher { contract_address: karstnft_contract_address }
                 .balance_of(recipient);
@@ -81,15 +93,34 @@ mod ProfileComponent {
             let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
                 .get_user_token_id(recipient);
 
+            // create tokenbound account
             let profile_address = IRegistryLibraryDispatcher {
                 class_hash: registry_hash.try_into().unwrap()
             }
                 .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
 
+            // deploy follow nft contract
+            let mut constructor_calldata: Array<felt252> = array![
+                self.hub_address.read().into(), profile_address.into(), recipient.into()
+            ];
+            let (follow_nft_address, _) = deploy_syscall(
+                self.follow_nft_classhash.read(),
+                profile_address.into(),
+                constructor_calldata.span(),
+                true
+            )
+                .unwrap_syscall();
+
+            // create new Profile obj
             let new_profile = Profile {
-                profile_address, profile_owner: recipient, pub_count: 0, metadata_URI: "",
+                profile_address,
+                profile_owner: recipient,
+                pub_count: 0,
+                metadata_URI: "",
+                follow_nft: follow_nft_address,
             };
 
+            // update profile, emit events
             self.profile.write(profile_address, new_profile);
             self
                 .emit(
@@ -163,6 +194,7 @@ mod ProfileComponent {
                 profile_owner: profile.profile_owner,
                 pub_count: new_pub_count,
                 metadata_URI: profile.metadata_URI,
+                follow_nft: profile.follow_nft
             };
 
             self.profile.write(profile_address, updated_profile);

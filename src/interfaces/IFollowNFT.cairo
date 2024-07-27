@@ -20,6 +20,7 @@ pub trait IFollowNFT<TState> {
     fn get_follow_timestamp(self: @TState, follow_id: u256) -> u64;
     fn get_follow_data(self: @TState, follow_id: u256) -> FollowData;
     fn is_following(self: @TState, follower_profile_address: ContractAddress) -> bool;
+    fn is_blocked(self: @TState, follower_profile_address: ContractAddress) -> bool;
     fn get_follow_id(self: @TState, follower_profile_address: ContractAddress) -> u256;
     fn get_follower_count(self: @TState) -> u256;
     // *************************************************************************
