@@ -256,8 +256,7 @@ mod Handles {
             self: @ContractState, token_id: u256, local_name: felt252
         ) -> ByteArray {
             // call token uri component
-            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile);
-
+            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile)
         }
     }
 

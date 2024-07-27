@@ -24,7 +24,6 @@ impl IERC721MetadataImpl<
         let component = HasComponent::get_component(self);
         ERC721Metadata::name(component)
     }
-
     fn symbol(self: @TContractState) -> ByteArray {
         let component = HasComponent::get_component(self);
         ERC721Metadata::symbol(component)
@@ -43,6 +42,7 @@ pub mod KarstNFT {
     use karst::base::{
         utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors::ALREADY_MINTED,
     //  token_uris::profile_token_uri::ProfileTokenUri,
+
     };
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
@@ -51,7 +51,6 @@ pub mod KarstNFT {
         },
         introspection::{src5::SRC5Component}
     };
-
 
     use karst::base::token_uris::token_uris::TokenURIComponent;
     component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);

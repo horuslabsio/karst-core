@@ -50,8 +50,6 @@ mod Follow {
     component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);
 
 
-   
-
     use openzeppelin::{
         account, access::ownable::OwnableComponent,
         token::erc721::{
@@ -78,7 +76,15 @@ mod Follow {
     #[abi(embed_v0)]
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-    
+
+    #[abi(embed_v0)]
+    impl TokenURIImpl = TokenURIComponent::KarstTokenURI<ContractState>;
+
+
+    use karst::base::token_uris::token_uris::TokenURIComponent;
+    component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);
+
+
     #[abi(embed_v0)]
     impl TokenURIImpl = TokenURIComponent::KarstTokenURI<ContractState>;
 

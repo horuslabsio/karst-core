@@ -60,6 +60,7 @@ mod TokenURIComponent {
                     )
             );
         }
+
         // TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/HandleTokenURI.sol
         fn handle_get_token_uri(
             token_id: u256, local_name: felt252, namespace: felt252
@@ -88,6 +89,7 @@ mod TokenURIComponent {
                     )
             );
         }
+
         // TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/FollowTokenURI.sol#L14
         fn follow_get_token_uri(
             follow_token_id: u256, followed_profile_address: ContractAddress, follow_timestamp: u64

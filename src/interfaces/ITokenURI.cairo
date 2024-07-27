@@ -13,3 +13,4 @@ pub trait ITokenURI<TState> {
         follow_token_id: u256, followed_profile_address: ContractAddress, follow_timestamp: u64
     ) -> ByteArray;
 }
+
