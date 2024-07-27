@@ -96,6 +96,9 @@ mod KarstHub {
         // *************************************************************************
         //                            EXTERNAL FUNCTIONS
         // *************************************************************************
+        /// @notice follows a set of given addresses
+        /// @param follower_profile_address address of the user trying to perform the follow action
+        /// @param address_of_profiles_to_follow addresses of profiles to follow
         fn follow(
             ref self: ContractState,
             follower_profile_address: ContractAddress,
@@ -115,6 +118,8 @@ mod KarstHub {
             follow_ids
         }
 
+        /// @notice unfollows a set of given addresses
+        /// @param address_of_profiles_to_unfollow addresses of profiles to unfollow
         fn unfollow(
             ref self: ContractState, address_of_profiles_to_unfollow: Array<ContractAddress>
         ) {
@@ -129,6 +134,10 @@ mod KarstHub {
             };
         }
 
+        /// @notice blocks/unblocks a set of given addresses
+        /// @param blocker_profile_address address of the user trying to perform the block/unblock action
+        /// @param address_of_profiles_to_block addresses of profiles to block/unblock
+        /// @param block_status true if intent is to block, false if intent is to unblock
         fn set_block_status(
             ref self: ContractState,
             blocker_profile_address: ContractAddress,
@@ -145,6 +154,12 @@ mod KarstHub {
             }
         }
 
+        // *************************************************************************
+        //                            GETTERS
+        // *************************************************************************
+        /// @notice checks if a particular address is following the followed profile
+        /// @param followed_profile_address address of the user being followed
+        /// @param follower_address address to be check
         fn is_following(
             self: @ContractState,
             followed_profile_address: ContractAddress,
@@ -155,6 +170,9 @@ mod KarstHub {
             dispatcher.is_following(follower_address)
         }
 
+        /// @notice checks if a particular address is blocked by the followed profile
+        /// @param followed_profile_address address of the user being followed
+        /// @param follower_profile_address address of the user to check
         fn is_blocked(
             self: @ContractState,
             followed_profile_address: ContractAddress,
@@ -165,6 +183,8 @@ mod KarstHub {
             dispatcher.is_blocked(follower_address)
         }
 
+        /// @notice returns the handle ID linked to a profile address
+        /// @param profile_address address of profile to be queried
         fn get_handle_id(self: @ContractState, profile_address: ContractAddress) -> u256 {
             let dispatcher = IHandleRegistryDispatcher {
                 contract_address: self.handle_registry_contract_address.read()
@@ -172,6 +192,8 @@ mod KarstHub {
             dispatcher.get_handle(profile_address)
         }
 
+        /// @notice returns the full handle of a user
+        /// @param handle_id ID of handle to retrieve
         fn get_handle(self: @ContractState, handle_id: u256) -> ByteArray {
             let dispatcher = IHandleDispatcher {
                 contract_address: self.handle_contract_address.read()
@@ -180,8 +202,14 @@ mod KarstHub {
         }
     }
 
+    // *************************************************************************
+    //                            PRIVATE FUNCTIONS
+    // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
+        /// @notice internal function that processes the follow action
+        /// @param follower_profile_address address of the user trying to perform the follow action
+        /// @param followed_profile_address address of profile to follow
         fn _follow(
             ref self: ContractState,
             follower_profile_address: ContractAddress,
@@ -202,6 +230,9 @@ mod KarstHub {
             dispatcher.follow(follower_profile_address)
         }
 
+        /// @notice internal function that processes the unfollow action
+        /// @param unfollower_profile_address address of the user trying to perform the unfollow action
+        /// @param unfollowed_profile_address address of profile to unfollow
         fn _unfollow(
             ref self: ContractState,
             unfollower_profile_address: ContractAddress,
@@ -214,6 +245,10 @@ mod KarstHub {
             dispatcher.unfollow(unfollower_profile_address);
         }
 
+        /// @notice internal function that processes the block/unblock action
+        /// @param blocker_profile_address address of the user trying to perform the block/unblock action
+        /// @param address_to_block address of profile to block/unblock
+        /// @param block_status true if intent is to block, false if intent is to unblock
         fn _set_block_status(
             ref self: ContractState,
             blocker_profile_address: ContractAddress,
