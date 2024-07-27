@@ -8,6 +8,7 @@ use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_pr
 
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
+use karst::follownft::follownft::Follow;
 use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
 
@@ -42,12 +43,15 @@ fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractA
     let registry_class_hash = declare("Registry").unwrap();
     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
 
-    // deploy account
+    // declare account
     let account_class_hash = declare("Account").unwrap();
+
+    // declare follownft
+    let follow_nft_classhash = declare("Follow").unwrap();
 
     // deploy profile
     let profile_contract = declare("KarstProfile").unwrap();
-    let mut karst_profile_constructor_calldata = array![HUB_ADDRESS];
+    let mut karst_profile_constructor_calldata = array![nft_contract_address.into(), HUB_ADDRESS, follow_nft_classhash.class_hash.into()];
     let (profile_contract_address, _) = profile_contract
         .deploy(@karst_profile_constructor_calldata)
         .unwrap();

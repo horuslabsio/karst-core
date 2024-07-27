@@ -27,7 +27,6 @@ pub mod PublicationComponent {
     #[storage]
     struct Storage {
         publication: LegacyMap<(ContractAddress, u256), Publication>,
-        karst_hub: ContractAddress
     }
 
     // *************************************************************************
@@ -88,12 +87,6 @@ pub mod PublicationComponent {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
-        /// @notice initialize publication component
-        /// @param hub_address address of hub contract
-        fn initialize(ref self: ComponentState<TContractState>, hub_address: ContractAddress) {
-            self.karst_hub.write(hub_address);
-        }
-
         /// @notice performs post action
         /// @param contentURI uri of the content to be posted
         /// @param profile_address address of profile performing the post action
