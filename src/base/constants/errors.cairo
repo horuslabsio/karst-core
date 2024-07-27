@@ -16,4 +16,6 @@ pub mod Errors {
     pub const HANDLE_DOES_NOT_EXIST: felt252 = 'Karst: handle does not exist!';
     pub const INVALID_LOCAL_NAME: felt252 = 'Karst: invalid local name!';
     pub const UNSUPPORTED_PUB_TYPE: felt252 = 'Karst: unsupported pub type!';
+    pub const INVALID_PROFILE_ADDRESS: felt252 = 'Karst: invalid profile address!';
+    pub const SELF_FOLLOWING: felt252 = 'Karst: self follow is forbidden';
 }

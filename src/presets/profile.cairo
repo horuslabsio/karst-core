@@ -22,7 +22,12 @@ mod KarstProfile {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, hub_address: ContractAddress) {
-        self.profile.initializer(hub_address);
+    fn constructor(
+        ref self: ContractState,
+        karstnft_contract_address: ContractAddress,
+        hub_address: ContractAddress,
+        follow_nft_classhash: felt252
+    ) {
+        self.profile.initializer(karstnft_contract_address, hub_address, follow_nft_classhash);
     }
 }

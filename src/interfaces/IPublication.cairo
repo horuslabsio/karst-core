@@ -11,7 +11,6 @@ pub trait IKarstPublications<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
-    fn initialize(ref self: TState, hub_address: ContractAddress);
     fn post(ref self: TState, post_params: PostParams) -> u256;
     fn comment(ref self: TState, comment_params: CommentParams) -> u256;
     fn quote(ref self: TState, quote_params: QuoteParams) -> u256;

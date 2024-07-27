@@ -7,13 +7,17 @@ use starknet::ContractAddress;
 // /**
 // * @notice A struct containing token follow-related data.
 // *
-// * @param follower_profile_address The ID of the profile using the token to follow.
+// * @param followed_profile_address The ID of the profile being followed.
+// * @param follower_profile_address The ID of the profile following.
 // * @param followTimestamp The timestamp of the current follow, if a profile is using the token to follow.
+// * @param block_status true if follower is blocked, false otherwise
 // */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct FollowData {
+    followed_profile_address: ContractAddress,
     follower_profile_address: ContractAddress,
-    follow_timestamp: u64
+    follow_timestamp: u64,
+    block_status: bool,
 }
 
 // * @notice A struct containing profile data.
@@ -21,12 +25,14 @@ pub struct FollowData {
 // * profile_owner The address that created the profile_address
 // * @param pub_count The number of publications made to this profile.
 // * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed name, description, interests, etc.
+// * @param follow_nft profile follow nft token contract
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
     profile_address: ContractAddress,
     profile_owner: ContractAddress,
     pub_count: u256,
     metadata_URI: ByteArray,
+    follow_nft: ContractAddress
 }
 
 // /**

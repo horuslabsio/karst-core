@@ -13,6 +13,7 @@ use token_bound_accounts::presets::account::Account;
 use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
+use karst::follownft::follownft::Follow;
 use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
 use karst::base::constants::types::{
     PostParams, MirrorParams, CommentParams, PublicationType, QuoteParams
@@ -54,7 +55,7 @@ fn __setup__() -> (
 
     // deploy publication
     let publication_contract = declare("KarstPublication").unwrap();
-    let mut publication_constructor_calldata = array![HUB_ADDRESS];
+    let mut publication_constructor_calldata = array![];
     let (publication_contract_address, _) = publication_contract
         .deploy(@publication_constructor_calldata)
         .unwrap_syscall();
@@ -62,8 +63,19 @@ fn __setup__() -> (
     // declare account
     let account_class_hash = declare("Account").unwrap();
 
-    // deploying karst Profile for USER 1
+    // declare follownft
+    let follow_nft_classhash = declare("Follow").unwrap();
+
+    // create dispatcher, initialize profile contract
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    dispatcher
+        .initializer(
+            nft_contract_address,
+            HUB_ADDRESS.try_into().unwrap(),
+            follow_nft_classhash.class_hash.into()
+        );
+
+    // deploying karst Profile for USER 1
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let user_one_profile_address = dispatcher
         .create_profile(
