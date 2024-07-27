@@ -219,7 +219,7 @@ mod Follow {
         }
 
         /// @notice performs the unblocking action
-        /// @param follower_profile_address address of the user to be blocked
+        /// @param follower_profile_address address of the user to be unblocked
         fn process_unblock(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
