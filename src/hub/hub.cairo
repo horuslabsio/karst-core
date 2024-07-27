@@ -6,7 +6,7 @@ trait IKarstHub<TState> {
         ref self: TState, 
         follower_profile_address: ContractAddress, 
         address_of_profiles_to_follow: Array<ContractAddress>
-    );
+    ) -> Array<u256>;
     fn unfollow(
         ref self: TState, 
         address_of_profiles_to_unfollow: Array<ContractAddress>
@@ -18,6 +18,11 @@ trait IKarstHub<TState> {
         block_status: bool
     );
     fn is_following(
+        self: @TState, 
+        followed_profile_address: ContractAddress, 
+        follower_address: ContractAddress
+    ) -> bool;
+    fn is_blocked(
         self: @TState, 
         followed_profile_address: ContractAddress, 
         follower_address: ContractAddress
@@ -36,6 +41,7 @@ trait IKarstHub<TState> {
 mod KarstHub {
     use starknet::{ ContractAddress, get_caller_address, get_contract_address };
     use core::num::traits::zero::Zero;
+    use core::traits::TryInto;
     use karst::profile::profile::ProfileComponent;
     use karst::publication::publication::PublicationComponent;
     use karst::interfaces::IFollowNFT::{ IFollowNFTDispatcher, IFollowNFTDispatcherTrait };
@@ -98,24 +104,31 @@ mod KarstHub {
             ref self: ContractState, 
             follower_profile_address: ContractAddress, 
             address_of_profiles_to_follow: Array<ContractAddress>
-        ) {
+        ) -> Array<u256> {
             let addresses_to_follow = address_of_profiles_to_follow.span();
             let mut address_count = addresses_to_follow.len();
+            let mut follow_ids = array![];
 
             while address_count != 0 {
-                // validate profile exists
-                let followed_profile_address = addresses_to_follow.at(address_count);
-                assert(self.profile.get_profile(followed_profile_address).is_non_zero(), 'zero address')
-                // validate profile is not blocked
+                let followed_profile_address = *addresses_to_follow[address_count];
+                let follow_id = self._follow(follower_profile_address, followed_profile_address);
+                follow_ids.append(follow_id);
+                address_count -= 1;
+            };
 
-                // validate user is not self following
-
-                // perform follow action
-            }
+            follow_ids
         }
     
         fn unfollow(ref self: ContractState, address_of_profiles_to_unfollow: Array<ContractAddress>) {
-            // TODO
+            let addresses_to_unfollow = address_of_profiles_to_unfollow.span();
+            let mut address_count = addresses_to_unfollow.len();
+
+            while address_count != 0 {
+                let followed_profile_address = *addresses_to_unfollow[address_count];
+                let unfollower_profile_address = get_caller_address();
+                self._unfollow(unfollower_profile_address, followed_profile_address);
+                address_count -= 1;
+            };
         }
     
         fn set_block_status(
@@ -133,12 +146,53 @@ mod KarstHub {
             true
         }
 
+        fn is_blocked(
+            self: @ContractState, followed_profile_address: ContractAddress, follower_address: ContractAddress
+        ) -> bool {
+            true
+        }
+
         fn get_handle_id(self: @ContractState, profile_address: ContractAddress) -> u256 {
             25_u256
         }
 
         fn get_handle(self: @ContractState, handle_id: u256) -> ByteArray {
             "handle"
+        }
+    }
+
+    #[generate_trait]
+    impl Private of PrivateTrait {
+        fn _follow(
+            ref self: ContractState, 
+            follower_profile_address: ContractAddress, 
+            followed_profile_address: ContractAddress
+        ) -> u256 {
+            // validate profile
+            let profile = self.profile.get_profile(followed_profile_address);
+            assert(followed_profile_address == profile.profile_address, 'invalid profile address!');
+
+            // validate profile is not blocked
+            let dispatcher = IFollowNFTDispatcher { contract_address: profile.follow_nft };
+            assert(!dispatcher.is_blocked(follower_profile_address), 'user is blocked!');
+
+            // validate user is not self following
+            assert(follower_profile_address != followed_profile_address, 'self following is forbidden');
+
+            // perform follow action
+            dispatcher.follow(follower_profile_address)
+        }
+
+        fn _unfollow(
+            ref self: ContractState, 
+            unfollower_profile_address: ContractAddress, 
+            unfollowed_profile_address: ContractAddress
+        ) {
+            let profile = self.profile.get_profile(unfollowed_profile_address);
+            let dispatcher = IFollowNFTDispatcher { contract_address: profile.follow_nft };
+
+            // perform unfollow action
+            dispatcher.unfollow(unfollower_profile_address);
         }
     }
 }
