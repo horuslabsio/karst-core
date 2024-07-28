@@ -26,6 +26,7 @@ trait IKarstHub<TState> {
 
 #[starknet::contract]
 mod KarstHub {
+    use core::array::SpanTrait;
     use starknet::{ContractAddress, get_caller_address, get_contract_address};
     use core::num::traits::zero::Zero;
     use core::traits::TryInto;
@@ -104,16 +105,16 @@ mod KarstHub {
             follower_profile_address: ContractAddress,
             address_of_profiles_to_follow: Array<ContractAddress>
         ) -> Array<u256> {
-            let addresses_to_follow = address_of_profiles_to_follow.span();
-            let mut address_count = addresses_to_follow.len();
+            let mut addresses_to_follow = address_of_profiles_to_follow.span();
             let mut follow_ids = array![];
 
-            while address_count != 0 {
-                let followed_profile_address = *addresses_to_follow[address_count];
-                let follow_id = self._follow(follower_profile_address, followed_profile_address);
-                follow_ids.append(follow_id);
-                address_count -= 1;
-            };
+            while addresses_to_follow
+                .len() != 0 {
+                    let followed_profile_address = addresses_to_follow.pop_front().unwrap();
+                    let follow_id = self
+                        ._follow(follower_profile_address, *followed_profile_address);
+                    follow_ids.append(follow_id);
+                };
 
             follow_ids
         }
@@ -123,15 +124,14 @@ mod KarstHub {
         fn unfollow(
             ref self: ContractState, address_of_profiles_to_unfollow: Array<ContractAddress>
         ) {
-            let addresses_to_unfollow = address_of_profiles_to_unfollow.span();
-            let mut address_count = addresses_to_unfollow.len();
+            let mut addresses_to_unfollow = address_of_profiles_to_unfollow.span();
 
-            while address_count != 0 {
-                let unfollowed_profile_address = *addresses_to_unfollow[address_count];
-                let unfollower_profile_address = get_caller_address();
-                self._unfollow(unfollower_profile_address, unfollowed_profile_address);
-                address_count -= 1;
-            };
+            while addresses_to_unfollow
+                .len() != 0 {
+                    let unfollowed_profile_address = addresses_to_unfollow.pop_front().unwrap();
+                    let unfollower_profile_address = get_caller_address();
+                    self._unfollow(unfollower_profile_address, *unfollowed_profile_address);
+                };
         }
 
         /// @notice blocks/unblocks a set of given addresses
@@ -144,14 +144,16 @@ mod KarstHub {
             address_of_profiles_to_block: Array<ContractAddress>,
             block_status: bool
         ) {
-            let addresses = address_of_profiles_to_block.span();
-            let mut address_count = addresses.len();
+            let mut addresses = address_of_profiles_to_block.span();
 
-            while address_count != 0 {
-                let address_to_block = *addresses[address_count];
-                self._set_block_status(blocker_profile_address, address_to_block, block_status);
-                address_count -= 1;
-            }
+            while addresses
+                .len() != 0 {
+                    let address_to_block = addresses.pop_front().unwrap();
+                    self
+                        ._set_block_status(
+                            blocker_profile_address, *address_to_block, block_status
+                        );
+                }
         }
 
         // *************************************************************************
