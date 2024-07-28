@@ -197,7 +197,7 @@ pub mod KarstNFT {
             let profile = self.profile.get_profile(get_caller_address());
 
             // call token uri component
-            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile);
+            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile)
         }
     }
 }

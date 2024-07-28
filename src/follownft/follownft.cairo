@@ -77,12 +77,7 @@ mod Follow {
     impl OwnableImpl = OwnableComponent::OwnableImpl<ContractState>;
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
-    #[abi(embed_v0)]
-    impl TokenURIImpl = TokenURIComponent::KarstTokenURI<ContractState>;
 
-
-    use karst::base::token_uris::token_uris::TokenURIComponent;
-    component!(path: TokenURIComponent, storage: token_uri, event: TokenUriEvent);
 
 
     #[abi(embed_v0)]
@@ -107,6 +102,7 @@ mod Follow {
         karst_hub: ContractAddress,
         #[substorage(v0)]
         token_uri: TokenURIComponent::Storage,
+        
     }
 
     // *************************************************************************
@@ -121,6 +117,8 @@ mod Follow {
         SRC5Event: SRC5Component::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        TokenUriEvent: TokenURIComponent::Event,
         Followed: Followed,
         Unfollowed: Unfollowed,
         FollowerBlocked: FollowerBlocked,
