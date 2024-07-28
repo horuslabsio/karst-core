@@ -124,7 +124,7 @@ mod Handles {
         SRC5Event: SRC5Component::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event,
-         #[flat]
+        #[flat]
         TokenUriEvent: TokenURIComponent::Event,
         HandleMinted: HandleMinted,
         HandleBurnt: HandleBurnt,
@@ -254,9 +254,7 @@ mod Handles {
         /// @param token_id ID of handle to be queried
         /// @param local_name local name of handle to be queried
 
-        fn token_uri(
-            self: @ContractState, token_id: u256, local_name: felt252
-        ) -> ByteArray {
+        fn token_uri(self: @ContractState, token_id: u256, local_name: felt252) -> ByteArray {
             // call token uri component
             self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile)
         }

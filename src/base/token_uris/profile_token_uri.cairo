@@ -2,7 +2,7 @@
 
 pub mod ProfileTokenUri {
     use alexandria_bytes::{Bytes, BytesTrait};
-    use alexandria_encoding::sol_abi::{SolBytesTrait, SolAbiEncodeTrait};
+    ///  use alexandria_encoding::sol_abi::{SolBytesTrait, SolAbiEncodeTrait};
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
     use starknet::{
         ContractAddress, get_caller_address, get_contract_address, contract_address_const

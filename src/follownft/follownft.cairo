@@ -78,8 +78,6 @@ mod Follow {
     impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
 
 
-
-
     #[abi(embed_v0)]
     impl TokenURIImpl = TokenURIComponent::KarstTokenURI<ContractState>;
 
@@ -102,7 +100,6 @@ mod Follow {
         karst_hub: ContractAddress,
         #[substorage(v0)]
         token_uri: TokenURIComponent::Storage,
-        
     }
 
     // *************************************************************************
@@ -339,7 +336,7 @@ mod Follow {
             let followed_profile_address = self.followed_profile_address.read();
 
             // call token uri component
-            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile);
+            self.token_uri.profile_get_token_uri(token_id, mint_timestamp, profile)
         }
     }
 

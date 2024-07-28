@@ -1,14 +1,14 @@
-use starknet::ContractAddress;
-
-
 #[starknet::component]
 mod TokenURIComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
+    use starknet::ContractAddress;
+    use karst::base::{constants::types::Profile};
     use alexandria_bytes::{Bytes, BytesTrait};
     use alexandria_encoding::sol_abi::{SolBytesTrait, SolAbiEncodeTrait};
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
+    use karst::interfaces::ITokenURI::ITokenURI;
 
     // *************************************************************************
     //                              STORAGE
@@ -26,7 +26,10 @@ mod TokenURIComponent {
     > of ITokenURI<ComponentState<TContractState>> {
         // TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/ProfileTokenURI.sol
         fn profile_get_token_uri(
-            token_id: u256, mint_timestamp: u64, profile: Profile
+            ref self: ComponentState<TContractState>,
+            token_id: u256,
+            mint_timestamp: u64,
+            profile: Profile
         ) -> ByteArray {
             let mut encoded_inner: Bytes = BytesTrait::new(0, array![]);
             let profile_svg_example =
@@ -63,7 +66,10 @@ mod TokenURIComponent {
 
         // TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/HandleTokenURI.sol
         fn handle_get_token_uri(
-            token_id: u256, local_name: felt252, namespace: felt252
+            ref self: ComponentState<TContractState>,
+            token_id: u256,
+            local_name: felt252,
+            namespace: felt252
         ) -> ByteArray {
             let mut encoded_inner: Bytes = BytesTrait::new(0, array![]);
             let profile_svg_example =
@@ -92,7 +98,10 @@ mod TokenURIComponent {
 
         // TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/FollowTokenURI.sol#L14
         fn follow_get_token_uri(
-            follow_token_id: u256, followed_profile_address: ContractAddress, follow_timestamp: u64
+            ref self: ComponentState<TContractState>,
+            follow_token_id: u256,
+            followed_profile_address: ContractAddress,
+            follow_timestamp: u64
         ) -> ByteArray {
             "TODO"
         }
