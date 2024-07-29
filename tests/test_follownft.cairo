@@ -213,4 +213,5 @@ fn test_is_blocked(){
     dispatcher.follow(FOLLOWER1.try_into().unwrap());
     dispatcher.process_block(FOLLOWER1.try_into().unwrap());
     assert(dispatcher.is_blocked(FOLLOWER1.try_into().unwrap()) == true, 'incorrect value for is_blocked');
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
