@@ -205,3 +205,12 @@ fn test_metadata() {
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
 
+#[test]
+fn test_is_blocked(){
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    dispatcher.process_block(FOLLOWER1.try_into().unwrap());
+    assert(dispatcher.is_blocked(FOLLOWER1.try_into().unwrap()) == true, 'incorrect value for is_blocked');
+}
