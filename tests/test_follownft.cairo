@@ -13,6 +13,7 @@ use snforge_std::{
 use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
 use karst::follownft::follownft::Follow;
 use karst::base::constants::types::FollowData;
+use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 24205;
 const ADMIN: felt252 = 13245;
@@ -205,3 +206,48 @@ fn test_metadata() {
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
 
+#[test]
+fn test_is_blocked() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    dispatcher.process_block(FOLLOWER1.try_into().unwrap());
+    assert(
+        dispatcher.is_blocked(FOLLOWER1.try_into().unwrap()) == true,
+        'incorrect value for is_blocked'
+    );
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
+}
+
+#[test]
+fn test_follow_mints_nft() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+    let follower_profile_address = dispatcher.get_follower_profile_address(follow_id);
+    assert(
+        _erc721Dispatcher.owner_of(follow_id) == follower_profile_address, 'Follow did not mint NFT'
+    );
+}
+
+
+#[test]
+#[should_panic(expected: ('ERC721: invalid token ID',))]
+fn test_unfollow_burns_nft() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    let _erc721Dispatcher = IERC721Dispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+    let follower_profile_address = dispatcher.get_follower_profile_address(follow_id);
+    assert(
+        _erc721Dispatcher.owner_of(follow_id) == follower_profile_address, 'Follow did not mint NFT'
+    );
+    dispatcher.unfollow(FOLLOWER1.try_into().unwrap());
+    _erc721Dispatcher.owner_of(follow_id);
+}
