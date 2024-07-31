@@ -4,7 +4,8 @@ use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 use starknet::{ContractAddress, get_block_timestamp};
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp,
+    spy_events, SpyOn, EventAssertions
 };
 
 use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
@@ -204,15 +205,26 @@ fn test_get_handle_should_panic() {
 }
 
 #[test]
-fn test_mint_handle_event(){
+fn test_mint_handle_event() {
     let handles_contract_address = __setup__();
 
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
 
     start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
-    
-    let token_id = handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
-    assert(starknet::testing::pop_log(handles_contract_address) ==  Option::Some(Handles::Event::HandleMinted(Handles::HandleMinted{local_name: TEST_LOCAL_NAME, to: USER_ONE.try_into().unwrap(), token_id: token_id, block_timestamp: get_block_timestamp()}.into())), 'HandleMinted Event not emitted');
+    let mut spy = spy_events(SpyOn::One(handles_contract_address));
+
+    let test_token_id = handles_dispatcher
+        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+    let expected_event = Handles::Event::HandleMinted(
+        Handles::HandleMinted {
+            local_name: TEST_LOCAL_NAME,
+            token_id: test_token_id,
+            to: USER_ONE.try_into().unwrap(),
+            block_timestamp: get_block_timestamp()
+        }
+    );
+
+    spy.assert_emitted(@array![(handles_contract_address, expected_event)]);
 
     stop_prank(CheatTarget::One(handles_contract_address));
 }
