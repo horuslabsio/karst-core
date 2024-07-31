@@ -5,13 +5,18 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress};
+use starknet::{ContractAddress, get_block_timestamp};
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp, 
+    spy_events, SpyOn, EventAssertions, EventFetcher
 };
 
 use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
 use karst::follownft::follownft::Follow;
+use karst::follownft::follownft::Follow::{Event as FollowEvent, Followed};
+use karst::follownft::follownft::Follow::{Event as UnfollowEvent, Unfollowed};
+use karst::follownft::follownft::Follow::{Event as FollowerBlockedEvent, FollowerBlocked};
+use karst::follownft::follownft::Follow::{Event as FollowerUnblockedEvent, FollowerUnblocked};
 use karst::base::constants::types::FollowData;
 
 const HUB_ADDRESS: felt252 = 24205;
@@ -205,3 +210,90 @@ fn test_metadata() {
     stop_prank(CheatTarget::One(follow_nft_contract_address));
 }
 
+#[test]
+fn test_followed_event() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    let mut spy = spy_events(SpyOn::One(follow_nft_contract_address));
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+    let follower_profile_address = dispatcher.get_follower_profile_address(follow_id);
+
+    let expected_event = FollowEvent::Followed(
+        Followed {
+            followed_address: FOLLOWED_ADDRESS.try_into().unwrap(),
+            follower_address: follower_profile_address,
+            follow_id: follow_id,
+            timestamp: get_block_timestamp()
+        }
+    );
+    spy.assert_emitted(@array![(follow_nft_contract_address, expected_event)]);
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
+}
+
+#[test]
+fn test_unfollowed_event() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    let mut spy = spy_events(SpyOn::One(follow_nft_contract_address));
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    dispatcher.follow(FOLLOWER2.try_into().unwrap());
+    dispatcher.unfollow(FOLLOWER1.try_into().unwrap());
+
+    let expected_event = UnfollowEvent::Unfollowed(
+        Unfollowed {
+            unfollowed_address: FOLLOWED_ADDRESS.try_into().unwrap(),
+            unfollower_address: FOLLOWER1.try_into().unwrap(),
+            follow_id: 1,
+            timestamp: get_block_timestamp()
+        }
+    );
+    spy.assert_emitted(@array![(follow_nft_contract_address, expected_event)]);
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
+}
+
+#[test]
+fn test_block_event() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    let mut spy = spy_events(SpyOn::One(follow_nft_contract_address));
+    dispatcher.process_block(FOLLOWER1.try_into().unwrap());
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+    
+    let expected_event = FollowerBlockedEvent::FollowerBlocked(
+        FollowerBlocked {
+            followed_address: FOLLOWED_ADDRESS.try_into().unwrap(),
+            blocked_follower: FOLLOWER1.try_into().unwrap(),
+            follow_id: follow_id,
+            timestamp: get_block_timestamp()
+        }
+    );
+    spy.assert_emitted(@array![(follow_nft_contract_address, expected_event)]);
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
+}
+
+#[test]
+fn test_unblock_event() {
+    let follow_nft_contract_address = __setup__();
+    let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
+    start_prank(CheatTarget::One(follow_nft_contract_address), HUB_ADDRESS.try_into().unwrap());
+    dispatcher.follow(FOLLOWER1.try_into().unwrap());
+    let mut spy = spy_events(SpyOn::One(follow_nft_contract_address));
+    dispatcher.process_unblock(FOLLOWER1.try_into().unwrap());
+    let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
+
+    let expected_event = FollowerUnblockedEvent::FollowerUnblocked(
+        FollowerUnblocked {
+            followed_address: FOLLOWED_ADDRESS.try_into().unwrap(),
+            unblocked_follower: FOLLOWER1.try_into().unwrap(),
+            follow_id: follow_id,
+            timestamp: get_block_timestamp()
+        }
+    );
+    spy.assert_emitted(@array![(follow_nft_contract_address, expected_event)]);
+    stop_prank(CheatTarget::One(follow_nft_contract_address));
+}
