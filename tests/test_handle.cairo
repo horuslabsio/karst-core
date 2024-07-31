@@ -228,3 +228,43 @@ fn test_mint_handle_event() {
 
     stop_prank(CheatTarget::One(handles_contract_address));
 }
+
+
+#[test]
+fn test_burn_handle_event() {
+    let handles_contract_address = __setup__();
+
+    let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
+
+    start_prank(CheatTarget::One(handles_contract_address), USER_ONE.try_into().unwrap());
+    let mut spy = spy_events(SpyOn::One(handles_contract_address));
+
+    let test_token_id = handles_dispatcher
+        .mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+
+    let mut expected_event = Handles::Event::HandleMinted(
+        Handles::HandleMinted {
+            local_name: TEST_LOCAL_NAME,
+            token_id: test_token_id,
+            to: USER_ONE.try_into().unwrap(),
+            block_timestamp: get_block_timestamp()
+        }
+    );
+
+    spy.assert_emitted(@array![(handles_contract_address, expected_event)]);
+
+    handles_dispatcher.burn_handle(test_token_id);
+    expected_event =
+        Handles::Event::HandleBurnt(
+            Handles::HandleBurnt {
+                local_name: TEST_LOCAL_NAME,
+                token_id: test_token_id,
+                owner: USER_ONE.try_into().unwrap(),
+                block_timestamp: get_block_timestamp()
+            }
+        );
+
+    spy.assert_emitted(@array![(handles_contract_address, expected_event)]);
+
+    stop_prank(CheatTarget::One(handles_contract_address));
+}
