@@ -87,6 +87,7 @@ Check out the contract architecture below, and join our [working group](https://
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Oshioke-Salaki"><img src="https://avatars.githubusercontent.com/u/105825121?v=4?s=100" width="100px;" alt="Oshioke Salaki"/><br /><sub><b>Oshioke Salaki</b></sub></a><br /><a href="#code-Oshioke-Salaki" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/remybar"><img src="https://avatars.githubusercontent.com/u/57539816?v=4?s=100" width="100px;" alt="Rémy Baranx"/><br /><sub><b>Rémy Baranx</b></sub></a><br /><a href="#code-remybar" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jemiiah"><img src="https://avatars.githubusercontent.com/u/160767568?v=4?s=100" width="100px;" alt="Jemiiah"/><br /><sub><b>Jemiiah</b></sub></a><br /><a href="#code-Jemiiah" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/od-hunter"><img src="https://avatars.githubusercontent.com/u/146340502?v=4?s=100" width="100px;" alt="Hunter001"/><br /><sub><b>Hunter001</b></sub></a><br /><a href="#code-od-hunter" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
