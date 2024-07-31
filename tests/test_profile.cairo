@@ -3,12 +3,16 @@ use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 
-use starknet::{ContractAddress, class_hash::ClassHash};
-use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank};
+use starknet::{ContractAddress, class_hash::ClassHash, get_block_timestamp};
+use snforge_std::{
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, spy_events, SpyOn,
+    EventAssertions
+};
 
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
 use karst::follownft::follownft::Follow;
+use karst::profile::profile::ProfileComponent::{Event as ProfileEvent, CreatedProfile};
 use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
 
@@ -130,6 +134,49 @@ fn test_profile_metadata() {
         profile_uri == "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/",
         'invalid profile URI'
     );
+
+    stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
+}
+
+#[test]
+fn test_profile_creation_event() {
+    let (
+        nft_contract_address, _, registry_class_hash, account_class_hash, profile_contract_address
+    ) =
+        __setup__();
+    let karstNFTDispatcher = IKarstNFTDispatcher { contract_address: nft_contract_address };
+    let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
+    let mut spy = spy_events(SpyOn::One(profile_contract_address));
+
+    //user 1 create profile
+    start_prank(
+        CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]),
+        USER.try_into().unwrap()
+    );
+    let profile_address = profileDispatcher
+        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456,);
+
+    // test a new karst nft is minted
+    let last_minted_id = karstNFTDispatcher.get_last_minted_id();
+    let token_id = karstNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
+    assert(last_minted_id == 1.try_into().unwrap(), 'invalid ID');
+    assert(token_id == 1.try_into().unwrap(), 'invalid ID');
+
+    // test profile creation was successful
+    let profile = profileDispatcher.get_profile(profile_address);
+    assert(profile.profile_address == profile_address, 'invalid profile address');
+    assert(profile.profile_owner == USER.try_into().unwrap(), 'invalid profile address');
+
+    let expected_event = ProfileEvent::CreatedProfile(
+        CreatedProfile {
+            owner: USER.try_into().unwrap(),
+            profile_address,
+            token_id,
+            timestamp: get_block_timestamp()
+        }
+    );
+
+    spy.assert_emitted(@array![(profile_contract_address, expected_event)]);
 
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
 }
