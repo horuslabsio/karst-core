@@ -103,6 +103,9 @@ fn test_profile_creation() {
     assert(profile.profile_address == profile_address, 'invalid profile address');
     assert(profile.profile_owner == USER.try_into().unwrap(), 'invalid profile address');
 
+    // test follow nft contract is deployed
+    assert(profile.follow_nft != 0.try_into().unwrap(), 'follow nft not deployed');
+
     stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
 }
 
@@ -156,16 +159,7 @@ fn test_profile_creation_event() {
     let profile_address = profileDispatcher
         .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456,);
 
-    // test a new karst nft is minted
-    let last_minted_id = karstNFTDispatcher.get_last_minted_id();
     let token_id = karstNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
-    assert(last_minted_id == 1.try_into().unwrap(), 'invalid ID');
-    assert(token_id == 1.try_into().unwrap(), 'invalid ID');
-
-    // test profile creation was successful
-    let profile = profileDispatcher.get_profile(profile_address);
-    assert(profile.profile_address == profile_address, 'invalid profile address');
-    assert(profile.profile_owner == USER.try_into().unwrap(), 'invalid profile address');
 
     let expected_event = ProfileEvent::CreatedProfile(
         CreatedProfile {
