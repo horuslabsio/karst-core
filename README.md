@@ -89,6 +89,7 @@ Check out the contract architecture below, and join our [working group](https://
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/Jemiiah"><img src="https://avatars.githubusercontent.com/u/160767568?v=4?s=100" width="100px;" alt="Jemiiah"/><br /><sub><b>Jemiiah</b></sub></a><br /><a href="#code-Jemiiah" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/od-hunter"><img src="https://avatars.githubusercontent.com/u/146340502?v=4?s=100" width="100px;" alt="Hunter001"/><br /><sub><b>Hunter001</b></sub></a><br /><a href="#code-od-hunter" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/manlikeHB"><img src="https://avatars.githubusercontent.com/u/109147010?v=4?s=100" width="100px;" alt="Yusuf Habib"/><br /><sub><b>Yusuf Habib</b></sub></a><br /><a href="#code-manlikeHB" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/adrianvrj"><img src="https://avatars.githubusercontent.com/u/111903096?v=4?s=100" width="100px;" alt="ADR!AN"/><br /><sub><b>ADR!AN</b></sub></a><br /><a href="#code-adrianvrj" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
