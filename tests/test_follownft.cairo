@@ -7,7 +7,7 @@ use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 use starknet::{ContractAddress, get_block_timestamp};
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp, 
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp,
     spy_events, SpyOn, EventAssertions, EventFetcher
 };
 
@@ -310,7 +310,7 @@ fn test_block_event() {
     let mut spy = spy_events(SpyOn::One(follow_nft_contract_address));
     dispatcher.process_block(FOLLOWER1.try_into().unwrap());
     let follow_id = dispatcher.get_follow_id(FOLLOWER1.try_into().unwrap());
-    
+
     let expected_event = FollowerBlockedEvent::FollowerBlocked(
         FollowerBlocked {
             followed_address: FOLLOWED_ADDRESS.try_into().unwrap(),
