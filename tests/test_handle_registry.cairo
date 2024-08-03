@@ -2,14 +2,19 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress};
+use starknet::{ContractAddress, get_block_timestamp};
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp
+    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp,
+    spy_events, SpyOn, EventAssertions, EventFetcher
 };
+use starknet::get_caller_address;
 
 use karst::interfaces::IHandleRegistry::{IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait};
 use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 use karst::namespaces::handle_registry::HandleRegistry;
+use karst::namespaces::handle_registry::HandleRegistry::{Event as LinkedEvent, HandleLinked};
+use karst::namespaces::handle_registry::HandleRegistry::{Event as UnlinkedEvent, HandleUnlinked};
+
 
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
@@ -171,5 +176,66 @@ fn test_unlink_fails_if_caller_is_not_owner() {
     // call unlink
     start_prank(CheatTarget::One(handle_registry_address), USER_TWO.try_into().unwrap());
     registryDispatcher.unlink(handle_id, USER_ONE.try_into().unwrap());
+    stop_prank(CheatTarget::One(handle_registry_address));
+}
+
+#[test]
+fn test_emmit_linked_event() {
+    let (handle_registry_address, handle_contract_address) = __setup__();
+    let registryDispatcher = IHandleRegistryDispatcher {
+        contract_address: handle_registry_address
+    };
+    let handleDispatcher = IHandleDispatcher { contract_address: handle_contract_address };
+    let mut spy = spy_events(SpyOn::One(handle_registry_address));
+
+    // mint handle
+    let handle_id = handleDispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+
+    start_prank(CheatTarget::One(handle_registry_address), USER_ONE.try_into().unwrap());
+
+    // link token to profile
+    registryDispatcher.link(handle_id, USER_ONE.try_into().unwrap());
+
+    let expected_event = LinkedEvent::Linked(
+        HandleLinked {
+            handle_id: handle_id,
+            profile_address: USER_ONE.try_into().unwrap(),
+            caller: USER_ONE.try_into().unwrap(),
+            timestamp: get_block_timestamp()
+        }
+    );
+    spy.assert_emitted(@array![(handle_registry_address, expected_event)]);
+    stop_prank(CheatTarget::One(handle_registry_address));
+}
+
+#[test]
+fn test_emmit_unlinked_event() {
+    let (handle_registry_address, handle_contract_address) = __setup__();
+    let registryDispatcher = IHandleRegistryDispatcher {
+        contract_address: handle_registry_address
+    };
+    let handleDispatcher = IHandleDispatcher { contract_address: handle_contract_address };
+    let mut spy = spy_events(SpyOn::One(handle_registry_address));
+
+    // mint handle
+    let handle_id = handleDispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
+
+    // link token to profile
+    registryDispatcher.link(handle_id, USER_ONE.try_into().unwrap());
+
+    start_prank(CheatTarget::One(handle_registry_address), USER_ONE.try_into().unwrap());
+
+    // call unlink
+    registryDispatcher.unlink(handle_id, USER_ONE.try_into().unwrap());
+
+    let expected_event = UnlinkedEvent::Unlinked(
+        HandleUnlinked {
+            handle_id: handle_id,
+            profile_address: USER_ONE.try_into().unwrap(),
+            caller: USER_ONE.try_into().unwrap(),
+            timestamp: get_block_timestamp()
+        }
+    );
+    spy.assert_emitted(@array![(handle_registry_address, expected_event)]);
     stop_prank(CheatTarget::One(handle_registry_address));
 }
