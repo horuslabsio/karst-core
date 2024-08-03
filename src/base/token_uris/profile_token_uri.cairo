@@ -1,13 +1,8 @@
 // TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/ProfileTokenURI.sol
 
 pub mod ProfileTokenUri {
-    use core::traits::TryInto;
-    use core::serde::Serde;
     use alexandria_bytes::{Bytes, BytesTrait};
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
-    // use alexandria_encoding::base64::Base64FeltEncoder;
-    use core::integer::BoundedInt;
-
 
     pub fn get_token_uri(token_id: u256, mint_timestamp: u64) -> ByteArray {
         let mut svg = ArrayTrait::<felt252>::new();
