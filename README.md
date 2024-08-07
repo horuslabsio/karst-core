@@ -91,6 +91,9 @@ Check out the contract architecture below, and join our [working group](https://
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/manlikeHB"><img src="https://avatars.githubusercontent.com/u/109147010?v=4?s=100" width="100px;" alt="Yusuf Habib"/><br /><sub><b>Yusuf Habib</b></sub></a><br /><a href="#code-manlikeHB" title="Code">💻</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/adrianvrj"><img src="https://avatars.githubusercontent.com/u/111903096?v=4?s=100" width="100px;" alt="ADR!AN"/><br /><sub><b>ADR!AN</b></sub></a><br /><a href="#code-adrianvrj" title="Code">💻</a></td>
     </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/EmmanuelAR"><img src="https://avatars.githubusercontent.com/u/54730752?v=4?s=100" width="100px;" alt="Emmanuel Agüero "/><br /><sub><b>Emmanuel Agüero </b></sub></a><br /><a href="#code-EmmanuelAR" title="Code">💻</a></td>
+    </tr>
   </tbody>
 </table>
 
