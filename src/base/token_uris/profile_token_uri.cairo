@@ -6,7 +6,8 @@ pub mod ProfileTokenUri {
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
     use alexandria_encoding::base64::{Base64UrlEncoder};
 
-    fn get_svg() -> Array<felt252> {
+    // get svg according to the token id and mint timestamp
+    fn get_svg(token_id: u256, mint_timestamp: u64) -> Array<felt252> {
         let mut svg = ArrayTrait::<felt252>::new();
         svg.append('<svg width="200" height="200" x');
         svg.append('mlns="http://www.w3.org/2000/sv');
@@ -51,7 +52,7 @@ pub mod ProfileTokenUri {
 
     pub fn get_token_uri(token_id: u256, mint_timestamp: u64) -> ByteArray {
         let baseuri = 'data:image/svg+xml;base64,';
-        let mut svg = get_svg();
+        let mut svg = get_svg(token_id, mint_timestamp);
         let mut tokenuri: ByteArray = Default::default();
         // append the svg encoded value after the base uri 
         tokenuri.append(@baseuri.try_into().unwrap());
