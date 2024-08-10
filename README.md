@@ -93,6 +93,7 @@ Check out the contract architecture below, and join our [working group](https://
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/EmmanuelAR"><img src="https://avatars.githubusercontent.com/u/54730752?v=4?s=100" width="100px;" alt="Emmanuel Agüero "/><br /><sub><b>Emmanuel Agüero </b></sub></a><br /><a href="#code-EmmanuelAR" title="Code">💻</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/PavitraAgarwal21"><img src="https://avatars.githubusercontent.com/u/85789615?v=4?s=100" width="100px;" alt="PavitraAgarwal"/><br /><sub><b>PavitraAgarwal</b></sub></a><br /><a href="#code-PavitraAgarwal21" title="Code">💻</a></td>
     </tr>
   </tbody>
 </table>
