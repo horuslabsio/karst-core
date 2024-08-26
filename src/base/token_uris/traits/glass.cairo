@@ -2,7 +2,7 @@
 
 mod glass {
     use core::traits::TryInto;
-    use karst::base::token_uris::color::karstColors;
+    use karst::base::token_uris::traits::color::karstColors;
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
 
     #[derive(Drop)]
