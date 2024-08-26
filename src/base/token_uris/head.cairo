@@ -14,17 +14,8 @@ mod head {
         HEAD5, // 5
     }
 
-    pub fn faceSvgStart() {
-        let mut svgStart: ByteArray = "<svg width=\"200\" height=\"200\"";
-        svgStart.append(@getHeadvariant(FaceVariants::HEAD1));
-        svgStart.append(@"</svg>");
-        println!("{:?}", svgStart);
-    }
-
-
-    pub fn checkface() {
-        println!("hello from the head ");
-        faceSvgStart();
+    pub fn faceSvgStart() -> ByteArray {
+        getHeadvariant(FaceVariants::HEAD1)
     }
 
 
