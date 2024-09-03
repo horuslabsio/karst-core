@@ -4,3 +4,4 @@ mod color;
 mod beard;
 mod background;
 mod cloth;
+mod profile ; 
