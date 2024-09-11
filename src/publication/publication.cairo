@@ -217,7 +217,9 @@ pub mod PublicationComponent {
 
             pub_id_assigned
         }
-
+        /// @notice upvote a post 
+        /// @param profile_address address of profile performing the upvote action
+        ///  @param pub_id id of the publication to upvote
         fn upvote(
             ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) {
@@ -257,7 +259,9 @@ pub mod PublicationComponent {
                     }
                 )
         }
-
+        /// @notice downvote a post 
+        /// @param profile_address address of profile performing the downvote action
+        ///  @param pub_id id of the publication to upvote
         fn downvote(
             ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) {
@@ -334,11 +338,15 @@ pub mod PublicationComponent {
         ) -> PublicationType {
             self._get_publication_type(profile_address, pub_id_assigned)
         }
-
+        /// @notice retrieves a post vote_count
+        /// @param pub_id the ID of the publication whose count is to be retrieved
         fn get_vote_count(self: @ComponentState<TContractState>, pub_id: u256) -> u256 {
             let vote_count = self.vote_count.read(pub_id);
             vote_count
         }
+
+        /// @notice retrieves a post vote_status
+        /// @param pub_id the ID of the publication whose count is to be retrieved
         fn has_user_voted(
             self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) -> bool {
