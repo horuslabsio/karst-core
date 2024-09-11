@@ -3,7 +3,7 @@
 // *************************************************************************
 use starknet::ContractAddress;
 use karst::base::constants::types::{
-    PostParams, MirrorParams, CommentParams, PublicationType, Publication, QuoteParams
+    PostParams, RepostParams, CommentParams, PublicationType, Publication, QuoteParams
 };
 
 #[starknet::interface]
@@ -13,8 +13,11 @@ pub trait IKarstPublications<TState> {
     // *************************************************************************
     fn post(ref self: TState, post_params: PostParams) -> u256;
     fn comment(ref self: TState, comment_params: CommentParams) -> u256;
-    fn quote(ref self: TState, quote_params: QuoteParams) -> u256;
-    fn mirror(ref self: TState, mirror_params: MirrorParams) -> u256;
+    fn repost(ref self: TState, repost_params: RepostParams) -> u256;
+    fn upvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
+    fn downvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
+    fn collect(ref self: TState, pub_id: u256) -> bool;
+
     // *************************************************************************
     //                              GETTERS
     // *************************************************************************
@@ -27,4 +30,6 @@ pub trait IKarstPublications<TState> {
     fn get_publication_content_uri(
         self: @TState, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
+    fn get_vote_count(self: @TState, pub_id: u256) -> u256;
+    fn has_user_voted(self: @TState, profile_address: ContractAddress, pub_id: u256) -> bool;
 }

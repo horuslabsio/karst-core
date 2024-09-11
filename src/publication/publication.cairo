@@ -9,11 +9,13 @@ pub mod PublicationComponent {
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::interfaces::IPublication::IKarstPublications;
     use karst::base::{
-        constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE},
+        constants::errors::Errors::{
+            NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_UPVOTED, ALREADY_DOWNVOTED
+        },
         utils::hubrestricted::HubRestricted::hub_only,
         constants::types::{
             PostParams, Publication, PublicationType, ReferencePubParams, CommentParams,
-            QuoteParams, MirrorParams
+            RepostParams, Upvote, Downvote
         }
     };
 
@@ -27,6 +29,8 @@ pub mod PublicationComponent {
     #[storage]
     struct Storage {
         publication: LegacyMap<(ContractAddress, u256), Publication>,
+        vote_status: LegacyMap<(ContractAddress, u256), bool>,
+        vote_count: LegacyMap<u256, u256>,
     }
 
     // *************************************************************************
@@ -37,8 +41,9 @@ pub mod PublicationComponent {
     pub enum Event {
         Post: Post,
         CommentCreated: CommentCreated,
-        MirrorCreated: MirrorCreated,
-        QuoteCreated: QuoteCreated,
+        RepostCreated: RepostCreated,
+        UpvoteCreated: UpvoteCreated,
+        DownvoteCreated: DownvoteCreated
     }
 
     #[derive(Drop, starknet::Event)]
@@ -50,8 +55,8 @@ pub mod PublicationComponent {
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct MirrorCreated {
-        mirrorParams: MirrorParams,
+    pub struct RepostCreated {
+        repostParams: RepostParams,
         publication_id: u256,
         transaction_executor: ContractAddress,
         block_timestamp: u64,
@@ -66,13 +71,18 @@ pub mod PublicationComponent {
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct QuoteCreated {
-        quoteParams: QuoteParams,
+    pub struct UpvoteCreated {
         publication_id: u256,
         transaction_executor: ContractAddress,
         block_timestamp: u64,
     }
 
+    #[derive(Drop, starknet::Event)]
+    pub struct DownvoteCreated {
+        publication_id: u256,
+        transaction_executor: ContractAddress,
+        block_timestamp: u64,
+    }
 
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
@@ -107,7 +117,17 @@ pub mod PublicationComponent {
                 content_URI: post_params.content_URI,
                 pub_Type: PublicationType::Post,
                 root_profile_address: 0.try_into().unwrap(),
-                root_pub_id: 0
+                root_pub_id: 0,
+                upvote: Upvote {
+                    publication_id: 0,
+                    transaction_executor: 0.try_into().unwrap(),
+                    block_timestamp: 0
+                },
+                downvote: Downvote {
+                    publication_id: 0,
+                    transaction_executor: 0.try_into().unwrap(),
+                    block_timestamp: 0
+                },
             };
 
             self.publication.write((post_params.profile_address, pub_id_assigned), new_post);
@@ -147,7 +167,7 @@ pub mod PublicationComponent {
                     comment_params.content_URI,
                     comment_params.pointed_profile_address,
                     comment_params.pointed_pub_id,
-                    reference_pub_type
+                    reference_pub_type,
                 );
 
             self
@@ -164,33 +184,33 @@ pub mod PublicationComponent {
 
         /// @notice performs the mirror function
         /// @param mirrorParams the MirrorParams struct
-        fn mirror(ref self: ComponentState<TContractState>, mirror_params: MirrorParams) -> u256 {
+        fn repost(ref self: ComponentState<TContractState>, repost_params: RepostParams) -> u256 {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
-                .get_profile(mirror_params.profile_address)
+                .get_profile(repost_params.profile_address)
                 .profile_owner;
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
 
-            let ref_mirrorParams = mirror_params.clone();
+            let ref_repostParams = repost_params.clone();
             let publication = self
                 .get_publication(
-                    mirror_params.pointed_profile_address, mirror_params.pointed_pub_id
+                    repost_params.pointed_profile_address, repost_params.pointed_pub_id
                 );
 
             let pub_id_assigned = self
                 ._create_reference_publication(
-                    mirror_params.profile_address,
+                    repost_params.profile_address,
                     publication.content_URI,
-                    mirror_params.pointed_profile_address,
-                    mirror_params.pointed_pub_id,
-                    PublicationType::Mirror
+                    repost_params.pointed_profile_address,
+                    repost_params.pointed_pub_id,
+                    PublicationType::Repost,
                 );
 
             self
                 .emit(
-                    MirrorCreated {
-                        mirrorParams: ref_mirrorParams,
+                    RepostCreated {
+                        repostParams: ref_repostParams,
                         publication_id: pub_id_assigned,
-                        transaction_executor: mirror_params.profile_address,
+                        transaction_executor: repost_params.profile_address,
                         block_timestamp: get_block_timestamp(),
                     }
                 );
@@ -198,38 +218,86 @@ pub mod PublicationComponent {
             pub_id_assigned
         }
 
-        /// @notice performs the quote function
-        /// @param reference_pub_type publication type
-        /// @param quoteParams the quoteParams struct
-        fn quote(ref self: ComponentState<TContractState>, quote_params: QuoteParams) -> u256 {
-            let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
-                .get_profile(quote_params.profile_address)
-                .profile_owner;
-            assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
-
-            let ref_quoteParams = quote_params.clone();
-            let reference_pub_type = self._as_reference_pub_params(quote_params.reference_pub_type);
-            assert(reference_pub_type == PublicationType::Quote, UNSUPPORTED_PUB_TYPE);
-
-            let pub_id_assigned = self
-                ._create_reference_publication(
-                    quote_params.profile_address,
-                    quote_params.content_URI,
-                    quote_params.pointed_profile_address,
-                    quote_params.pointed_pub_id,
-                    reference_pub_type
-                );
+        fn upvote(
+            ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+        ) {
+            let publication = self.get_publication(profile_address, pub_id);
+            let caller = get_caller_address();
+            let has_upvoted = self.vote_status.read((caller, pub_id));
+            let mut vote_current_count = self.vote_count.read(pub_id) + 1;
+            assert(has_upvoted == false, ALREADY_UPVOTED);
+            let updated_publication = Publication {
+                pointed_profile_address: publication.pointed_profile_address,
+                pointed_pub_id: publication.pointed_pub_id,
+                content_URI: publication.content_URI,
+                pub_Type: publication.pub_Type,
+                root_profile_address: publication.root_profile_address,
+                root_pub_id: publication.root_pub_id,
+                upvote: Upvote {
+                    publication_id: pub_id,
+                    transaction_executor: caller,
+                    block_timestamp: get_block_timestamp()
+                },
+                downvote: Downvote {
+                    publication_id: 0,
+                    transaction_executor: 0.try_into().unwrap(),
+                    block_timestamp: 0
+                },
+            };
+            self.vote_count.write(pub_id, vote_current_count);
+            self.vote_status.write((caller, pub_id), true);
+            self.publication.write((profile_address, pub_id), updated_publication);
 
             self
                 .emit(
-                    QuoteCreated {
-                        quoteParams: ref_quoteParams,
-                        publication_id: pub_id_assigned,
-                        transaction_executor: quote_params.profile_address,
-                        block_timestamp: get_block_timestamp(),
+                    UpvoteCreated {
+                        publication_id: pub_id,
+                        transaction_executor: caller,
+                        block_timestamp: get_block_timestamp()
                     }
-                );
-            pub_id_assigned
+                )
+        }
+
+        fn downvote(
+            ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+        ) {
+            let publication = self.get_publication(profile_address, pub_id);
+            let caller = get_caller_address();
+            let has_downvoted = self.vote_status.read((caller, pub_id));
+            let mut vote_current_count = self.vote_count.read(pub_id) - 1;
+            assert(has_downvoted == false, ALREADY_DOWNVOTED);
+            let updated_publication = Publication {
+                pointed_profile_address: publication.pointed_profile_address,
+                pointed_pub_id: publication.pointed_pub_id,
+                content_URI: publication.content_URI,
+                pub_Type: publication.pub_Type,
+                root_profile_address: publication.root_profile_address,
+                root_pub_id: publication.root_pub_id,
+                upvote: Upvote {
+                    publication_id: 0,
+                    transaction_executor: 0.try_into().unwrap(),
+                    block_timestamp: 0
+                },
+                downvote: Downvote {
+                    publication_id: pub_id,
+                    transaction_executor: caller,
+                    block_timestamp: get_block_timestamp()
+                },
+            };
+            self.vote_count.write(pub_id, vote_current_count);
+            self.publication.write((profile_address, pub_id), updated_publication);
+            self.vote_status.write((caller, pub_id), true);
+            self
+                .emit(
+                    DownvoteCreated {
+                        publication_id: pub_id,
+                        transaction_executor: caller,
+                        block_timestamp: get_block_timestamp()
+                    }
+                )
+        }
+        fn collect(ref self: ComponentState<TContractState>, pub_id: u256) -> bool {
+            true
         }
 
         // *************************************************************************
@@ -266,7 +334,20 @@ pub mod PublicationComponent {
         ) -> PublicationType {
             self._get_publication_type(profile_address, pub_id_assigned)
         }
+
+        fn get_vote_count(self: @ComponentState<TContractState>, pub_id: u256) -> u256 {
+            let vote_count = self.vote_count.read(pub_id);
+            vote_count
+        }
+        fn has_user_voted(
+            self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+        ) -> bool {
+            let status = self.vote_status.read((profile_address, pub_id));
+            status
+        }
     }
+
+
     // *************************************************************************
     //                            PRIVATE FUNCTIONS
     // *************************************************************************
@@ -289,7 +370,7 @@ pub mod PublicationComponent {
             content_URI: ByteArray,
             pointed_profile_address: ContractAddress,
             pointed_pub_id: u256,
-            reference_pub_type: PublicationType
+            reference_pub_type: PublicationType,
         ) -> u256 {
             let cloned_reference_pub_type = reference_pub_type.clone();
             let mut profile_instance = get_dep_component_mut!(ref self, Profile);
@@ -306,7 +387,7 @@ pub mod PublicationComponent {
                     root_pub_id = 0.try_into().unwrap();
                     root_profile_address = 0.try_into().unwrap();
                 },
-                PublicationType::Mirror | PublicationType::Quote |
+                PublicationType::Repost |
                 PublicationType::Comment => {
                     if (pointed_pub.root_pub_id == 0) {
                         root_pub_id = pointed_pub_id;
@@ -325,7 +406,17 @@ pub mod PublicationComponent {
                 content_URI: content_URI,
                 pub_Type: reference_pub_type,
                 root_pub_id: root_pub_id,
-                root_profile_address: root_profile_address
+                root_profile_address: root_profile_address,
+                upvote: Upvote {
+                    publication_id: 0,
+                    transaction_executor: 0.try_into().unwrap(),
+                    block_timestamp: 0
+                },
+                downvote: Downvote {
+                    publication_id: 0,
+                    transaction_executor: 0.try_into().unwrap(),
+                    block_timestamp: 0
+                },
             };
 
             self.publication.write((profile_address, pub_id_assigned), updated_reference);
@@ -344,7 +435,7 @@ pub mod PublicationComponent {
             content_URI: ByteArray,
             pointed_profile_address: ContractAddress,
             pointed_pub_id: u256,
-            reference_pub_type: PublicationType
+            reference_pub_type: PublicationType,
         ) -> u256 {
             self._validate_pointed_pub(pointed_profile_address, pointed_pub_id);
 
@@ -354,7 +445,7 @@ pub mod PublicationComponent {
                     content_URI,
                     pointed_profile_address,
                     pointed_pub_id,
-                    reference_pub_type
+                    reference_pub_type,
                 );
 
             pub_id_assigned
@@ -366,7 +457,6 @@ pub mod PublicationComponent {
             ref self: ComponentState<TContractState>, reference_pub_type: PublicationType
         ) -> PublicationType {
             match reference_pub_type {
-                PublicationType::Quote => PublicationType::Quote,
                 PublicationType::Comment => PublicationType::Comment,
                 _ => PublicationType::Nonexistent,
             }
@@ -380,7 +470,7 @@ pub mod PublicationComponent {
         ) {
             let pointedPubType = self._get_publication_type(profile_address, pub_id);
             if pointedPubType == PublicationType::Nonexistent
-                || pointedPubType == PublicationType::Mirror {
+                || pointedPubType == PublicationType::Repost {
                 panic!("invalid pointed publication");
             }
         }
@@ -411,7 +501,7 @@ pub mod PublicationComponent {
             if pub_type_option == PublicationType::Nonexistent {
                 return "0";
             }
-            if pub_type_option == PublicationType::Mirror {
+            if pub_type_option == PublicationType::Repost {
                 let pointedPub: Publication = self
                     .publication
                     .read((publication.pointed_profile_address, publication.pointed_pub_id));

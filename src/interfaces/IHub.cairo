@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use karst::base::constants::types::{
-    Profile, PostParams, MirrorParams, CommentParams, PublicationType, Publication, QuoteParams
+    Profile, PostParams, RepostParams, CommentParams, PublicationType, Publication, QuoteParams
 };
 
 // *************************************************************************
@@ -36,9 +36,7 @@ pub trait IHub<TState> {
 
     fn comment(ref self: TState, comment_params: CommentParams) -> u256;
 
-    fn quote(ref self: TState, quote_params: QuoteParams) -> u256;
-
-    fn mirror(ref self: TState, mirror_params: MirrorParams) -> u256;
+    fn repost(ref self: TState, repost_params: RepostParams) -> u256;
 
     fn get_publication(
         self: @TState, profile_address: ContractAddress, pub_id_assigned: u256

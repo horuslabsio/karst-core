@@ -18,4 +18,6 @@ pub mod Errors {
     pub const UNSUPPORTED_PUB_TYPE: felt252 = 'Karst: unsupported pub type!';
     pub const INVALID_PROFILE_ADDRESS: felt252 = 'Karst: invalid profile address!';
     pub const SELF_FOLLOWING: felt252 = 'Karst: self follow is forbidden';
+    pub const ALREADY_UPVOTED: felt252 = 'Karst: user already upvoted!';
+    pub const ALREADY_DOWNVOTED: felt252 = 'Karst: user already downvoted!';
 }
