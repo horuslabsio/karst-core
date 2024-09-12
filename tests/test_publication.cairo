@@ -11,7 +11,7 @@ use snforge_std::{
     EventAssertions
 };
 use karst::publication::publication::PublicationComponent::{
-    Event as PublicationEvent, Post, CommentCreated, RepostCreated, UpvoteCreated, DownvoteCreated
+    Event as PublicationEvent, Post, CommentCreated, RepostCreated, Upvoted, Downvoted
 };
 
 
@@ -327,8 +327,8 @@ fn test_upvote_event_emission() {
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
     start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    let expected_event = PublicationEvent::UpvoteCreated(
-        UpvoteCreated {
+    let expected_event = PublicationEvent::Upvoted(
+        Upvoted {
             publication_id: user_one_first_post_pointed_pub_id,
             transaction_executor: USER_ONE.try_into().unwrap(),
             block_timestamp: get_block_timestamp()
@@ -359,8 +359,8 @@ fn test_downvote_event_emission() {
     start_prank(CheatTarget::One(publication_contract_address), USER_SIX.try_into().unwrap());
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
     dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    let expected_event = PublicationEvent::DownvoteCreated(
-        DownvoteCreated {
+    let expected_event = PublicationEvent::Downvoted(
+        Downvoted {
             publication_id: user_one_first_post_pointed_pub_id,
             transaction_executor: USER_SIX.try_into().unwrap(),
             block_timestamp: get_block_timestamp()

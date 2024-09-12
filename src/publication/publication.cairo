@@ -39,8 +39,8 @@ pub mod PublicationComponent {
         Post: Post,
         CommentCreated: CommentCreated,
         RepostCreated: RepostCreated,
-        UpvoteCreated: UpvoteCreated,
-        DownvoteCreated: DownvoteCreated
+        Upvoted: Upvoted,
+        Downvoted: Downvoted
     }
 
     #[derive(Drop, starknet::Event)]
@@ -68,14 +68,14 @@ pub mod PublicationComponent {
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct UpvoteCreated {
+    pub struct Upvoted {
         publication_id: u256,
         transaction_executor: ContractAddress,
         block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct DownvoteCreated {
+    pub struct Downvoted {
         publication_id: u256,
         transaction_executor: ContractAddress,
         block_timestamp: u64,
@@ -233,7 +233,7 @@ pub mod PublicationComponent {
 
             self
                 .emit(
-                    UpvoteCreated {
+                    Upvoted {
                         publication_id: pub_id,
                         transaction_executor: caller,
                         block_timestamp: get_block_timestamp()
@@ -267,7 +267,7 @@ pub mod PublicationComponent {
             self.vote_status.write((caller, pub_id), true);
             self
                 .emit(
-                    DownvoteCreated {
+                    Downvoted {
                         publication_id: pub_id,
                         transaction_executor: caller,
                         block_timestamp: get_block_timestamp()
