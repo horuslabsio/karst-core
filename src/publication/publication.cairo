@@ -9,9 +9,7 @@ pub mod PublicationComponent {
     use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
     use karst::interfaces::IPublication::IKarstPublications;
     use karst::base::{
-        constants::errors::Errors::{
-            NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_UPVOTED, ALREADY_DOWNVOTED
-        },
+        constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED},
         utils::hubrestricted::HubRestricted::hub_only,
         constants::types::{
             PostParams, Publication, PublicationType, ReferencePubParams, CommentParams,
@@ -30,7 +28,6 @@ pub mod PublicationComponent {
     struct Storage {
         publication: LegacyMap<(ContractAddress, u256), Publication>,
         vote_status: LegacyMap<(ContractAddress, u256), bool>,
-        vote_count: LegacyMap<u256, u256>,
     }
 
     // *************************************************************************
@@ -118,16 +115,8 @@ pub mod PublicationComponent {
                 pub_Type: PublicationType::Post,
                 root_profile_address: 0.try_into().unwrap(),
                 root_pub_id: 0,
-                upvote: Upvote {
-                    publication_id: 0,
-                    transaction_executor: 0.try_into().unwrap(),
-                    block_timestamp: 0
-                },
-                downvote: Downvote {
-                    publication_id: 0,
-                    transaction_executor: 0.try_into().unwrap(),
-                    block_timestamp: 0
-                },
+                upvote: 0,
+                downvote: 0
             };
 
             self.publication.write((post_params.profile_address, pub_id_assigned), new_post);
@@ -220,14 +209,15 @@ pub mod PublicationComponent {
         /// @notice upvote a post 
         /// @param profile_address address of profile performing the upvote action
         ///  @param pub_id id of the publication to upvote
+        /// todo!(gate function)
         fn upvote(
             ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) {
-            let publication = self.get_publication(profile_address, pub_id);
+            let mut publication = self.get_publication(profile_address, pub_id);
             let caller = get_caller_address();
-            let has_upvoted = self.vote_status.read((caller, pub_id));
-            let mut vote_current_count = self.vote_count.read(pub_id) + 1;
-            assert(has_upvoted == false, ALREADY_UPVOTED);
+            let has_voted = self.vote_status.read((caller, pub_id));
+            let upvote_current_count = publication.upvote + 1;
+            assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication {
                 pointed_profile_address: publication.pointed_profile_address,
                 pointed_pub_id: publication.pointed_pub_id,
@@ -235,18 +225,9 @@ pub mod PublicationComponent {
                 pub_Type: publication.pub_Type,
                 root_profile_address: publication.root_profile_address,
                 root_pub_id: publication.root_pub_id,
-                upvote: Upvote {
-                    publication_id: pub_id,
-                    transaction_executor: caller,
-                    block_timestamp: get_block_timestamp()
-                },
-                downvote: Downvote {
-                    publication_id: 0,
-                    transaction_executor: 0.try_into().unwrap(),
-                    block_timestamp: 0
-                },
+                upvote: upvote_current_count,
+                downvote: publication.downvote
             };
-            self.vote_count.write(pub_id, vote_current_count);
             self.vote_status.write((caller, pub_id), true);
             self.publication.write((profile_address, pub_id), updated_publication);
 
@@ -259,17 +240,19 @@ pub mod PublicationComponent {
                     }
                 )
         }
-        /// @notice downvote a post 
-        /// @param profile_address address of profile performing the downvote action
-        ///  @param pub_id id of the publication to upvote
+        // @notice downvote a post 
+        // @param profile_address address of profile performing the downvote action
+        //  @param pub_id id of the publication to upvote
+        /// todo!(gate function)
+
         fn downvote(
             ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
         ) {
-            let publication = self.get_publication(profile_address, pub_id);
+            let mut publication = self.get_publication(profile_address, pub_id);
             let caller = get_caller_address();
-            let has_downvoted = self.vote_status.read((caller, pub_id));
-            let mut vote_current_count = self.vote_count.read(pub_id) - 1;
-            assert(has_downvoted == false, ALREADY_DOWNVOTED);
+            let has_voted = self.vote_status.read((caller, pub_id));
+            let downvote_current_count = publication.downvote + 1;
+            assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication {
                 pointed_profile_address: publication.pointed_profile_address,
                 pointed_pub_id: publication.pointed_pub_id,
@@ -277,18 +260,9 @@ pub mod PublicationComponent {
                 pub_Type: publication.pub_Type,
                 root_profile_address: publication.root_profile_address,
                 root_pub_id: publication.root_pub_id,
-                upvote: Upvote {
-                    publication_id: 0,
-                    transaction_executor: 0.try_into().unwrap(),
-                    block_timestamp: 0
-                },
-                downvote: Downvote {
-                    publication_id: pub_id,
-                    transaction_executor: caller,
-                    block_timestamp: get_block_timestamp()
-                },
+                upvote: publication.upvote,
+                downvote: downvote_current_count,
             };
-            self.vote_count.write(pub_id, vote_current_count);
             self.publication.write((profile_address, pub_id), updated_publication);
             self.vote_status.write((caller, pub_id), true);
             self
@@ -338,12 +312,6 @@ pub mod PublicationComponent {
         ) -> PublicationType {
             self._get_publication_type(profile_address, pub_id_assigned)
         }
-        /// @notice retrieves a post vote_count
-        /// @param pub_id the ID of the publication whose count is to be retrieved
-        fn get_vote_count(self: @ComponentState<TContractState>, pub_id: u256) -> u256 {
-            let vote_count = self.vote_count.read(pub_id);
-            vote_count
-        }
 
         /// @notice retrieves a post vote_status
         /// @param pub_id the ID of the publication whose count is to be retrieved
@@ -352,6 +320,25 @@ pub mod PublicationComponent {
         ) -> bool {
             let status = self.vote_status.read((profile_address, pub_id));
             status
+        }
+
+        /// @notice retrieves the upvote count
+        /// @param profile_address the the profile address to be queried
+        /// @param pub_id the ID of the publication whose count is to be retrieved
+        fn get_upvote_count(
+            self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+        ) -> u256 {
+            let upvote_count = self.get_publication(profile_address, pub_id).upvote;
+            upvote_count
+        }
+        /// @notice retrieves the downvote count
+        /// @param profile_address the the profile address to be queried
+        /// @param pub_id the ID of the publication whose count is to be retrieved
+        fn get_downvote_count(
+            self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+        ) -> u256 {
+            let downvote_count = self.get_publication(profile_address, pub_id).downvote;
+            downvote_count
         }
     }
 
@@ -415,16 +402,8 @@ pub mod PublicationComponent {
                 pub_Type: reference_pub_type,
                 root_pub_id: root_pub_id,
                 root_profile_address: root_profile_address,
-                upvote: Upvote {
-                    publication_id: 0,
-                    transaction_executor: 0.try_into().unwrap(),
-                    block_timestamp: 0
-                },
-                downvote: Downvote {
-                    publication_id: 0,
-                    transaction_executor: 0.try_into().unwrap(),
-                    block_timestamp: 0
-                },
+                upvote: 0,
+                downvote: 0
             };
 
             self.publication.write((profile_address, pub_id_assigned), updated_reference);

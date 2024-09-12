@@ -31,6 +31,10 @@ const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'ALICE';
 const USER_THREE: felt252 = 'ROB';
+const USER_FOUR: felt252 = 'DAN';
+const USER_FIVE: felt252 = 'RANDY';
+const USER_SIX: felt252 = 'JOE';
+
 
 // *************************************************************************
 //                              SETUP 
@@ -128,6 +132,22 @@ fn __setup__() -> (
         );
     stop_prank(CheatTarget::One(publication_contract_address));
 
+    // upvote
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address));
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address));
+    // downvote
+    start_prank(CheatTarget::One(publication_contract_address), USER_FOUR.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address));
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_FIVE.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address));
     return (
         nft_contract_address,
         registry_contract_address,
@@ -174,7 +194,7 @@ fn test_post() {
 }
 
 #[test]
-fn test_upvote_and_downvote() {
+fn test_upvote() {
     let (
         _,
         _,
@@ -189,27 +209,106 @@ fn test_upvote_and_downvote() {
     ) =
         __setup__();
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
-    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    let upvote_count = dispatcher.get_vote_count(user_one_first_post_pointed_pub_id);
-    let status = dispatcher
-        .has_user_voted(USER_TWO.try_into().unwrap(), user_one_first_post_pointed_pub_id);
-    assert(upvote_count == 1_u256, 'invalid upvote count');
-    assert(status == true, 'invalid upvote status');
-    stop_prank(CheatTarget::One(publication_contract_address));
-
-    start_prank(CheatTarget::One(publication_contract_address), USER_THREE.try_into().unwrap());
-    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    let upvote_count = dispatcher.get_vote_count(user_one_first_post_pointed_pub_id);
-    let status = dispatcher
-        .has_user_voted(USER_THREE.try_into().unwrap(), user_one_first_post_pointed_pub_id);
-    assert(upvote_count == 0_u256, 'invalid upvote count');
-    assert(status == true, 'invalid upvote status');
+    let upvote_count = dispatcher
+        .get_upvote_count(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    assert(upvote_count == 2, 'invalid upvote count');
     stop_prank(CheatTarget::One(publication_contract_address));
 }
 
 #[test]
-fn test_vote_event_emission() {
+fn test_downvote() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    let upvote_count = dispatcher
+        .get_downvote_count(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    assert(upvote_count == 2, 'invalid downvote count');
+    stop_prank(CheatTarget::One(publication_contract_address));
+}
+
+
+#[test]
+#[should_panic(expected: ('Karst: already react to post!',))]
+fn test_upvote_should_fail_if_user_has_upvote() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: already react to post!',))]
+fn test_downvote_should_fail_if_user_has_reacted_to_publication() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: already react to post!',))]
+fn test_upvote_should_fail_if_user_has_reacted_to_publication() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+
+    start_prank(CheatTarget::One(publication_contract_address), USER_FOUR.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
+
+#[test]
+fn test_upvote_event_emission() {
     let (
         _,
         _,
@@ -225,9 +324,8 @@ fn test_vote_event_emission() {
         __setup__();
 
     let mut spy = spy;
-
-    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    start_prank(CheatTarget::One(publication_contract_address), USER_ONE.try_into().unwrap());
     dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
     let expected_event = PublicationEvent::UpvoteCreated(
         UpvoteCreated {
@@ -238,36 +336,40 @@ fn test_vote_event_emission() {
     );
 
     spy.assert_emitted(@array![(publication_contract_address, expected_event)]);
-    stop_prank(CheatTarget::One(publication_contract_address));
+    stop_prank(CheatTarget::One(publication_contract_address),);
+}
 
-    start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
+#[test]
+fn test_downvote_event_emission() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        spy
+    ) =
+        __setup__();
+
+    let mut spy = spy;
+    start_prank(CheatTarget::One(publication_contract_address), USER_SIX.try_into().unwrap());
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
     dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
     let expected_event = PublicationEvent::DownvoteCreated(
         DownvoteCreated {
             publication_id: user_one_first_post_pointed_pub_id,
-            transaction_executor: USER_TWO.try_into().unwrap(),
+            transaction_executor: USER_SIX.try_into().unwrap(),
             block_timestamp: get_block_timestamp()
         }
     );
 
     spy.assert_emitted(@array![(publication_contract_address, expected_event)]);
-    stop_prank(CheatTarget::One(publication_contract_address));
+    stop_prank(CheatTarget::One(publication_contract_address),);
 }
-
-// #[test]
-// #[should_panic(expected: ('Karst: user already upvoted!',))]
-// fn test_upvote_should_fail_if_user_has_upvote() {
-//     let (_, _, publication_contract_address, _, _, user_one_profile_address, _, _, user_one_first_post_pointed_pub_id, _) =
-//         __setup__();
-//     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-
-//     start_prank(CheatTarget::One(publication_contract_address), USER_TWO.try_into().unwrap());
-//     dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-
-//     dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-//     stop_prank(CheatTarget::One(publication_contract_address),);
-// }
 
 #[test]
 fn test_post_event_emission() {

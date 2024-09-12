@@ -57,8 +57,8 @@ pub struct Publication {
     pub_Type: PublicationType,
     root_profile_address: ContractAddress,
     root_pub_id: u256,
-    upvote: Upvote,
-    downvote: Downvote,
+    upvote: u256,
+    downvote: u256,
 }
 
 // /**
@@ -157,12 +157,4 @@ pub struct Downvote {
     publication_id: u256,
     transaction_executor: ContractAddress,
     block_timestamp: u64,
-}
-
-// Enum to represent vote types
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-enum VoteStatus {
-    None, // No vote cast
-    Upvoted, // User upvoted
-    Downvoted // User downvoted
 }
