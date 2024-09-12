@@ -29,8 +29,6 @@ pub mod FollowTokenUri {
         follow_timestamp: u64
     ) -> ByteArray {
         let token_id_felt: felt252 = token_id.try_into().unwrap();
-        let token_id_byte: ByteArray = token_id_felt.try_into().unwrap();
-        let token_id_byte_len: felt252 = token_id_byte.len().try_into().unwrap();
         let follow_profile_address_felt: felt252 = followed_profile_address.try_into().unwrap();
         let follow_prfile_address_byte: ByteArray = follow_profile_address_felt.try_into().unwrap();
         let follow_prfile_address_byte_len: felt252 = follow_prfile_address_byte

@@ -26,9 +26,6 @@ pub mod HandleTokenUri {
         local_name: felt252,
         namespace: felt252
     ) -> ByteArray {
-        let token_id_felt: felt252 = token_id.try_into().unwrap();
-        let token_id_byte: ByteArray = token_id_felt.try_into().unwrap();
-        let token_id_byte_len: felt252 = token_id_byte.len().try_into().unwrap();
         let mut attributespre = ArrayTrait::<felt252>::new();
         let mut attributespost = ArrayTrait::<felt252>::new();
         attributespre.append('{"name":"@');
