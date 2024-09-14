@@ -18,6 +18,9 @@ alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.
 [dev-dependencies]
 snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.22.0" }
 
+[sncast.default]
+url= "https://starknet-sepolia.public.blastapi.io"
+
 [[target.starknet-contract]]
 casm = true
 build-external-contracts = ["token_bound_accounts::presets::account::Account"]

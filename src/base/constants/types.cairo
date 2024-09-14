@@ -56,7 +56,9 @@ pub struct Publication {
     content_URI: ByteArray,
     pub_Type: PublicationType,
     root_profile_address: ContractAddress,
-    root_pub_id: u256
+    root_pub_id: u256,
+    upvote: u256,
+    downvote: u256,
 }
 
 // /**
@@ -66,15 +68,13 @@ pub struct Publication {
 // * @param Post A standard post, having an URI, and no pointer to another publication.
 // * @param Comment A comment, having an URI, and a pointer to another publication.
 // * @param Mirror A mirror, having a pointer to another publication, but no URI.
-// * @param Quote A quote, having an URI, and a pointer to another publication.
 // */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 enum PublicationType {
     Nonexistent,
     Post,
     Comment,
-    Mirror,
-    Quote
+    Repost,
 }
 
 // /**
@@ -103,7 +103,7 @@ struct CommentParams {
     content_URI: ByteArray,
     pointed_profile_address: ContractAddress,
     pointed_pub_id: u256,
-    reference_pub_type: PublicationType
+    reference_pub_type: PublicationType,
 }
 
 
@@ -124,10 +124,10 @@ pub struct ReferencePubParams {
 // * @param pointed_pub_id The publication ID to point the mirror to.
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
-pub struct MirrorParams {
+pub struct RepostParams {
     profile_address: ContractAddress,
     pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256
+    pointed_pub_id: u256,
 }
 
 // /**
@@ -145,4 +145,16 @@ pub struct QuoteParams {
     pointed_profile_address: ContractAddress,
     pointed_pub_id: u256,
     reference_pub_type: PublicationType
+}
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct Upvote {
+    publication_id: u256,
+    transaction_executor: ContractAddress,
+    block_timestamp: u64,
+}
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct Downvote {
+    publication_id: u256,
+    transaction_executor: ContractAddress,
+    block_timestamp: u64,
 }
