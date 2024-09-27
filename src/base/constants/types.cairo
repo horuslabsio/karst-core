@@ -166,3 +166,63 @@ pub struct Downvote {
     pub transaction_executor: ContractAddress,
     pub block_timestamp: u64,
 }
+
+// /**
+// * @notice A struct containing the parameters required for the `create_community()` function.
+// *
+// * @param community_owner The address of the profile to the create the community.
+// * @param community_metadata_uri The URI to set for this new community.
+// * @param community_nft_address The nft address of the community.
+// * @param community_premium_status The community is premium or not .
+// */
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityParams {
+    community_id: u256,
+    community_owner: ContractAddress,
+    community_metadata_uri: ByteArray,
+    community_nft_address: ContractAddress,
+    community_total_members: u256,
+    community_premium_status: bool
+}
+
+// /**
+// * @notice A struct containing the parameters required for the `join_community()` function.
+// *
+// * @param profile_address The address of the profile of the community member.
+// * @param community_id The id of the community he join.
+// * @param total_publications The toal publication of the member in the community.
+// * @param community_token_id The community token ID of the member.
+// */
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+ pub struct CommunityMember {
+		  profile_address: ContractAddress,
+		  community_id : u256 , 
+		  total_publications: u256,
+		  community_token_id: u256,
+		  ban_status: bool,
+	}
+
+ // /**
+// * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
+// *
+// * @param Nonexistent An indicator showing the queried publication does not exist.
+// * @param Post A standard post, having an URI, and no pointer to another publication.
+// * @param Comment A comment, having an URI, and a pointer to another publication.
+// * @param Mirror A mirror, having a pointer to another publication, but no URI.
+// */
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
+enum GateKeepType {
+    None,
+    NFTGating,
+    PermissionedGating,
+    Paid,
+}   
+
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
+enum CommunityType {
+	Free,
+	Standard,
+	Business
+}  
