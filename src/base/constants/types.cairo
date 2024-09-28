@@ -179,6 +179,14 @@ pub struct Downvote {
 pub struct CommunityParams {
     community_id: u256,
     community_owner: ContractAddress,
+    community_nft_address: ContractAddress,
+    community_premium_status: bool
+}
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityDetails {
+    community_id: u256,
+    community_owner: ContractAddress,
     community_metadata_uri: ByteArray,
     community_nft_address: ContractAddress,
     community_total_members: u256,
@@ -194,15 +202,15 @@ pub struct CommunityParams {
 // * @param community_token_id The community token ID of the member.
 // */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
- pub struct CommunityMember {
-		  profile_address: ContractAddress,
-		  community_id : u256 , 
-		  total_publications: u256,
-		  community_token_id: u256,
-		  ban_status: bool,
-	}
+pub struct CommunityMember {
+    profile_address: ContractAddress,
+    community_id: u256,
+    total_publications: u256,
+    community_token_id: u256,
+    ban_status: bool,
+}
 
- // /**
+// /**
 // * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
 // *
 // * @param Nonexistent An indicator showing the queried publication does not exist.
@@ -217,12 +225,12 @@ enum GateKeepType {
     NFTGating,
     PermissionedGating,
     Paid,
-}   
+}
 
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 enum CommunityType {
-	Free,
-	Standard,
-	Business
-}  
+    Free,
+    Standard,
+    Business
+}
