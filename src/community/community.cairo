@@ -24,8 +24,9 @@ mod CommunityComponent {
     #[storage]
     struct Storage {
         communities_counts: u256,
+        communities_owner: LegacyMap<ContractAddress, u256>, // map<owner, community)id>
         communities: LegacyMap<
-            u256, Vec<CommunityDetails>
+            u256, CommunityDetails
         >, // map <community_id, community_details>
         member_community_id: LegacyMap<
             ContractAddress, u256
@@ -103,7 +104,7 @@ mod CommunityComponent {
         fn create_comminuty(
             ref self: ComponentState<TContractState>, community_param: CommunityParams
         ) -> u256 {
-            let owner = get_caller_address();
+            let community_owner = get_caller_address();
             let community_count = self.communities_counts.read();
             let community_id = community_count + 1;
 
@@ -117,6 +118,7 @@ mod CommunityComponent {
             };
 
             self.communities.write(community_id, community_details);
+            self.communities_owner.write(community_owner, community_id);
             self
                 .emit(
                     CommunityCreated {
@@ -134,8 +136,8 @@ mod CommunityComponent {
             let member_community_id = self.member_community_id.read(member_address);
             assert(member_community_id != community_id, "Already a member");
 
-            if (community) {
-                panic('Community ID does not exist')
+            if (!community) {
+                panic('Community does not exist')
             }
             let community_member = CommunityMember {
                 profile_address: member_address,
@@ -149,5 +151,38 @@ mod CommunityComponent {
             member_details.append(community_member);
             self.community_member.write(member_address, member_details);
         }
+        fn leave_community(ref self: ComponentState<TContractState>, community_id: u256) {
+            let member_address = get_caller_address();
+            let community = self.communities.read(community_id);
+             if (!community) {
+                panic('Community does not exist')
+            }
+            let member_community_id = self.member_community_id.read(member_address);
+            assert(member_community_id != community_id, "Already a member");
+
+            // remove the member_community_id
+             self.member_community_id.write(member_address, 0);
+
+             // remove member details
+              let community_member = CommunityMember {
+                profile_address: member_address,
+                community_id: 0,
+                total_publications: 0,
+                community_token_id: 0,
+                ban_status: false
+            };
+            let member_details = self.community_member.read(member_address);
+            member_details.append(community_member);
+            self.community_member.write(member_address, member_details); 
+        }
+         fn set_community_metadata_uri(ref self: ComponentState<TContractState>, community_id: u256, metadata_uri: ByteArray) {
+             let community_owner = get_caller_address();
+             let comminuty_main_id = self.communities_owner.read(community_owner);
+             assert(comminuty_main_id != community_id, "Not Community Owner");
+             let community_details = self.communities.read(comminuty_main_id);
+             community_details.community_metadata_uri = metadata_uri;
+             self.communities.write(comminuty_main_id. community_details)
+
+         }
     }
 }
