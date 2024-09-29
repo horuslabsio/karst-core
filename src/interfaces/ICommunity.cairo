@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{CommunityParams, GateKeepType, CommunityType};
+use karst::base::constants::types::{CommunityParams, GateKeepType, CommunityType, CommunityDetails};
 
 // *************************************************************************
 //                              INTERFACE of ICommunity
@@ -28,4 +28,18 @@ pub trait ICommunity<TState> {
         nft_contract_address: ContractAddress,
         permissioned_addresses: Array<ContractAddress>
     );
+
+    // *************************************************************************
+    //                              GETTERS
+    // *************************************************************************
+    fn get_community(self: @TState, community_id: u256) -> CommunityDetails;
+    fn get_community_metadata_uri(self: @TState, community_id: u256) -> ByteArray;
+    fn is_community_member(
+        self: @TState, profile: ContractAddress, community_id: u256
+    ) -> (bool, u256);
+    fn get_total_members(self: @TState, community_id: u256) -> u256;
+    fn is_community_mod(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
+    fn get_ban_status(self: @TState, profile: ContractAddress, channel_id: u256) -> bool;
+    fn is_premium_community(self: @TState, community_id: u256) -> (bool, CommunityType);
+    fn is_gatekeeped(ref self: TState, community_id: u256) -> (bool, GateKeepType);
 }

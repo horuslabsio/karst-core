@@ -190,7 +190,8 @@ pub struct CommunityDetails {
     community_metadata_uri: ByteArray,
     community_nft_address: ContractAddress,
     community_total_members: u256,
-    community_premium_status: bool
+    community_premium_status: bool,
+    community_type: ByteArray
 }
 
 // /**
@@ -208,6 +209,13 @@ pub struct CommunityMember {
     total_publications: u256,
     community_token_id: u256,
     ban_status: bool,
+}
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityMod {
+    community_id: u256,
+    transaction_executor: ContractAddress,
+    mod_address: ContractAddress,
 }
 
 // /**
