@@ -28,10 +28,8 @@ trait IKarstHub<TState> {
 pub mod KarstHub {
     use core::array::SpanTrait;
     use starknet::{
-        ContractAddress, 
-        get_caller_address, 
-        get_contract_address,
-        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess }
+        ContractAddress, get_caller_address, get_contract_address,
+        storage::{StoragePointerWriteAccess, StoragePointerReadAccess}
     };
     use karst::profile::profile::ProfileComponent;
     use karst::publication::publication::PublicationComponent;
@@ -111,13 +109,11 @@ pub mod KarstHub {
             let mut addresses_to_follow = address_of_profiles_to_follow.span();
             let mut follow_ids = array![];
 
-            while addresses_to_follow
-                .len() != 0 {
-                    let followed_profile_address = addresses_to_follow.pop_front().unwrap();
-                    let follow_id = self
-                        ._follow(follower_profile_address, *followed_profile_address);
-                    follow_ids.append(follow_id);
-                };
+            while addresses_to_follow.len() != 0 {
+                let followed_profile_address = addresses_to_follow.pop_front().unwrap();
+                let follow_id = self._follow(follower_profile_address, *followed_profile_address);
+                follow_ids.append(follow_id);
+            };
 
             follow_ids
         }
@@ -129,17 +125,16 @@ pub mod KarstHub {
         ) {
             let mut addresses_to_unfollow = address_of_profiles_to_unfollow.span();
 
-            while addresses_to_unfollow
-                .len() != 0 {
-                    let unfollowed_profile_address = addresses_to_unfollow.pop_front().unwrap();
-                    let unfollower_profile_address = get_caller_address();
-                    self._unfollow(unfollower_profile_address, *unfollowed_profile_address);
-                };
+            while addresses_to_unfollow.len() != 0 {
+                let unfollowed_profile_address = addresses_to_unfollow.pop_front().unwrap();
+                let unfollower_profile_address = get_caller_address();
+                self._unfollow(unfollower_profile_address, *unfollowed_profile_address);
+            };
         }
 
         /// @notice blocks/unblocks a set of given addresses
-        /// @param blocker_profile_address address of the user trying to perform the block/unblock action
-        /// @param address_of_profiles_to_block addresses of profiles to block/unblock
+        /// @param blocker_profile_address address of the user trying to perform the block/unblock
+        /// action @param address_of_profiles_to_block addresses of profiles to block/unblock
         /// @param block_status true if intent is to block, false if intent is to unblock
         fn set_block_status(
             ref self: ContractState,
@@ -149,14 +144,10 @@ pub mod KarstHub {
         ) {
             let mut addresses = address_of_profiles_to_block.span();
 
-            while addresses
-                .len() != 0 {
-                    let address_to_block = addresses.pop_front().unwrap();
-                    self
-                        ._set_block_status(
-                            blocker_profile_address, *address_to_block, block_status
-                        );
-                }
+            while addresses.len() != 0 {
+                let address_to_block = addresses.pop_front().unwrap();
+                self._set_block_status(blocker_profile_address, *address_to_block, block_status);
+            }
         }
 
         // *************************************************************************
@@ -236,8 +227,8 @@ pub mod KarstHub {
         }
 
         /// @notice internal function that processes the unfollow action
-        /// @param unfollower_profile_address address of the user trying to perform the unfollow action
-        /// @param unfollowed_profile_address address of profile to unfollow
+        /// @param unfollower_profile_address address of the user trying to perform the unfollow
+        /// action @param unfollowed_profile_address address of profile to unfollow
         fn _unfollow(
             ref self: ContractState,
             unfollower_profile_address: ContractAddress,
@@ -251,8 +242,8 @@ pub mod KarstHub {
         }
 
         /// @notice internal function that processes the block/unblock action
-        /// @param blocker_profile_address address of the user trying to perform the block/unblock action
-        /// @param address_to_block address of profile to block/unblock
+        /// @param blocker_profile_address address of the user trying to perform the block/unblock
+        /// action @param address_to_block address of profile to block/unblock
         /// @param block_status true if intent is to block, false if intent is to unblock
         fn _set_block_status(
             ref self: ContractState,

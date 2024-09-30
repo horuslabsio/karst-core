@@ -1,4 +1,5 @@
-// TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/FollowTokenURI.sol#L14
+// TODO:
+// https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/FollowTokenURI.sol#L14
 
 pub mod FollowTokenUri {
     use starknet::ContractAddress;
@@ -10,7 +11,7 @@ pub mod FollowTokenUri {
         follow_token_id: u256, followed_profile_address: ContractAddress, follow_timestamp: u64
     ) -> ByteArray {
         let baseuri = 'data:image/svg+xml;base64,';
-        /// TODO what are feaature include in the svg 
+        /// TODO what are feaature include in the svg
         let mut svg_byte_array: ByteArray = get_svg_follow(follow_token_id);
         let mut svg_encoded: ByteArray = get_base64_encode(svg_byte_array);
         let mut attribute_byte_array: ByteArray = get_attributes(
@@ -45,7 +46,7 @@ pub mod FollowTokenUri {
         attributespre.append(follow_profile_address_felt);
         attributespre.append('","image":"data:image');
         attributespre.append('/svg+xml;base64,');
-        //post base64 follow svg 
+        //post base64 follow svg
         attributespost.append('","attributes":[{"display');
         attributespost.append('_type":"number","trait_type');
         attributespost.append('":"ID","value":"');

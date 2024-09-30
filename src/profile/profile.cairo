@@ -6,18 +6,17 @@ pub mod ProfileComponent {
     use core::{traits::TryInto};
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
-        syscalls::deploy_syscall, SyscallResultTrait, 
-        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+        syscalls::deploy_syscall, SyscallResultTrait,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-    use karst::interfaces::IRegistry::{
-        IRegistryDispatcherTrait, IRegistryLibraryDispatcher
-    };
+    use karst::interfaces::IRegistry::{IRegistryDispatcherTrait, IRegistryLibraryDispatcher};
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::interfaces::IProfile::IProfile;
-    use karst::base::{
-        constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,
-    };
+    use karst::base::{constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,};
 
     // *************************************************************************
     //                              STORAGE
@@ -131,7 +130,8 @@ pub mod ProfileComponent {
             profile_address
         }
 
-        /// @notice set profile metadata_uri (`banner_image, description, profile_image` to be uploaded to arweave or ipfs)
+        /// @notice set profile metadata_uri (`banner_image, description, profile_image` to be
+        /// uploaded to arweave or ipfs)
         /// @params profile_address the targeted profile address
         /// @params metadata_uri the profile CID
         fn set_profile_metadata_uri(
@@ -159,7 +159,7 @@ pub mod ProfileComponent {
         }
 
         /// @notice returns user profile metadata
-        /// @params profile_address the targeted profile address 
+        /// @params profile_address the targeted profile address
         fn get_profile_metadata(
             self: @ComponentState<TContractState>, profile_address: ContractAddress
         ) -> ByteArray {
@@ -178,7 +178,9 @@ pub mod ProfileComponent {
     }
 
     #[generate_trait]
-    pub impl Private<TContractState, +HasComponent<TContractState>> of PrivateTrait<TContractState> {
+    pub impl Private<
+        TContractState, +HasComponent<TContractState>
+    > of PrivateTrait<TContractState> {
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
         fn increment_publication_count(

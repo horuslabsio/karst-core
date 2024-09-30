@@ -8,21 +8,21 @@ pub mod Handles {
     use core::poseidon::PoseidonTrait;
     use core::hash::{HashStateTrait, HashStateExTrait};
     use starknet::{
-        ContractAddress, 
-        get_caller_address, 
-        get_block_timestamp,
-        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+        ContractAddress, get_caller_address, get_block_timestamp,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
     use openzeppelin::{
-        access::ownable::OwnableComponent,
-        token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
+        access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
     use karst::base::{
         constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray,
         token_uris::handle_token_uri::HandleTokenUri,
     };
-    use karst::interfaces::{ IHandle::IHandle };
+    use karst::interfaces::{IHandle::IHandle};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -247,7 +247,8 @@ pub mod Handles {
             token_id
         }
 
-        /// @notice validates that a local name contains only [a-z,0-9,_] and does not begin with an underscore.
+        /// @notice validates that a local name contains only [a-z,0-9,_] and does not begin with an
+        /// underscore.
         /// @param local_name username to be minted
         fn _validate_local_name(self: @ContractState, local_name: felt252) {
             let mut value: u256 = local_name.into();

@@ -9,7 +9,7 @@ pub mod Registry {
     use starknet::{
         ContractAddress, get_caller_address, syscalls::call_contract_syscall, class_hash::ClassHash,
         syscalls::deploy_syscall, SyscallResultTrait,
-        storage::{ Map, StorageMapReadAccess, StorageMapWriteAccess }
+        storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
     };
     use token_bound_accounts::interfaces::IRegistry::IRegistry;
 
@@ -110,7 +110,7 @@ pub mod Registry {
         }
 
         /// @notice returns the total no. of deployed tokenbound accounts for an NFT by the registry
-        /// @param token_contract the contract address of the NFT 
+        /// @param token_contract the contract address of the NFT
         /// @param token_id the ID of the NFT
         fn total_deployed_accounts(
             self: @ContractState, token_contract: ContractAddress, token_id: u256
@@ -124,7 +124,10 @@ pub mod Registry {
         /// @notice internal function for getting NFT owner
         /// @param token_contract contract address of NFT
         // @param token_id token ID of NFT
-        // NB: This function aims for compatibility with all contracts (snake or camel case) but do not work as expected on mainnet as low level calls do not return err at the moment. Should work for contracts which implements CamelCase but not snake_case until starknet v0.15.
+        // NB: This function aims for compatibility with all contracts (snake or camel case) but do
+        // not work as expected on mainnet as low level calls do not return err at the moment.
+        // Should work for contracts which implements CamelCase but not snake_case until starknet
+        // v0.15.
         fn _get_owner(
             self: @ContractState, token_contract: ContractAddress, token_id: u256
         ) -> ContractAddress {

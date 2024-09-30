@@ -28,7 +28,7 @@ const HUB_ADDRESS: felt252 = 'HUB';
 const USER: felt252 = 'USER1';
 
 // *************************************************************************
-//                              SETUP 
+//                              SETUP
 // *************************************************************************
 
 fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractAddress) {
@@ -73,7 +73,7 @@ fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractA
 
 
 // *************************************************************************
-//                              TESTS 
+//                              TESTS
 // *************************************************************************
 #[test]
 fn test_profile_creation() {

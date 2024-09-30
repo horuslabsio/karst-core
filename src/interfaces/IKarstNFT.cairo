@@ -16,7 +16,7 @@ pub trait IKarstNFT<TState> {
     fn get_token_mint_timestamp(self: @TState, token_id: u256) -> u64;
     // *************************************************************************
     //                            METADATA
-    // *************************************************************************   
+    // *************************************************************************
     fn name(self: @TState) -> ByteArray;
     fn symbol(self: @TState) -> ByteArray;
     fn token_uri(self: @TState, token_id: u256) -> ByteArray;

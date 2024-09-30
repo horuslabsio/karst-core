@@ -4,21 +4,19 @@ pub mod KarstNFT {
     //                             IMPORTS
     // *************************************************************************
     use starknet::{
-        ContractAddress, 
-        get_block_timestamp,
-        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+        ContractAddress, get_block_timestamp,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
     use core::num::traits::zero::Zero;
     use karst::interfaces::IKarstNFT;
     use karst::base::{
-        constants::errors::Errors::ALREADY_MINTED,
-        token_uris::profile_token_uri::ProfileTokenUri,
+        constants::errors::Errors::ALREADY_MINTED, token_uris::profile_token_uri::ProfileTokenUri,
     };
     use openzeppelin::{
-        access::ownable::OwnableComponent,
-        token::erc721::{
-            ERC721Component, ERC721HooksEmptyImpl
-        },
+        access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
@@ -78,10 +76,7 @@ pub mod KarstNFT {
     //                              CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        admin: ContractAddress,
-    ) {
+    fn constructor(ref self: ContractState, admin: ContractAddress,) {
         self.admin.write(admin);
         self.erc721.initializer("Karst", "KST", "");
     }
@@ -89,7 +84,7 @@ pub mod KarstNFT {
     #[abi(embed_v0)]
     impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
         // *************************************************************************
-        //                            EXTERNAL 
+        //                            EXTERNAL
         // *************************************************************************
         /// @notice mints the karst NFT
         /// @param address address of user trying to mint the karst NFT

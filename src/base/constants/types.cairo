@@ -8,7 +8,8 @@ use starknet::ContractAddress;
 // *
 // * @param followed_profile_address The ID of the profile being followed.
 // * @param follower_profile_address The ID of the profile following.
-// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to follow.
+// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
+// follow.
 // * @param block_status true if follower is blocked, false otherwise
 // */
 #[derive(Drop, Serde, starknet::Store)]
@@ -20,10 +21,11 @@ pub struct FollowData {
 }
 
 // * @notice A struct containing profile data.
-// * profile_address The profile ID of a karst profile 
+// * profile_address The profile ID of a karst profile
 // * profile_owner The address that created the profile_address
 // * @param pub_count The number of publications made to this profile.
-// * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed name, description, interests, etc.
+// * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed
+// name, description, interests, etc.
 // * @param follow_nft profile follow nft token contract
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
@@ -43,10 +45,13 @@ pub struct Profile {
 // * - Mirrors
 // * - Comments
 // * - Quotes
-// * @param content_URI The URI to set for the content of publication (can be ipfs, arweave, http, etc).
+// * @param content_URI The URI to set for the content of publication (can be ipfs, arweave, http,
+// etc).
 // * @param pub_Type The type of publication, can be Nonexistent, Post, Comment, Mirror or Quote.
-// * @param root_profile_address The profile ID of the root post (to determine if comments/quotes and mirrors come from it).
-// * @param root_pub_id The publication ID of the root post (to determine if comments/quotes and mirrors come from it).
+// * @param root_profile_address The profile ID of the root post (to determine if comments/quotes
+// and mirrors come from it).
+// * @param root_pub_id The publication ID of the root post (to determine if comments/quotes and
+// mirrors come from it).
 // */
 #[derive(Debug, Drop, Serde, starknet::Store)]
 pub struct Publication {
@@ -61,7 +66,8 @@ pub struct Publication {
 }
 
 // /**
-// * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
+// * @notice An enum specifically used in a helper function to easily retrieve the publication type
+// for integrations.
 // *
 // * @param Nonexistent An indicator showing the queried publication does not exist.
 // * @param Post A standard post, having an URI, and no pointer to another publication.
@@ -118,7 +124,8 @@ pub struct ReferencePubParams {
 // * @notice A struct containing the parameters required for the `mirror()` function.
 // *
 // * @param profile_address The address of the profile to publish to.
-// * @param metadata_URI the URI containing metadata attributes to attach to this mirror publication.
+// * @param metadata_URI the URI containing metadata attributes to attach to this mirror
+// publication.
 // * @param pointed_profile_id The profile address to point the mirror to.
 // * @param pointed_pub_id The publication ID to point the mirror to.
 // */

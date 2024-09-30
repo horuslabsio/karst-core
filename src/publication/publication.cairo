@@ -7,18 +7,13 @@ pub mod PublicationComponent {
     use karst::interfaces::IProfile::IProfile;
     use core::option::OptionTrait;
     use starknet::{
-        ContractAddress, 
-        get_caller_address, 
-        get_block_timestamp,
-        storage::{ Map, StorageMapReadAccess, StorageMapWriteAccess }
+        ContractAddress, get_caller_address, get_block_timestamp,
+        storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
     };
     use karst::interfaces::IPublication::IKarstPublications;
     use karst::base::{
         constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED},
-        constants::types::{
-            PostParams, Publication, PublicationType, CommentParams,
-            RepostParams
-        }
+        constants::types::{PostParams, Publication, PublicationType, CommentParams, RepostParams}
     };
 
     use karst::profile::profile::ProfileComponent;
@@ -210,7 +205,7 @@ pub mod PublicationComponent {
 
             pub_id_assigned
         }
-        /// @notice upvote a post 
+        /// @notice upvote a post
         /// @param profile_address address of profile performing the upvote action
         ///  @param pub_id id of the publication to upvote
         /// todo!(gate function)
@@ -244,7 +239,7 @@ pub mod PublicationComponent {
                     }
                 )
         }
-        // @notice downvote a post 
+        // @notice downvote a post
         // @param profile_address address of profile performing the downvote action
         //  @param pub_id id of the publication to upvote
         /// todo!(gate function)

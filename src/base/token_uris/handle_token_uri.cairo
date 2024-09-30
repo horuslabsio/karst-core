@@ -1,4 +1,5 @@
-// TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/HandleTokenURI.sol
+// TODO:
+// https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/HandleTokenURI.sol
 
 pub mod HandleTokenUri {
     use core::array::ArrayTrait;
@@ -8,7 +9,7 @@ pub mod HandleTokenUri {
 
     pub fn get_token_uri(token_id: u256, local_name: felt252, namespace: felt252) -> ByteArray {
         let baseuri = 'data:image/svg+xml;base64,';
-        /// TODO what are feaature include in the svg 
+        /// TODO what are feaature include in the svg
         let mut svg_byte_array: ByteArray = get_svg_handle(token_id, local_name, namespace);
         let mut svg_encoded: ByteArray = get_base64_encode(svg_byte_array);
         let mut attribute_byte_array: ByteArray = get_attributes(

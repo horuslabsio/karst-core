@@ -6,7 +6,10 @@ pub mod HandleRegistry {
     use core::num::traits::zero::Zero;
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, contract_address_const,
-        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
@@ -99,7 +102,7 @@ pub mod HandleRegistry {
 
     // *************************************************************************
     //                            PRIVATE FUNCTIONS
-    // ************************************************************************* 
+    // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
         /// @notice internal function to link a profile address to a handle

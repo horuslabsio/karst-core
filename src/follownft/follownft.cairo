@@ -4,9 +4,11 @@ pub mod Follow {
     //                            IMPORT
     // *************************************************************************
     use starknet::{
-        ContractAddress, 
-        get_block_timestamp,
-        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+        ContractAddress, get_block_timestamp,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
     use core::num::traits::zero::Zero;
     use karst::interfaces::{IFollowNFT::IFollowNFT};
@@ -15,8 +17,7 @@ pub mod Follow {
         utils::hubrestricted::HubRestricted::hub_only, token_uris::follow_token_uri::FollowTokenUri,
     };
     use openzeppelin::{
-        access::ownable::OwnableComponent,
-        token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
+        access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
 
@@ -61,7 +62,7 @@ pub mod Follow {
 
     // *************************************************************************
     //                            EVENTS
-    // ************************************************************************* 
+    // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -142,7 +143,8 @@ pub mod Follow {
         }
 
         /// @notice performs the unfollow action
-        /// @param unfollower_profile_address address of the user trying to perform the unfollow action
+        /// @param unfollower_profile_address address of the user trying to perform the unfollow
+        /// action
         fn unfollow(ref self: ContractState, unfollower_profile_address: ContractAddress) {
             hub_only(self.karst_hub.read());
             let follow_id = self

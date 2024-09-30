@@ -1,4 +1,4 @@
-// let make the face of the profile svg  
+// let make the face of the profile svg
 
 pub mod eyeacessory {
     use core::traits::TryInto;

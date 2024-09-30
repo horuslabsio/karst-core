@@ -1,4 +1,4 @@
-// let make the face of the profile svg  
+// let make the face of the profile svg
 
 pub mod background {
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
