@@ -24,7 +24,7 @@ mod CommunityComponent {
     #[storage]
     struct Storage {
         communities_counts: u256,
-        communities_owner: LegacyMap<ContractAddress, u256>, // map<owner, community)id>
+        communities_owner: LegacyMap<ContractAddress, u256>, // map<owner_address, community_id>
         communities: LegacyMap<u256, CommunityDetails>, // map <community_id, community_details>
         member_community_id: LegacyMap<
             ContractAddress, u256
@@ -34,8 +34,9 @@ mod CommunityComponent {
         >, //  map <member_address, CommunityMember>
         community_mod: LegacyMap<u256, Vec<CommunityMod>>, // map <community id mod_address>
         community_gate_keep: LegacyMap<
-            u256, Vec<GateKeepType>
-        > // map <community, Vec<GateKeepType>>
+            u256, CommunityGateKeepDetails
+        >, // map <community, CommunityGateKeepDetails>
+        community_gate_keep_permissioned_addresses: LegacyMap<u256, Vec<ContractAddress>>
     }
 
     // *************************************************************************
@@ -48,7 +49,8 @@ mod CommunityComponent {
         CommunityModAdded: CommunityModAdded,
         CommunityBanStatusUpdated: CommunityBanStatusUpdated,
         CommunityModRemoved: CommunityModRemoved,
-        CommunityUpgraded: CommunityUpgraded
+        CommunityUpgraded: CommunityUpgraded,
+        CommunityGateKeep: CommunityGateKeep
     }
 
     #[derive(Drop, starknet::Event)]
@@ -88,6 +90,14 @@ mod CommunityComponent {
         community_id: u256,
         transaction_executor: ContractAddress,
         premiumType: CommunityType,
+        block_timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct CommunityGateKeep {
+        community_id: u256,
+        transaction_executor: ContractAddress,
+        gatekeepType: GateKeepType,
         block_timestamp: u64,
     }
 
@@ -333,14 +343,41 @@ mod CommunityComponent {
                     }
                 );
         }
-        // IN_COMPLET
+        // IN_COMPLETE
         fn gatekeep(
             ref self: ComponentState<TContractState>,
             community_id: u256,
-            gatekeep_type: GateKeepType,
+            gate_keep_type: GateKeepType,
             nft_contract_address: ContractAddress,
-            permissioned_addresses: Array<ContractAddress>
-        ) {}
+            permissioned_addresses: Vec<ContractAddress>
+        ) {
+            // only community owner can set gate keep type
+            let community_owner = get_caller_address();
+            let comminuty_main_id = self.communities_owner.read(community_owner);
+            assert(comminuty_main_id == community_id, "Not Community Owner");
+            let community_details = self.communities.read(community_id);
+            let community_gate_keep_details = CommunityGateKeepDetails {
+                community_id: comminuty_main_id,
+                gate_keep_type: gatekeep_type,
+                community_nft_address: community_details.community_nft_address,
+                permissioned_addresses: permissioned_addresses,
+            };
+
+            self.community_gate_keep.write(comminuty_main_id, community_gate_keep_details);
+            self
+                .community_gate_keep_permissioned_addresses
+                .write(community_id, permissioned_addresses)
+            // emint event
+            self
+                .emit(
+                    CommunityGateKeep {
+                        community_id: community_id,
+                        transaction_executor: community_owner,
+                        gatekeepType: gate_keep_type,
+                        block_timestamp: get_block_timestamp()
+                    }
+                );
+        }
 
         fn get_community(
             self: @ComponentState<TContractState>, community_id: u256

@@ -218,14 +218,14 @@ pub struct CommunityMod {
     mod_address: ContractAddress,
 }
 
-// /**
-// * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
-// *
-// * @param Nonexistent An indicator showing the queried publication does not exist.
-// * @param Post A standard post, having an URI, and no pointer to another publication.
-// * @param Comment A comment, having an URI, and a pointer to another publication.
-// * @param Mirror A mirror, having a pointer to another publication, but no URI.
-// */
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityGateKeepDetails {
+    community_id: u256,
+    gate_keep_type: ByteArray,
+    community_nft_address: ContractAddress,
+}
+
+//  // permissioned_addresses: Vec<ContractAddress>,
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 enum GateKeepType {

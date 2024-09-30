@@ -24,7 +24,7 @@ pub trait ICommunity<TState> {
     fn gatekeep(
         ref self: TState,
         community_id: u256,
-        gatekeep_type: GateKeepType,
+        gate_keep_type: GateKeepType,
         nft_contract_address: ContractAddress,
         permissioned_addresses: Array<ContractAddress>
     );
