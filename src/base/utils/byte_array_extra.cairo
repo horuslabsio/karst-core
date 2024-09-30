@@ -10,7 +10,7 @@ pub impl FeltTryIntoByteArray of TryInto<felt252, ByteArray> {
             data /= 0x100;
             length += 1;
         };
-        
+
         res.append_word(self, length);
         Option::Some(res)
     }
@@ -24,7 +24,7 @@ mod tests {
     fn from_felt252() {
         let a = 'hello how are you?';
         let b: ByteArray = a.try_into().unwrap();
-        
+
         assert(b == "hello how are you?", 'invalid byteArray');
     }
 }
