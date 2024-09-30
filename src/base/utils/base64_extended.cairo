@@ -1,4 +1,3 @@
-use core::serde::Serde;
 use core::array::ArrayTrait;
 use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
 use alexandria_encoding::base64::{Base64UrlEncoder};

@@ -1,2 +1,2 @@
-mod errors;
-mod types;
+pub mod errors;
+pub mod types;

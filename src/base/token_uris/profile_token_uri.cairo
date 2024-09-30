@@ -2,10 +2,8 @@
 
 pub mod ProfileTokenUri {
     use core::array::ArrayTrait;
-    use alexandria_bytes::{Bytes, BytesTrait};
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
     use karst::base::utils::base64_extended::{get_base64_encode, convert_into_byteArray};
-    use karst::base::token_uris::traits::profile::ProfileSvg::gen_profile_svg;
 
     fn get_svg(token_id: u256, mint_timestamp: u64) -> Array<felt252> {
         let mut svg = ArrayTrait::<felt252>::new();

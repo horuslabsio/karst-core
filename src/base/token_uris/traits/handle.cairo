@@ -1,4 +1,4 @@
-mod handle {
+pub mod handle {
     use core::array::ArrayTrait;
     use karst::base::utils::base64_extended::convert_into_byteArray;
     use karst::base::token_uris::traits::color::karstColors;

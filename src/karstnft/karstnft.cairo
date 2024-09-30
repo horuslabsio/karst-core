@@ -1,54 +1,23 @@
-use starknet::ContractAddress;
-
-// *************************************************************************
-//                             OZ IMPORTS
-// *************************************************************************
-use openzeppelin::{
-    token::erc721::{ERC721Component::{ERC721Metadata, HasComponent}},
-    introspection::src5::SRC5Component,
-};
-
-#[starknet::interface]
-trait IERC721Metadata<TState> {
-    fn name(self: @TState) -> ByteArray;
-    fn symbol(self: @TState) -> ByteArray;
-}
-
-#[starknet::embeddable]
-impl IERC721MetadataImpl<
-    TContractState,
-    +HasComponent<TContractState>,
-    +SRC5Component::HasComponent<TContractState>,
-    +Drop<TContractState>
-> of IERC721Metadata<TContractState> {
-    fn name(self: @TContractState) -> ByteArray {
-        let component = HasComponent::get_component(self);
-        ERC721Metadata::name(component)
-    }
-
-    fn symbol(self: @TContractState) -> ByteArray {
-        let component = HasComponent::get_component(self);
-        ERC721Metadata::symbol(component)
-    }
-}
-
 #[starknet::contract]
 pub mod KarstNFT {
     // *************************************************************************
     //                             IMPORTS
     // *************************************************************************
-    use openzeppelin::token::erc721::interface::IERC721Metadata;
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use starknet::{
+        ContractAddress, 
+        get_block_timestamp,
+        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+    };
     use core::num::traits::zero::Zero;
     use karst::interfaces::IKarstNFT;
     use karst::base::{
-        utils::hubrestricted::HubRestricted::hub_only, constants::errors::Errors::ALREADY_MINTED,
+        constants::errors::Errors::ALREADY_MINTED,
         token_uris::profile_token_uri::ProfileTokenUri,
     };
     use openzeppelin::{
-        account, access::ownable::OwnableComponent,
+        access::ownable::OwnableComponent,
         token::erc721::{
-            ERC721Component, erc721::ERC721Component::InternalTrait as ERC721InternalTrait
+            ERC721Component, ERC721HooksEmptyImpl
         },
         introspection::{src5::SRC5Component}
     };
@@ -66,6 +35,7 @@ pub mod KarstNFT {
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
     #[abi(embed_v0)]
     impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
+    impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
     // add an owner
     #[abi(embed_v0)]
@@ -86,8 +56,8 @@ pub mod KarstNFT {
         ownable: OwnableComponent::Storage,
         admin: ContractAddress,
         last_minted_id: u256,
-        mint_timestamp: LegacyMap<u256, u64>,
-        user_token_id: LegacyMap<ContractAddress, u256>,
+        mint_timestamp: Map<u256, u64>,
+        user_token_id: Map<ContractAddress, u256>,
     }
 
     // *************************************************************************
@@ -111,12 +81,9 @@ pub mod KarstNFT {
     fn constructor(
         ref self: ContractState,
         admin: ContractAddress,
-        name: ByteArray,
-        symbol: ByteArray,
-        base_uri: ByteArray,
     ) {
         self.admin.write(admin);
-        self.erc721.initializer(name, symbol, base_uri);
+        self.erc721.initializer("Karst", "KST", "");
     }
 
     #[abi(embed_v0)]
@@ -131,7 +98,7 @@ pub mod KarstNFT {
             assert(balance.is_zero(), ALREADY_MINTED);
 
             let mut token_id = self.last_minted_id.read() + 1;
-            self.erc721._mint(address, token_id);
+            self.erc721.mint(address, token_id);
             let timestamp: u64 = get_block_timestamp();
 
             self.user_token_id.write(address, token_id);
@@ -162,12 +129,12 @@ pub mod KarstNFT {
         // *************************************************************************
         /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
-            self.erc721.name()
+            return "Karst Handles";
         }
 
         /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
-            self.erc721.symbol()
+            return "KARST";
         }
 
         /// @notice returns the token_uri for a particular token_id

@@ -1,2 +1,2 @@
-mod profile;
-mod publication;
+pub mod profile;
+pub mod publication;

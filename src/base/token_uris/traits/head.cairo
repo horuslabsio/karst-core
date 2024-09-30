@@ -1,8 +1,6 @@
 // let make the face of the profile svg  
 
-mod head {
-    use core::traits::TryInto;
-    use karst::base::token_uris::traits::color::karstColors;
+pub mod head {
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
 
     #[derive(Drop)]

@@ -25,11 +25,14 @@ trait IKarstHub<TState> {
 }
 
 #[starknet::contract]
-mod KarstHub {
+pub mod KarstHub {
     use core::array::SpanTrait;
-    use starknet::{ContractAddress, get_caller_address, get_contract_address};
-    use core::num::traits::zero::Zero;
-    use core::traits::TryInto;
+    use starknet::{
+        ContractAddress, 
+        get_caller_address, 
+        get_contract_address,
+        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess }
+    };
     use karst::profile::profile::ProfileComponent;
     use karst::publication::publication::PublicationComponent;
     use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};

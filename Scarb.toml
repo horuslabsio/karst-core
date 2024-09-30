@@ -1,7 +1,7 @@
 [package]
 name = "karst"
 version = "0.1.0"
-edition = "2023_10"
+edition = "2024_07"
 authors = ["Horus Labs <horuslabsio@gmail.com>"]
 description = "Decentralized Social Graph on Starknet"
 repository = "https://github.com/horuslabsio/karst-core"
@@ -10,13 +10,13 @@ keywords = ["Karst", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 
 [dependencies]
-starknet = "2.6.3"
-openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.11.0" }
+starknet = "2.8.2"
+openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.17.0" }
 token_bound_accounts= { git = "https://github.com/Starknet-Africa-Edu/TBA", tag = "v0.3.0" }
 alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 [dev-dependencies]
-snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.22.0" }
+snforge_std = { git = "https://github.com/foundry-rs/starknet-foundry", tag = "v0.31.0" }
 
 [sncast.default]
 url= "https://starknet-sepolia.public.blastapi.io"

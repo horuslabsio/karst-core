@@ -2,7 +2,6 @@
 
 pub mod FollowTokenUri {
     use starknet::ContractAddress;
-    use alexandria_bytes::{Bytes, BytesTrait};
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
     use karst::base::utils::base64_extended::{convert_into_byteArray, get_base64_encode};
     use karst::base::token_uris::traits::follow::follow::get_svg_follow;

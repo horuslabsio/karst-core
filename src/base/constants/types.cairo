@@ -1,4 +1,3 @@
-use core::option::OptionTrait;
 // *************************************************************************
 //                              TYPES
 // *************************************************************************
@@ -14,10 +13,10 @@ use starknet::ContractAddress;
 // */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct FollowData {
-    followed_profile_address: ContractAddress,
-    follower_profile_address: ContractAddress,
-    follow_timestamp: u64,
-    block_status: bool,
+    pub followed_profile_address: ContractAddress,
+    pub follower_profile_address: ContractAddress,
+    pub follow_timestamp: u64,
+    pub block_status: bool,
 }
 
 // * @notice A struct containing profile data.
@@ -28,11 +27,11 @@ pub struct FollowData {
 // * @param follow_nft profile follow nft token contract
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
-    profile_address: ContractAddress,
-    profile_owner: ContractAddress,
-    pub_count: u256,
-    metadata_URI: ByteArray,
-    follow_nft: ContractAddress
+    pub profile_address: ContractAddress,
+    pub profile_owner: ContractAddress,
+    pub pub_count: u256,
+    pub metadata_URI: ByteArray,
+    pub follow_nft: ContractAddress
 }
 
 // /**
@@ -51,14 +50,14 @@ pub struct Profile {
 // */
 #[derive(Debug, Drop, Serde, starknet::Store)]
 pub struct Publication {
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
-    content_URI: ByteArray,
-    pub_Type: PublicationType,
-    root_profile_address: ContractAddress,
-    root_pub_id: u256,
-    upvote: u256,
-    downvote: u256,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
+    pub content_URI: ByteArray,
+    pub pub_Type: PublicationType,
+    pub root_profile_address: ContractAddress,
+    pub root_pub_id: u256,
+    pub upvote: u256,
+    pub downvote: u256,
 }
 
 // /**
@@ -70,7 +69,7 @@ pub struct Publication {
 // * @param Mirror A mirror, having a pointer to another publication, but no URI.
 // */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
-enum PublicationType {
+pub enum PublicationType {
     Nonexistent,
     Post,
     Comment,
@@ -85,8 +84,8 @@ enum PublicationType {
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct PostParams {
-    content_URI: ByteArray,
-    profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub profile_address: ContractAddress,
 }
 
 // /**
@@ -98,21 +97,21 @@ pub struct PostParams {
 // * @param pointed_pub_id ID of the pointed publication
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
-struct CommentParams {
-    profile_address: ContractAddress,
-    content_URI: ByteArray,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
-    reference_pub_type: PublicationType,
+pub struct CommentParams {
+    pub profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
+    pub reference_pub_type: PublicationType,
 }
 
 
 #[derive(Drop, Serde, starknet::Store)]
 pub struct ReferencePubParams {
-    profile_address: ContractAddress,
-    content_URI: ByteArray,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256
+    pub profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256
 }
 
 // /**
@@ -125,9 +124,9 @@ pub struct ReferencePubParams {
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct RepostParams {
-    profile_address: ContractAddress,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
+    pub profile_address: ContractAddress,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
 }
 
 // /**
@@ -140,21 +139,23 @@ pub struct RepostParams {
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct QuoteParams {
-    profile_address: ContractAddress,
-    content_URI: ByteArray,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
-    reference_pub_type: PublicationType
+    pub profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
+    pub reference_pub_type: PublicationType
 }
+
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct Upvote {
-    publication_id: u256,
-    transaction_executor: ContractAddress,
-    block_timestamp: u64,
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
 }
+
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct Downvote {
-    publication_id: u256,
-    transaction_executor: ContractAddress,
-    block_timestamp: u64,
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
 }

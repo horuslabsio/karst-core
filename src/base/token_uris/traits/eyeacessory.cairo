@@ -1,6 +1,6 @@
 // let make the face of the profile svg  
 
-mod eyeacessory {
+pub mod eyeacessory {
     use core::traits::TryInto;
     use karst::base::token_uris::traits::color::karstColors;
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;

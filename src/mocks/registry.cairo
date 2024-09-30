@@ -8,14 +8,14 @@ pub mod Registry {
     use core::pedersen::PedersenTrait;
     use starknet::{
         ContractAddress, get_caller_address, syscalls::call_contract_syscall, class_hash::ClassHash,
-        syscalls::deploy_syscall, SyscallResultTrait
+        syscalls::deploy_syscall, SyscallResultTrait,
+        storage::{ Map, StorageMapReadAccess, StorageMapWriteAccess }
     };
-    use token_bound_accounts::interfaces::IERC721::{IERC721DispatcherTrait, IERC721Dispatcher};
     use token_bound_accounts::interfaces::IRegistry::IRegistry;
 
     #[storage]
     struct Storage {
-        registry_deployed_accounts: LegacyMap<
+        registry_deployed_accounts: Map<
             (ContractAddress, u256), u8
         >, // tracks no. of deployed accounts by registry for an NFT
     }

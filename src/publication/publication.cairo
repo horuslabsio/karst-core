@@ -6,14 +6,18 @@ pub mod PublicationComponent {
     use core::traits::TryInto;
     use karst::interfaces::IProfile::IProfile;
     use core::option::OptionTrait;
-    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
+    use starknet::{
+        ContractAddress, 
+        get_caller_address, 
+        get_block_timestamp,
+        storage::{ Map, StorageMapReadAccess, StorageMapWriteAccess }
+    };
     use karst::interfaces::IPublication::IKarstPublications;
     use karst::base::{
         constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED},
-        utils::hubrestricted::HubRestricted::hub_only,
         constants::types::{
-            PostParams, Publication, PublicationType, ReferencePubParams, CommentParams,
-            RepostParams, Upvote, Downvote
+            PostParams, Publication, PublicationType, CommentParams,
+            RepostParams
         }
     };
 
@@ -25,9 +29,9 @@ pub mod PublicationComponent {
     //                              STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
-        publication: LegacyMap<(ContractAddress, u256), Publication>,
-        vote_status: LegacyMap<(ContractAddress, u256), bool>,
+    pub struct Storage {
+        publication: Map<(ContractAddress, u256), Publication>,
+        vote_status: Map<(ContractAddress, u256), bool>,
     }
 
     // *************************************************************************

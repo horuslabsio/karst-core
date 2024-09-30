@@ -1,6 +1,5 @@
 #[starknet::contract]
-mod KarstPublication {
-    use starknet::{ContractAddress};
+pub mod KarstPublication {
     use karst::publication::publication::PublicationComponent;
     use karst::profile::profile::ProfileComponent;
 

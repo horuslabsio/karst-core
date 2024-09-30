@@ -1,33 +1,30 @@
-use starknet::ContractAddress;
-
 #[starknet::component]
-mod ProfileComponent {
+pub mod ProfileComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
-    use core::{traits::TryInto, result::ResultTrait};
+    use core::{traits::TryInto};
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
-        syscalls::deploy_syscall, SyscallResultTrait
+        syscalls::deploy_syscall, SyscallResultTrait, 
+        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
     };
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
     use karst::interfaces::IRegistry::{
-        IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
+        IRegistryDispatcherTrait, IRegistryLibraryDispatcher
     };
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::interfaces::IProfile::IProfile;
-    use karst::interfaces::{IFollowNFT::IFollowNFT};
     use karst::base::{
         constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,
-        utils::hubrestricted::HubRestricted::hub_only
     };
 
     // *************************************************************************
     //                              STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
-        profile: LegacyMap<ContractAddress, Profile>,
+    pub struct Storage {
+        profile: Map<ContractAddress, Profile>,
         karst_nft_address: ContractAddress,
         hub_address: ContractAddress,
         follow_nft_classhash: ClassHash
@@ -38,12 +35,12 @@ mod ProfileComponent {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         CreatedProfile: CreatedProfile
     }
 
     #[derive(Drop, starknet::Event)]
-    struct CreatedProfile {
+    pub struct CreatedProfile {
         #[key]
         owner: ContractAddress,
         #[key]
@@ -181,7 +178,7 @@ mod ProfileComponent {
     }
 
     #[generate_trait]
-    impl Private<TContractState, +HasComponent<TContractState>> of PrivateTrait<TContractState> {
+    pub impl Private<TContractState, +HasComponent<TContractState>> of PrivateTrait<TContractState> {
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
         fn increment_publication_count(

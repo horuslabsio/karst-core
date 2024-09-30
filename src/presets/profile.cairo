@@ -1,6 +1,6 @@
 #[starknet::contract]
-mod KarstProfile {
-    use starknet::{ContractAddress, get_caller_address};
+pub mod KarstProfile {
+    use starknet::ContractAddress;
     use karst::profile::profile::ProfileComponent;
 
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);

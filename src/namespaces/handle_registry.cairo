@@ -1,12 +1,12 @@
 #[starknet::contract]
-mod HandleRegistry {
+pub mod HandleRegistry {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
-    use core::traits::TryInto;
     use core::num::traits::zero::Zero;
     use starknet::{
-        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const
+        ContractAddress, get_caller_address, get_block_timestamp, contract_address_const,
+        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
     };
     use karst::interfaces::IHandleRegistry::IHandleRegistry;
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
@@ -17,10 +17,10 @@ mod HandleRegistry {
     //                            STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
+    pub struct Storage {
         handle_address: ContractAddress,
-        handle_to_profile_address: LegacyMap::<u256, ContractAddress>,
-        profile_address_to_handle: LegacyMap::<ContractAddress, u256>,
+        handle_to_profile_address: Map::<u256, ContractAddress>,
+        profile_address_to_handle: Map::<ContractAddress, u256>,
     }
 
     // *************************************************************************
@@ -28,13 +28,13 @@ mod HandleRegistry {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         Linked: HandleLinked,
         Unlinked: HandleUnlinked,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct HandleLinked {
+    pub struct HandleLinked {
         handle_id: u256,
         profile_address: ContractAddress,
         caller: ContractAddress,
@@ -42,7 +42,7 @@ mod HandleRegistry {
     }
 
     #[derive(Drop, starknet::Event)]
-    struct HandleUnlinked {
+    pub struct HandleUnlinked {
         handle_id: u256,
         profile_address: ContractAddress,
         caller: ContractAddress,

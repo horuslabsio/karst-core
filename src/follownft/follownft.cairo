@@ -1,55 +1,22 @@
-// *************************************************************************
-//                            OZ ERC721
-// *************************************************************************
-use openzeppelin::{
-    token::erc721::{ERC721Component::{ERC721Metadata, ERC721Mixin, HasComponent}},
-    introspection::src5::SRC5Component,
-};
-
-
-#[starknet::interface]
-trait IERC721Metadata<TState> {
-    fn name(self: @TState) -> ByteArray;
-    fn symbol(self: @TState) -> ByteArray;
-}
-
-#[starknet::embeddable]
-impl IERC721MetadataImpl<
-    TContractState,
-    +HasComponent<TContractState>,
-    +SRC5Component::HasComponent<TContractState>,
-    +Drop<TContractState>
-> of IERC721Metadata<TContractState> {
-    fn name(self: @TContractState) -> ByteArray {
-        let component = HasComponent::get_component(self);
-        ERC721Metadata::name(component)
-    }
-
-    fn symbol(self: @TContractState) -> ByteArray {
-        let component = HasComponent::get_component(self);
-        ERC721Metadata::symbol(component)
-    }
-}
-
 #[starknet::contract]
-mod Follow {
+pub mod Follow {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
-    use core::traits::TryInto;
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use starknet::{
+        ContractAddress, 
+        get_block_timestamp,
+        storage::{ StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess, StorageMapWriteAccess }
+    };
     use core::num::traits::zero::Zero;
     use karst::interfaces::{IFollowNFT::IFollowNFT};
     use karst::base::{
         constants::{errors::Errors, types::FollowData},
         utils::hubrestricted::HubRestricted::hub_only, token_uris::follow_token_uri::FollowTokenUri,
     };
-
     use openzeppelin::{
-        account, access::ownable::OwnableComponent,
-        token::erc721::{
-            ERC721Component, erc721::ERC721Component::InternalTrait as ERC721InternalTrait
-        },
+        access::ownable::OwnableComponent,
+        token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
 
@@ -66,6 +33,7 @@ mod Follow {
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
     #[abi(embed_v0)]
     impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
+    impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
     // add an owner
     #[abi(embed_v0)]
@@ -86,8 +54,8 @@ mod Follow {
         admin: ContractAddress,
         followed_profile_address: ContractAddress,
         follower_count: u256,
-        follow_id_by_follower_profile_address: LegacyMap<ContractAddress, u256>,
-        follow_data_by_follow_id: LegacyMap<u256, FollowData>,
+        follow_id_by_follower_profile_address: Map<ContractAddress, u256>,
+        follow_data_by_follow_id: Map<u256, FollowData>,
         karst_hub: ContractAddress,
     }
 
@@ -334,7 +302,7 @@ mod Follow {
         /// @param follower_profile_address address of profile performing the follow action
         fn _follow(ref self: ContractState, follower_profile_address: ContractAddress) -> u256 {
             let new_follower_id = self.follower_count.read() + 1;
-            self.erc721._mint(follower_profile_address, new_follower_id);
+            self.erc721.mint(follower_profile_address, new_follower_id);
 
             let follow_timestamp: u64 = get_block_timestamp();
             let follow_data = FollowData {
@@ -365,7 +333,7 @@ mod Follow {
         /// @param unfollower address of user performing the unfollow action
         /// @param follow_id ID of the initial follow action
         fn _unfollow(ref self: ContractState, unfollower: ContractAddress, follow_id: u256) {
-            self.erc721._burn(follow_id);
+            self.erc721.burn(follow_id);
             self.follow_id_by_follower_profile_address.write(unfollower, 0);
             self
                 .follow_data_by_follow_id
