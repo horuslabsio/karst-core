@@ -4,9 +4,10 @@ use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 
 use starknet::{ContractAddress, class_hash::ClassHash, get_block_timestamp};
+
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, spy_events, SpyOn,
-    EventAssertions
+    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
+    EventSpyAssertionsTrait, ContractClass, ContractClassTrait, DeclareResultTrait
 };
 
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
@@ -33,30 +34,27 @@ const USER: felt252 = 'USER1';
 
 fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractAddress) {
     // deploy NFT
-    let nft_contract = declare("KarstNFT").unwrap();
+    let nft_contract = declare("KarstNFT").unwrap().contract_class();
     let names: ByteArray = "KarstNFT";
     let symbol: ByteArray = "KNFT";
     let base_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/";
     let mut calldata: Array<felt252> = array![USER];
-    names.serialize(ref calldata);
-    symbol.serialize(ref calldata);
-    base_uri.serialize(ref calldata);
     let (nft_contract_address, _) = nft_contract.deploy(@calldata).unwrap_syscall();
 
     // deploy registry
-    let registry_class_hash = declare("Registry").unwrap();
+    let registry_class_hash = declare("Registry").unwrap().contract_class();
     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
 
     // declare account
-    let account_class_hash = declare("Account").unwrap();
+    let account_class_hash = declare("Account").unwrap().contract_class();
 
     // declare follownft
-    let follow_nft_classhash = declare("Follow").unwrap();
+    let follow_nft_classhash = declare("Follow").unwrap().contract_class();
 
     // deploy profile
-    let profile_contract = declare("KarstProfile").unwrap();
+    let profile_contract = declare("KarstProfile").unwrap().contract_class();
     let mut karst_profile_constructor_calldata = array![
-        nft_contract_address.into(), HUB_ADDRESS, follow_nft_classhash.class_hash.into()
+        nft_contract_address.into(), HUB_ADDRESS, (*follow_nft_classhash.class_hash).into()
     ];
     let (profile_contract_address, _) = profile_contract
         .deploy(@karst_profile_constructor_calldata)
@@ -65,12 +63,11 @@ fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractA
     return (
         nft_contract_address,
         registry_contract_address,
-        registry_class_hash.class_hash.into(),
-        account_class_hash.class_hash.into(),
+        (*registry_class_hash.class_hash).into(),
+        (*account_class_hash.class_hash).into(),
         profile_contract_address
     );
 }
-
 
 // *************************************************************************
 //                              TESTS
@@ -85,10 +82,8 @@ fn test_profile_creation() {
     let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     //user 1 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]),
-        USER.try_into().unwrap()
-    );
+    start_cheat_caller_address(profile_contract_address, USER.try_into().unwrap());
+    start_cheat_caller_address(nft_contract_address, USER.try_into().unwrap());
     let profile_address = profileDispatcher
         .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456,);
 
@@ -106,7 +101,8 @@ fn test_profile_creation() {
     // test follow nft contract is deployed
     assert(profile.follow_nft != 0.try_into().unwrap(), 'follow nft not deployed');
 
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
+    stop_cheat_caller_address(profile_contract_address);
+    stop_cheat_caller_address(nft_contract_address);
 }
 
 #[test]
@@ -118,10 +114,8 @@ fn test_profile_metadata() {
     let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     //user 1 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]),
-        USER.try_into().unwrap()
-    );
+    start_cheat_caller_address(profile_contract_address, USER.try_into().unwrap());
+    start_cheat_caller_address(nft_contract_address, USER.try_into().unwrap());
     let profile_address = profileDispatcher
         .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
@@ -138,7 +132,8 @@ fn test_profile_metadata() {
         'invalid profile URI'
     );
 
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
+    stop_cheat_caller_address(profile_contract_address);
+    stop_cheat_caller_address(nft_contract_address);
 }
 
 #[test]
@@ -149,13 +144,12 @@ fn test_profile_creation_event() {
         __setup__();
     let karstNFTDispatcher = IKarstNFTDispatcher { contract_address: nft_contract_address };
     let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
-    let mut spy = spy_events(SpyOn::One(profile_contract_address));
+    let mut spy = spy_events();
 
     //user 1 create profile
-    start_prank(
-        CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]),
-        USER.try_into().unwrap()
-    );
+    start_cheat_caller_address(profile_contract_address, USER.try_into().unwrap());
+    start_cheat_caller_address(nft_contract_address, USER.try_into().unwrap());
+
     let profile_address = profileDispatcher
         .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456,);
 
@@ -172,5 +166,6 @@ fn test_profile_creation_event() {
 
     spy.assert_emitted(@array![(profile_contract_address, expected_event)]);
 
-    stop_prank(CheatTarget::Multiple(array![profile_contract_address, nft_contract_address]));
+    stop_cheat_caller_address(profile_contract_address);
+    stop_cheat_caller_address(nft_contract_address);
 }

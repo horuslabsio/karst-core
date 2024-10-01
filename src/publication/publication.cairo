@@ -44,40 +44,40 @@ pub mod PublicationComponent {
 
     #[derive(Drop, starknet::Event)]
     pub struct Post {
-        post: PostParams,
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub post: PostParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct RepostCreated {
-        repostParams: RepostParams,
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub repostParams: RepostParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommentCreated {
-        commentParams: CommentParams,
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub commentParams: CommentParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct Upvoted {
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct Downvoted {
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     // *************************************************************************

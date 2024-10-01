@@ -76,7 +76,7 @@ pub mod Handles {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         ERC721Event: ERC721Component::Event,
         #[flat]
@@ -89,18 +89,18 @@ pub mod Handles {
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleMinted {
-        local_name: felt252,
-        token_id: u256,
-        to: ContractAddress,
-        block_timestamp: u64,
+        pub local_name: felt252,
+        pub token_id: u256,
+        pub to: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleBurnt {
-        local_name: felt252,
-        token_id: u256,
-        owner: ContractAddress,
-        block_timestamp: u64,
+        pub local_name: felt252,
+        pub token_id: u256,
+        pub owner: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     // *************************************************************************
