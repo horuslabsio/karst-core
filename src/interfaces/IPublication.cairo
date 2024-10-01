@@ -16,7 +16,15 @@ pub trait IKarstPublications<TState> {
     fn repost(ref self: TState, repost_params: RepostParams) -> u256;
     fn upvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
     fn downvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
-    fn collect(ref self: TState, pub_id: u256) -> bool;
+    fn tip(ref self: TState, profile_address: ContractAddress, pub_id: u256, amount: u256);
+    fn collect(
+        ref self: TState,
+        karst_hub: ContractAddress,
+        profile_address: ContractAddress,
+        pub_id: u256,
+        collect_nft_impl_class_hash: felt252,
+        salt: felt252
+    ) -> u256;
 
     // *************************************************************************
     //                              GETTERS
@@ -33,4 +41,5 @@ pub trait IKarstPublications<TState> {
     fn has_user_voted(self: @TState, profile_address: ContractAddress, pub_id: u256) -> bool;
     fn get_upvote_count(self: @TState, profile_address: ContractAddress, pub_id: u256) -> u256;
     fn get_downvote_count(self: @TState, profile_address: ContractAddress, pub_id: u256) -> u256;
+    fn get_tipped_amount(self: @TState, profile_address: ContractAddress, pub_id: u256) -> u256;
 }
