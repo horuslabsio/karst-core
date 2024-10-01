@@ -44,7 +44,7 @@ pub mod CollectNFT {
     use openzeppelin::token::erc721::interface::IERC721Metadata;
     use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
     use core::num::traits::zero::Zero;
-    use karst::interfaces::ICollect::ICollectNFT;
+    use karst::interfaces::ICollectNFT::ICollectNFT;
     use karst::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
     use karst::base::{
         utils::hubrestricted::HubRestricted::hub_only,
@@ -129,7 +129,7 @@ pub mod CollectNFT {
     }
 
     #[abi(embed_v0)]
-    impl CollectImpl of ICollectNFT<ContractState> {
+    impl CollectNFTImpl of ICollectNFT<ContractState> {
         // *************************************************************************
         //                            EXTERNAL 
         // *************************************************************************
@@ -137,7 +137,6 @@ pub mod CollectNFT {
         /// @param address address of user trying to mint the collect NFT
         fn mint_nft(ref self: ContractState, address: ContractAddress) -> u256 {
             let balance = self.erc721.balance_of(address);
-            // hub_only(self.karst_hub.read()); //assert only hub 
             assert(balance.is_zero(), ALREADY_MINTED);
 
             let mut token_id = self.last_minted_id.read() + 1;

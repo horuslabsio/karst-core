@@ -3,7 +3,7 @@ pub mod PublicationComponent {
     // *************************************************************************
     //                              IMPORTS
     // *************************************************************************
-    use karst::interfaces::ICollect::ICollectNFTDispatcherTrait;
+    use karst::interfaces::ICollectNFT::ICollectNFTDispatcherTrait;
     use core::num::traits::zero::Zero;
     use core::starknet::SyscallResultTrait;
     use core::traits::TryInto;
@@ -14,7 +14,7 @@ pub mod PublicationComponent {
         deploy_syscall, class_hash::ClassHash
     };
     use karst::interfaces::IPublication::IKarstPublications;
-    use karst::interfaces::ICollect::{ICollectNFT, ICollectNFTDispatcher};
+    use karst::interfaces::ICollectNFT::{ICollectNFT, ICollectNFTDispatcher};
     use karst::base::{
         constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED},
         utils::hubrestricted::HubRestricted::hub_only,
@@ -48,8 +48,8 @@ pub mod PublicationComponent {
         RepostCreated: RepostCreated,
         Upvoted: Upvoted,
         Downvoted: Downvoted,
-        CollectNFT: CollectNFT,
-        DeployCollectNFT: DeployCollectNFT
+        CollectedNFT: CollectedNFT,
+        DeployedCollectNFT: DeployedCollectNFT
     }
 
     #[derive(Drop, starknet::Event)]
@@ -91,7 +91,7 @@ pub mod PublicationComponent {
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct CollectNFT {
+    pub struct CollectedNFT {
         publication_id: u256,
         transaction_executor: ContractAddress,
         token_id: u256,
@@ -99,7 +99,7 @@ pub mod PublicationComponent {
     }
 
     #[derive(Drop, starknet::Event)]
-    pub struct DeployCollectNFT {
+    pub struct DeployedCollectNFT {
         publication_id: u256,
         profile_address: ContractAddress,
         collect_nft: ContractAddress,
@@ -246,19 +246,7 @@ pub mod PublicationComponent {
             let has_voted = self.vote_status.read((caller, pub_id));
             let upvote_current_count = publication.upvote + 1;
             assert(has_voted == false, ALREADY_REACTED);
-            let updated_publication = Publication {
-                pointed_profile_address: publication.pointed_profile_address,
-                pointed_pub_id: publication.pointed_pub_id,
-                content_URI: publication.content_URI,
-                pub_Type: publication.pub_Type,
-                root_profile_address: publication.root_profile_address,
-                root_pub_id: publication.root_pub_id,
-                upvote: upvote_current_count,
-                downvote: publication.downvote,
-                channel_id: publication.channel_id,
-                collect_nft: publication.collect_nft,
-                tipped_amount: publication.tipped_amount
-            };
+            let updated_publication = Publication { upvote: upvote_current_count, ..publication };
             self.vote_status.write((caller, pub_id), true);
             self.publication.write((profile_address, pub_id), updated_publication);
 
@@ -283,17 +271,7 @@ pub mod PublicationComponent {
             let downvote_current_count = publication.downvote + 1;
             assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication {
-                pointed_profile_address: publication.pointed_profile_address,
-                pointed_pub_id: publication.pointed_pub_id,
-                content_URI: publication.content_URI,
-                pub_Type: publication.pub_Type,
-                root_profile_address: publication.root_profile_address,
-                root_pub_id: publication.root_pub_id,
-                upvote: publication.upvote,
-                downvote: downvote_current_count,
-                channel_id: publication.channel_id,
-                collect_nft: publication.collect_nft,
-                tipped_amount: publication.tipped_amount
+                downvote: downvote_current_count, ..publication
             };
             self.publication.write((profile_address, pub_id), updated_publication);
             self.vote_status.write((caller, pub_id), true);
@@ -320,17 +298,7 @@ pub mod PublicationComponent {
             let mut publication = self.get_publication(profile_address, pub_id);
             let current_tip_amount = publication.tipped_amount;
             let updated_publication = Publication {
-                pointed_profile_address: publication.pointed_profile_address,
-                pointed_pub_id: publication.pointed_pub_id,
-                content_URI: publication.content_URI,
-                pub_Type: publication.pub_Type,
-                root_profile_address: publication.root_profile_address,
-                root_pub_id: publication.root_pub_id,
-                upvote: publication.upvote,
-                downvote: publication.downvote,
-                channel_id: publication.channel_id,
-                collect_nft: publication.collect_nft,
-                tipped_amount: current_tip_amount + amount
+                tipped_amount: current_tip_amount + amount, ..publication
             };
             self.publication.write((profile_address, pub_id), updated_publication)
         }
@@ -351,7 +319,7 @@ pub mod PublicationComponent {
 
             self
                 .emit(
-                    CollectNFT {
+                    CollectedNFT {
                         publication_id: pub_id,
                         transaction_executor: get_caller_address(),
                         token_id: token_id,
@@ -610,7 +578,7 @@ pub mod PublicationComponent {
 
             self
                 .emit(
-                    DeployCollectNFT {
+                    DeployedCollectNFT {
                         publication_id: pub_id,
                         profile_address: profile_address,
                         collect_nft: account_address,
@@ -639,16 +607,8 @@ pub mod PublicationComponent {
                 // Update the publication with the deployed Collect NFT address
                 let updated_publication = Publication {
                     pointed_profile_address: publication.pointed_profile_address,
-                    pointed_pub_id: publication.pointed_pub_id,
-                    content_URI: publication.content_URI,
-                    pub_Type: publication.pub_Type,
-                    root_profile_address: publication.root_profile_address,
-                    root_pub_id: publication.root_pub_id,
-                    upvote: publication.upvote,
-                    downvote: publication.downvote,
-                    channel_id: publication.channel_id,
                     collect_nft: deployed_collect_nft_address,
-                    tipped_amount: publication.tipped_amount
+                    ..publication
                 };
 
                 // Write the updated publication with the new Collect NFT address
