@@ -41,11 +41,11 @@ pub mod ProfileComponent {
     #[derive(Drop, starknet::Event)]
     pub struct CreatedProfile {
         #[key]
-        owner: ContractAddress,
+        pub owner: ContractAddress,
         #[key]
-        profile_address: ContractAddress,
-        token_id: u256,
-        timestamp: u64
+        pub profile_address: ContractAddress,
+        pub token_id: u256,
+        pub timestamp: u64
     }
 
     // *************************************************************************

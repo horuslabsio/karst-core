@@ -13,7 +13,8 @@ pub mod KarstNFT {
     use core::num::traits::zero::Zero;
     use karst::interfaces::IKarstNFT;
     use karst::base::{
-        constants::errors::Errors::ALREADY_MINTED, token_uris::profile_token_uri::ProfileTokenUri,
+        constants::errors::Errors::ALREADY_MINTED,
+        token_uris::profile_token_uri::ProfileTokenUri::get_token_uri,
     };
     use openzeppelin::{
         access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
@@ -124,18 +125,18 @@ pub mod KarstNFT {
         // *************************************************************************
         /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
-            return "Karst Handles";
+            return "Karst";
         }
 
         /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
-            return "KARST";
+            return "KST";
         }
 
         /// @notice returns the token_uri for a particular token_id
         fn token_uri(self: @ContractState, token_id: u256) -> ByteArray {
             let mint_timestamp: u64 = self.get_token_mint_timestamp(token_id);
-            ProfileTokenUri::get_token_uri(token_id, mint_timestamp)
+            get_token_uri(token_id, mint_timestamp)
         }
     }
 }

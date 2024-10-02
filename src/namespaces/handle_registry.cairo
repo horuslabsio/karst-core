@@ -38,18 +38,18 @@ pub mod HandleRegistry {
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleLinked {
-        handle_id: u256,
-        profile_address: ContractAddress,
-        caller: ContractAddress,
-        timestamp: u64
+        pub handle_id: u256,
+        pub profile_address: ContractAddress,
+        pub caller: ContractAddress,
+        pub timestamp: u64
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleUnlinked {
-        handle_id: u256,
-        profile_address: ContractAddress,
-        caller: ContractAddress,
-        timestamp: u64
+        pub handle_id: u256,
+        pub profile_address: ContractAddress,
+        pub caller: ContractAddress,
+        pub timestamp: u64
     }
 
     // *************************************************************************

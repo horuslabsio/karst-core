@@ -65,7 +65,7 @@ pub mod Follow {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         ERC721Event: ERC721Component::Event,
         #[flat]
@@ -79,35 +79,35 @@ pub mod Follow {
     }
 
     #[derive(Drop, starknet::Event)]
-    struct Followed {
-        followed_address: ContractAddress,
-        follower_address: ContractAddress,
-        follow_id: u256,
-        timestamp: u64,
+    pub struct Followed {
+        pub followed_address: ContractAddress,
+        pub follower_address: ContractAddress,
+        pub follow_id: u256,
+        pub timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct Unfollowed {
-        unfollowed_address: ContractAddress,
-        unfollower_address: ContractAddress,
-        follow_id: u256,
-        timestamp: u64,
+    pub struct Unfollowed {
+        pub unfollowed_address: ContractAddress,
+        pub unfollower_address: ContractAddress,
+        pub follow_id: u256,
+        pub timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct FollowerBlocked {
-        followed_address: ContractAddress,
-        blocked_follower: ContractAddress,
-        follow_id: u256,
-        timestamp: u64,
+    pub struct FollowerBlocked {
+        pub followed_address: ContractAddress,
+        pub blocked_follower: ContractAddress,
+        pub follow_id: u256,
+        pub timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
-    struct FollowerUnblocked {
-        followed_address: ContractAddress,
-        unblocked_follower: ContractAddress,
-        follow_id: u256,
-        timestamp: u64,
+    pub struct FollowerUnblocked {
+        pub followed_address: ContractAddress,
+        pub unblocked_follower: ContractAddress,
+        pub follow_id: u256,
+        pub timestamp: u64,
     }
 
     // *************************************************************************
