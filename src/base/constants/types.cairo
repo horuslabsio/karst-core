@@ -1,25 +1,8 @@
-// *************************************************************************
-//                              TYPES
-// *************************************************************************
 use starknet::ContractAddress;
 
-// /**
-// * @notice A struct containing token follow-related data.
-// *
-// * @param followed_profile_address The ID of the profile being followed.
-// * @param follower_profile_address The ID of the profile following.
-// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
-// follow.
-// * @param block_status true if follower is blocked, false otherwise
-// */
-#[derive(Drop, Serde, starknet::Store)]
-pub struct FollowData {
-    pub followed_profile_address: ContractAddress,
-    pub follower_profile_address: ContractAddress,
-    pub follow_timestamp: u64,
-    pub block_status: bool,
-}
-
+// *************************************************************************
+//                            PROFILE
+// *************************************************************************
 // * @notice A struct containing profile data.
 // * profile_address The profile ID of a karst profile
 // * profile_owner The address that created the profile_address
@@ -36,6 +19,9 @@ pub struct Profile {
     pub follow_nft: ContractAddress
 }
 
+// *************************************************************************
+//                            PUBLICATION
+// *************************************************************************
 // /**
 // * @notice A struct containing publication data.
 // *
@@ -166,3 +152,83 @@ pub struct Downvote {
     pub transaction_executor: ContractAddress,
     pub block_timestamp: u64,
 }
+
+// *************************************************************************
+//                            FOLLOW
+// *************************************************************************
+// /**
+// * @notice A struct containing token follow-related data.
+// *
+// * @param followed_profile_address The ID of the profile being followed.
+// * @param follower_profile_address The ID of the profile following.
+// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
+// follow.
+// * @param block_status true if follower is blocked, false otherwise
+// */
+#[derive(Drop, Serde, starknet::Store)]
+pub struct FollowData {
+    pub followed_profile_address: ContractAddress,
+    pub follower_profile_address: ContractAddress,
+    pub follow_timestamp: u64,
+    pub block_status: bool,
+}
+
+// *************************************************************************
+//                            JOLT
+// *************************************************************************
+#[derive(Drop, Serde, starknet::Store)]
+pub struct joltData {
+    pub jolt_id: u256,
+    pub jolt_type: JoltType,
+    pub sender: ContractAddress,
+    pub recipient: ContractAddress,
+    pub memo: ByteArray,
+    pub amount: u256,
+    pub amount_in_usd: u256,
+    pub currency: JoltCurrency,
+    pub status: JoltStatus,
+    pub expiration_stamp: u64,
+    pub block_timestamp: u64
+}
+
+#[derive(Drop, Serde)]
+pub struct joltParams {
+    pub jolt_type: JoltType,
+    pub recipient: ContractAddress,
+    pub memo: ByteArray,
+    pub amount: u256,
+    pub currency: JoltCurrency,
+    pub expiration_stamp: u64,
+    pub auto_renewal: (bool, u256),
+}
+
+#[derive(Drop, Serde, starknet::Store)]
+pub struct RenewalData {
+    pub renewal_duration: u256,
+    pub renewal_amount: u256,
+    pub erc20_contract_address: ContractAddress
+}
+
+#[derive(Drop, Serde, starknet::Store, PartialEq)]
+pub enum JoltCurrency {
+    USDT,
+    USDC,
+    ETH,
+    STRK
+}
+
+#[derive(Drop, Serde, starknet::Store, PartialEq)]
+pub enum JoltType {
+  Tip,
+  Transfer,
+  Subscription,
+  Request
+}
+
+#[derive(Drop, Serde, starknet::Store, PartialEq)]
+pub enum JoltStatus {
+    PENDING,
+    SUCCESSFUL,
+    EXPIRED,
+    FAILED
+  }

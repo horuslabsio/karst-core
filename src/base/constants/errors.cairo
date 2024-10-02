@@ -19,4 +19,9 @@ pub mod Errors {
     pub const INVALID_PROFILE_ADDRESS: felt252 = 'Karst: invalid profile address!';
     pub const SELF_FOLLOWING: felt252 = 'Karst: self follow is forbidden';
     pub const ALREADY_REACTED: felt252 = 'Karst: already react to post!';
+    pub const SELF_TIPPING: felt252 = 'Karst: self-tip forbidden!';
+    pub const MAX_TIPPING: felt252 = 'Karst: exceeds max tipping!';
+    pub const SELF_TRANSFER: felt252 = 'Karst: self-transfer forbidden!';
+    pub const INSUFFICIENT_ALLOWANCE: felt252 = 'Karst: insufficient allowance!';
+    pub const AUTO_RENEW_DURATION_ENDED: felt252 = 'Karst: auto renew ended!';
 }
