@@ -19,4 +19,8 @@ pub mod Errors {
     pub const INVALID_PROFILE_ADDRESS: felt252 = 'Karst: invalid profile address!';
     pub const SELF_FOLLOWING: felt252 = 'Karst: self follow is forbidden';
     pub const ALREADY_REACTED: felt252 = 'Karst: already react to post!';
+    pub const ALREADY_MEMBER: felt252 = 'Karst: already a Member';
+    pub const COMMUNITY_DOES_NOT_EXIST: felt252 = 'Karst: Community does not exist';
+    pub const NOT_COMMUNITY_OWNER: felt252 = 'Karst: Not Community owner';
+    pub const NOT_MEMBER: felt252 = 'Karst: Not a Community  Member';
 }

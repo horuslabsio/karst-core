@@ -175,13 +175,13 @@ pub struct Downvote {
 // * @param community_nft_address The nft address of the community.
 // * @param community_premium_status The community is premium or not .
 // */
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct CommunityParams {
-    community_id: u256,
-    community_owner: ContractAddress,
-    community_nft_address: ContractAddress,
-    community_premium_status: bool
-}
+// #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+// pub struct CommunityParams {
+//     community_id: u256,
+//     community_owner: ContractAddress,
+//     community_nft_address: ContractAddress,
+//     community_premium_status: bool
+// }
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityDetails {
@@ -211,21 +211,22 @@ pub struct CommunityMember {
     ban_status: bool,
 }
 
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct CommunityMod {
-    community_id: u256,
-    transaction_executor: ContractAddress,
-    mod_address: ContractAddress,
-}
+// #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+// pub struct CommunityMod {
+//     community_id: u256,
+//     transaction_executor: ContractAddress,
+//     mod_address: ContractAddress,
+// }
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityGateKeepDetails {
     community_id: u256,
     gate_keep_type: ByteArray,
     community_nft_address: ContractAddress,
+    entry_fee: u256
 }
 
-//  // permissioned_addresses: Vec<ContractAddress>,
+// permissioned_addresses: Vec<ContractAddress>,
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 enum GateKeepType {
