@@ -4,17 +4,16 @@ use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 use starknet::{ContractAddress, get_block_timestamp};
 use snforge_std::{
-    declare, ContractClassTrait, CheatTarget, start_prank, stop_prank, start_warp, stop_warp,
-    spy_events, SpyOn, EventAssertions, EventFetcher
+    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
+    EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
-use starknet::get_caller_address;
+
 
 use karst::interfaces::IHandleRegistry::{IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait};
 use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
-use karst::namespaces::handle_registry::HandleRegistry;
+
 use karst::namespaces::handle_registry::HandleRegistry::{Event as LinkedEvent, HandleLinked};
 use karst::namespaces::handle_registry::HandleRegistry::{Event as UnlinkedEvent, HandleUnlinked};
-
 
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
@@ -28,12 +27,12 @@ const HANDLE_ID: u256 = 1234;
 
 fn __setup__() -> (ContractAddress, ContractAddress) {
     // deploy handle contract
-    let handle_class_hash = declare("Handles").unwrap();
+    let handle_class_hash = declare("Handles").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![ADMIN_ADDRESS];
     let (handle_contract_address, _) = handle_class_hash.deploy(@calldata).unwrap_syscall();
 
     // deploy handle registry contract
-    let handle_registry_class_hash = declare("HandleRegistry").unwrap();
+    let handle_registry_class_hash = declare("HandleRegistry").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![handle_contract_address.into()];
     let (handle_registry_contract_address, _) = handle_registry_class_hash
         .deploy(@calldata)
@@ -67,7 +66,7 @@ fn test_resolve() {
     let handle_dispatcher = IHandleDispatcher { contract_address: handle_contract_address };
 
     // Mint Handle to USER_ONE
-    start_prank(CheatTarget::One(handle_contract_address), ADMIN_ADDRESS.try_into().unwrap());
+    start_cheat_caller_address(handle_contract_address, ADMIN_ADDRESS.try_into().unwrap());
     let token_id = handle_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
     // Link handle to USER_ONE
@@ -148,15 +147,14 @@ fn test_unlink() {
     registryDispatcher.link(handle_id, USER_ONE.try_into().unwrap());
 
     // call unlink
-    start_prank(CheatTarget::One(handle_registry_address), USER_ONE.try_into().unwrap());
+    start_cheat_caller_address(handle_registry_address, USER_ONE.try_into().unwrap());
     registryDispatcher.unlink(handle_id, USER_ONE.try_into().unwrap());
 
     // check it unlinks successfully
     let retrieved_handle = registryDispatcher.get_handle(USER_ONE.try_into().unwrap());
     assert(retrieved_handle == 0, 'unlinking failed');
-    stop_prank(CheatTarget::One(handle_registry_address));
+    stop_cheat_caller_address(handle_registry_address);
 }
-
 
 #[test]
 #[should_panic(expected: ('Karst: caller is not owner!',))]
@@ -174,9 +172,9 @@ fn test_unlink_fails_if_caller_is_not_owner() {
     registryDispatcher.link(handle_id, USER_ONE.try_into().unwrap());
 
     // call unlink
-    start_prank(CheatTarget::One(handle_registry_address), USER_TWO.try_into().unwrap());
+    start_cheat_caller_address(handle_registry_address, USER_TWO.try_into().unwrap());
     registryDispatcher.unlink(handle_id, USER_ONE.try_into().unwrap());
-    stop_prank(CheatTarget::One(handle_registry_address));
+    stop_cheat_caller_address(handle_registry_address);
 }
 
 #[test]
@@ -186,12 +184,12 @@ fn test_emmit_linked_event() {
         contract_address: handle_registry_address
     };
     let handleDispatcher = IHandleDispatcher { contract_address: handle_contract_address };
-    let mut spy = spy_events(SpyOn::One(handle_registry_address));
+    let mut spy = spy_events();
 
     // mint handle
     let handle_id = handleDispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
 
-    start_prank(CheatTarget::One(handle_registry_address), USER_ONE.try_into().unwrap());
+    start_cheat_caller_address(handle_registry_address, USER_ONE.try_into().unwrap());
 
     // link token to profile
     registryDispatcher.link(handle_id, USER_ONE.try_into().unwrap());
@@ -205,7 +203,7 @@ fn test_emmit_linked_event() {
         }
     );
     spy.assert_emitted(@array![(handle_registry_address, expected_event)]);
-    stop_prank(CheatTarget::One(handle_registry_address));
+    stop_cheat_caller_address(handle_registry_address);
 }
 
 #[test]
@@ -215,7 +213,7 @@ fn test_emmit_unlinked_event() {
         contract_address: handle_registry_address
     };
     let handleDispatcher = IHandleDispatcher { contract_address: handle_contract_address };
-    let mut spy = spy_events(SpyOn::One(handle_registry_address));
+    let mut spy = spy_events();
 
     // mint handle
     let handle_id = handleDispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_LOCAL_NAME);
@@ -223,7 +221,7 @@ fn test_emmit_unlinked_event() {
     // link token to profile
     registryDispatcher.link(handle_id, USER_ONE.try_into().unwrap());
 
-    start_prank(CheatTarget::One(handle_registry_address), USER_ONE.try_into().unwrap());
+    start_cheat_caller_address(handle_registry_address, USER_ONE.try_into().unwrap());
 
     // call unlink
     registryDispatcher.unlink(handle_id, USER_ONE.try_into().unwrap());
@@ -237,5 +235,5 @@ fn test_emmit_unlinked_event() {
         }
     );
     spy.assert_emitted(@array![(handle_registry_address, expected_event)]);
-    stop_prank(CheatTarget::One(handle_registry_address));
+    stop_cheat_caller_address(handle_registry_address);
 }

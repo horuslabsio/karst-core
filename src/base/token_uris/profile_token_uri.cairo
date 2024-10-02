@@ -1,11 +1,10 @@
-// TODO: https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/ProfileTokenURI.sol
+// TODO:
+// https://github.com/lens-protocol/core/blob/master/contracts/misc/token-uris/ProfileTokenURI.sol
 
 pub mod ProfileTokenUri {
     use core::array::ArrayTrait;
-    use alexandria_bytes::{Bytes, BytesTrait};
     use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
     use karst::base::utils::base64_extended::{get_base64_encode, convert_into_byteArray};
-    use karst::base::token_uris::traits::profile::ProfileSvg::gen_profile_svg;
 
     fn get_svg(token_id: u256, mint_timestamp: u64) -> Array<felt252> {
         let mut svg = ArrayTrait::<felt252>::new();
@@ -61,23 +60,23 @@ pub mod ProfileTokenUri {
         let mut svg = get_svg(token_id, mint_timestamp);
         let mut svg_byte_array: ByteArray = convert_into_byteArray(ref svg);
         let svg_encoded: ByteArray = get_base64_encode(svg_byte_array);
-        // getting json byte array 
-        // json - json + svg_base64_encoded 
+        // getting json byte array
+        // json - json + svg_base64_encoded
         let mut json = get_json(token_id, mint_timestamp);
         let mut json_byte_array: ByteArray = convert_into_byteArray(ref json);
         json_byte_array.append(@svg_encoded);
-        // getting attributes  
+        // getting attributes
         let mut attribute = get_attributes(token_id, mint_timestamp);
         let mut attribute_byte_array: ByteArray = convert_into_byteArray(ref attribute);
-        // tokenuri_to_encode = json + attribute 
+        // tokenuri_to_encode = json + attribute
         let mut tokenuri_to_encode: ByteArray = Default::default();
-        // concat json , 
+        // concat json ,
         tokenuri_to_encode.append(@json_byte_array);
-        // concat attribute 
+        // concat attribute
         tokenuri_to_encode.append(@attribute_byte_array);
-        // ecoding the encode 
+        // ecoding the encode
         let encoded_token_uri = get_base64_encode(tokenuri_to_encode);
-        // baseuri + base64_encoded(json,attribute) 
+        // baseuri + base64_encoded(json,attribute)
         let mut token_uri: ByteArray = baseuri.try_into().unwrap();
         // concat the base uri and the encoded token uri
         token_uri.append(@encoded_token_uri);

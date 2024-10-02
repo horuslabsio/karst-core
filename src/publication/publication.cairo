@@ -6,15 +6,14 @@ pub mod PublicationComponent {
     use core::traits::TryInto;
     use karst::interfaces::IProfile::IProfile;
     use core::option::OptionTrait;
-    use starknet::{ContractAddress, get_contract_address, get_caller_address, get_block_timestamp};
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp,
+        storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
+    };
     use karst::interfaces::IPublication::IKarstPublications;
     use karst::base::{
         constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED},
-        utils::hubrestricted::HubRestricted::hub_only,
-        constants::types::{
-            PostParams, Publication, PublicationType, ReferencePubParams, CommentParams,
-            RepostParams, Upvote, Downvote
-        }
+        constants::types::{PostParams, Publication, PublicationType, CommentParams, RepostParams}
     };
 
     use karst::profile::profile::ProfileComponent;
@@ -25,9 +24,9 @@ pub mod PublicationComponent {
     //                              STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
-        publication: LegacyMap<(ContractAddress, u256), Publication>,
-        vote_status: LegacyMap<(ContractAddress, u256), bool>,
+    pub struct Storage {
+        publication: Map<(ContractAddress, u256), Publication>,
+        vote_status: Map<(ContractAddress, u256), bool>,
     }
 
     // *************************************************************************
@@ -45,40 +44,40 @@ pub mod PublicationComponent {
 
     #[derive(Drop, starknet::Event)]
     pub struct Post {
-        post: PostParams,
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub post: PostParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct RepostCreated {
-        repostParams: RepostParams,
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub repostParams: RepostParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommentCreated {
-        commentParams: CommentParams,
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub commentParams: CommentParams,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct Upvoted {
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct Downvoted {
-        publication_id: u256,
-        transaction_executor: ContractAddress,
-        block_timestamp: u64,
+        pub publication_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     // *************************************************************************
@@ -206,7 +205,7 @@ pub mod PublicationComponent {
 
             pub_id_assigned
         }
-        /// @notice upvote a post 
+        /// @notice upvote a post
         /// @param profile_address address of profile performing the upvote action
         ///  @param pub_id id of the publication to upvote
         /// todo!(gate function)
@@ -240,7 +239,7 @@ pub mod PublicationComponent {
                     }
                 )
         }
-        // @notice downvote a post 
+        // @notice downvote a post
         // @param profile_address address of profile performing the downvote action
         //  @param pub_id id of the publication to upvote
         /// todo!(gate function)

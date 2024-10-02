@@ -1,6 +1,6 @@
 use starknet::ContractAddress;
 use karst::base::constants::types::{
-    Profile, PostParams, RepostParams, CommentParams, PublicationType, Publication, QuoteParams
+    Profile, PostParams, RepostParams, CommentParams, PublicationType, Publication
 };
 
 // *************************************************************************

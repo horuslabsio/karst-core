@@ -1,4 +1,3 @@
-use core::option::OptionTrait;
 // *************************************************************************
 //                              TYPES
 // *************************************************************************
@@ -9,30 +8,32 @@ use starknet::ContractAddress;
 // *
 // * @param followed_profile_address The ID of the profile being followed.
 // * @param follower_profile_address The ID of the profile following.
-// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to follow.
+// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
+// follow.
 // * @param block_status true if follower is blocked, false otherwise
 // */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct FollowData {
-    followed_profile_address: ContractAddress,
-    follower_profile_address: ContractAddress,
-    follow_timestamp: u64,
-    block_status: bool,
+    pub followed_profile_address: ContractAddress,
+    pub follower_profile_address: ContractAddress,
+    pub follow_timestamp: u64,
+    pub block_status: bool,
 }
 
 // * @notice A struct containing profile data.
-// * profile_address The profile ID of a karst profile 
+// * profile_address The profile ID of a karst profile
 // * profile_owner The address that created the profile_address
 // * @param pub_count The number of publications made to this profile.
-// * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed name, description, interests, etc.
+// * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed
+// name, description, interests, etc.
 // * @param follow_nft profile follow nft token contract
 #[derive(Drop, Serde, starknet::Store)]
 pub struct Profile {
-    profile_address: ContractAddress,
-    profile_owner: ContractAddress,
-    pub_count: u256,
-    metadata_URI: ByteArray,
-    follow_nft: ContractAddress
+    pub profile_address: ContractAddress,
+    pub profile_owner: ContractAddress,
+    pub pub_count: u256,
+    pub metadata_URI: ByteArray,
+    pub follow_nft: ContractAddress
 }
 
 // /**
@@ -44,25 +45,29 @@ pub struct Profile {
 // * - Mirrors
 // * - Comments
 // * - Quotes
-// * @param content_URI The URI to set for the content of publication (can be ipfs, arweave, http, etc).
+// * @param content_URI The URI to set for the content of publication (can be ipfs, arweave, http,
+// etc).
 // * @param pub_Type The type of publication, can be Nonexistent, Post, Comment, Mirror or Quote.
-// * @param root_profile_address The profile ID of the root post (to determine if comments/quotes and mirrors come from it).
-// * @param root_pub_id The publication ID of the root post (to determine if comments/quotes and mirrors come from it).
+// * @param root_profile_address The profile ID of the root post (to determine if comments/quotes
+// and mirrors come from it).
+// * @param root_pub_id The publication ID of the root post (to determine if comments/quotes and
+// mirrors come from it).
 // */
 #[derive(Debug, Drop, Serde, starknet::Store)]
 pub struct Publication {
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
-    content_URI: ByteArray,
-    pub_Type: PublicationType,
-    root_profile_address: ContractAddress,
-    root_pub_id: u256,
-    upvote: u256,
-    downvote: u256,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
+    pub content_URI: ByteArray,
+    pub pub_Type: PublicationType,
+    pub root_profile_address: ContractAddress,
+    pub root_pub_id: u256,
+    pub upvote: u256,
+    pub downvote: u256,
 }
 
 // /**
-// * @notice An enum specifically used in a helper function to easily retrieve the publication type for integrations.
+// * @notice An enum specifically used in a helper function to easily retrieve the publication type
+// for integrations.
 // *
 // * @param Nonexistent An indicator showing the queried publication does not exist.
 // * @param Post A standard post, having an URI, and no pointer to another publication.
@@ -70,7 +75,7 @@ pub struct Publication {
 // * @param Mirror A mirror, having a pointer to another publication, but no URI.
 // */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
-enum PublicationType {
+pub enum PublicationType {
     Nonexistent,
     Post,
     Comment,
@@ -85,8 +90,8 @@ enum PublicationType {
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct PostParams {
-    content_URI: ByteArray,
-    profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub profile_address: ContractAddress,
 }
 
 // /**
@@ -98,36 +103,37 @@ pub struct PostParams {
 // * @param pointed_pub_id ID of the pointed publication
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
-struct CommentParams {
-    profile_address: ContractAddress,
-    content_URI: ByteArray,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
-    reference_pub_type: PublicationType,
+pub struct CommentParams {
+    pub profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
+    pub reference_pub_type: PublicationType,
 }
 
 
 #[derive(Drop, Serde, starknet::Store)]
 pub struct ReferencePubParams {
-    profile_address: ContractAddress,
-    content_URI: ByteArray,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256
+    pub profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256
 }
 
 // /**
 // * @notice A struct containing the parameters required for the `mirror()` function.
 // *
 // * @param profile_address The address of the profile to publish to.
-// * @param metadata_URI the URI containing metadata attributes to attach to this mirror publication.
+// * @param metadata_URI the URI containing metadata attributes to attach to this mirror
+// publication.
 // * @param pointed_profile_id The profile address to point the mirror to.
 // * @param pointed_pub_id The publication ID to point the mirror to.
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct RepostParams {
-    profile_address: ContractAddress,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
+    pub profile_address: ContractAddress,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
 }
 
 // /**
@@ -140,21 +146,23 @@ pub struct RepostParams {
 // */
 #[derive(Drop, Serde, starknet::Store, Clone)]
 pub struct QuoteParams {
-    profile_address: ContractAddress,
-    content_URI: ByteArray,
-    pointed_profile_address: ContractAddress,
-    pointed_pub_id: u256,
-    reference_pub_type: PublicationType
+    pub profile_address: ContractAddress,
+    pub content_URI: ByteArray,
+    pub pointed_profile_address: ContractAddress,
+    pub pointed_pub_id: u256,
+    pub reference_pub_type: PublicationType
 }
+
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct Upvote {
-    publication_id: u256,
-    transaction_executor: ContractAddress,
-    block_timestamp: u64,
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
 }
+
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct Downvote {
-    publication_id: u256,
-    transaction_executor: ContractAddress,
-    block_timestamp: u64,
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
 }

@@ -1,2 +1,2 @@
-mod handles;
-mod handle_registry;
+pub mod handles;
+pub mod handle_registry;

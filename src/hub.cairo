@@ -1,1 +1,1 @@
-mod hub;
+pub mod hub;

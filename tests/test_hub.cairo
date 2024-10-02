@@ -5,8 +5,11 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress, class_hash::ClassHash, contract_address_const};
-use snforge_std::{declare, ContractClassTrait, CheatTarget, start_prank, stop_prank};
+use starknet::{ContractAddress};
+use snforge_std::{
+    declare, DeclareResultTrait, ContractClassTrait, start_cheat_caller_address,
+    stop_cheat_caller_address
+};
 
 use karst::hub::hub::KarstHub;
 use karst::mocks::registry::Registry;
@@ -32,78 +35,72 @@ const TEST_LOCAL_NAME: felt252 = 'user';
 // *************************************************************************
 fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress, u256) {
     // deploy NFT
-    let nft_class_hash = declare("KarstNFT").unwrap();
-    let names: ByteArray = "KarstNFT";
-    let symbol: ByteArray = "KNFT";
-    let base_uri: ByteArray = "";
+    let nft_class_hash = declare("KarstNFT").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![ADMIN];
-    names.serialize(ref calldata);
-    symbol.serialize(ref calldata);
-    base_uri.serialize(ref calldata);
     let (nft_contract_address, _) = nft_class_hash.deploy(@calldata).unwrap_syscall();
 
     // deploy handle contract
-    let handle_class_hash = declare("Handles").unwrap();
+    let handle_class_hash = declare("Handles").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![ADMIN];
     let (handle_contract_address, _) = handle_class_hash.deploy(@calldata).unwrap_syscall();
 
     // deploy handle registry contract
-    let handle_registry_class_hash = declare("HandleRegistry").unwrap();
+    let handle_registry_class_hash = declare("HandleRegistry").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![handle_contract_address.into()];
     let (handle_registry_contract_address, _) = handle_registry_class_hash
         .deploy(@calldata)
         .unwrap_syscall();
 
     // deploy tokenbound registry
-    let registry_class_hash = declare("Registry").unwrap();
+    let registry_class_hash = declare("Registry").unwrap().contract_class();
 
     // declare tokenbound account
-    let account_class_hash = declare("Account").unwrap();
+    let account_class_hash = declare("Account").unwrap().contract_class();
 
     // declare follownft
-    let follow_nft_classhash = declare("Follow").unwrap();
+    let follow_nft_classhash = declare("Follow").unwrap().contract_class();
 
     // deploy hub contract
-    let hub_class_hash = declare("KarstHub").unwrap();
+    let hub_class_hash = declare("KarstHub").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![
         nft_contract_address.into(),
         handle_contract_address.into(),
         handle_registry_contract_address.into(),
-        follow_nft_classhash.class_hash.into()
+        (*follow_nft_classhash.class_hash).into()
     ];
     let (hub_contract_address, _) = hub_class_hash.deploy(@calldata).unwrap_syscall();
 
     // create profiles
     let dispatcher = IHubDispatcher { contract_address: hub_contract_address };
-    start_prank(CheatTarget::One(hub_contract_address), ADDRESS1.try_into().unwrap());
+    start_cheat_caller_address(hub_contract_address, ADDRESS1.try_into().unwrap());
     let user_one_profile_address = dispatcher
         .create_profile(
             nft_contract_address,
-            registry_class_hash.class_hash.into(),
-            account_class_hash.class_hash.into(),
+            (*registry_class_hash.class_hash).into(),
+            (*account_class_hash.class_hash).into(),
             2478
         );
-    stop_prank(CheatTarget::One(hub_contract_address));
+    stop_cheat_caller_address(hub_contract_address);
 
-    start_prank(CheatTarget::One(hub_contract_address), ADDRESS2.try_into().unwrap());
+    start_cheat_caller_address(hub_contract_address, ADDRESS2.try_into().unwrap());
     let user_two_profile_address = dispatcher
         .create_profile(
             nft_contract_address,
-            registry_class_hash.class_hash.into(),
-            account_class_hash.class_hash.into(),
+            (*registry_class_hash.class_hash).into(),
+            (*account_class_hash.class_hash).into(),
             2478
         );
-    stop_prank(CheatTarget::One(hub_contract_address));
+    stop_cheat_caller_address(hub_contract_address);
 
-    start_prank(CheatTarget::One(hub_contract_address), ADDRESS3.try_into().unwrap());
+    start_cheat_caller_address(hub_contract_address, ADDRESS3.try_into().unwrap());
     let user_three_profile_address = dispatcher
         .create_profile(
             nft_contract_address,
-            registry_class_hash.class_hash.into(),
-            account_class_hash.class_hash.into(),
+            (*registry_class_hash.class_hash).into(),
+            (*account_class_hash.class_hash).into(),
             2478
         );
-    stop_prank(CheatTarget::One(hub_contract_address));
+    stop_cheat_caller_address(hub_contract_address);
 
     // mint and link handle for user_one
     let handleDispatcher = IHandleDispatcher { contract_address: handle_contract_address };
@@ -197,12 +194,12 @@ fn test_hub_unfollowing() {
     dispatcher.follow(user_one_profile_address, profiles_to_follow);
 
     // then unfollow them
-    start_prank(CheatTarget::One(hub_contract_address), user_one_profile_address);
+    start_cheat_caller_address(hub_contract_address, user_one_profile_address);
     let profiles_to_unfollow: Array<ContractAddress> = array![
         user_two_profile_address, user_three_profile_address
     ];
     dispatcher.unfollow(profiles_to_unfollow);
-    stop_prank(CheatTarget::One(hub_contract_address));
+    stop_cheat_caller_address(hub_contract_address);
 
     // check following status
     let follow_status_1 = dispatcher
@@ -267,6 +264,7 @@ fn test_get_handle_id() {
     assert(handle_id == minted_handle_id, 'invalid handle id');
 }
 
+// todo
 #[test]
 fn test_get_handle() {
     let (hub_contract_address, _, _, _, minted_handle_id) = __setup__();

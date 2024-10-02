@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 // *************************************************************************
-//                              INTERFACE of IERC721 
+//                              INTERFACE of IERC721
 // *************************************************************************
 #[starknet::interface]
 pub trait IERC721<TState> {
@@ -29,7 +29,7 @@ pub trait IERC721<TState> {
     fn supports_interface(self: @TState, interface_id: felt252) -> bool;
 
     // *************************************************************************
-    //                              ERC721 METADATA 
+    //                              ERC721 METADATA
     // *************************************************************************
     fn name(self: @TState) -> ByteArray;
     fn symbol(self: @TState) -> ByteArray;

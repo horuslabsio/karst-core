@@ -1,4 +1,4 @@
-// let make the face of the profile svg  
+// let make the face of the profile svg
 
 mod eyebrows {
     use core::traits::TryInto;

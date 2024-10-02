@@ -1,39 +1,5 @@
-// *************************************************************************
-//                            OZ ERC721
-// *************************************************************************
-use openzeppelin::{
-    token::erc721::{ERC721Component::{ERC721Metadata, ERC721Mixin, HasComponent}},
-    introspection::src5::SRC5Component,
-};
-
-
-#[starknet::interface]
-trait IERC721Metadata<TState> {
-    fn name(self: @TState) -> ByteArray;
-    fn symbol(self: @TState) -> ByteArray;
-}
-
-#[starknet::embeddable]
-impl IERC721MetadataImpl<
-    TContractState,
-    +HasComponent<TContractState>,
-    +SRC5Component::HasComponent<TContractState>,
-    +Drop<TContractState>
-> of IERC721Metadata<TContractState> {
-    fn name(self: @TContractState) -> ByteArray {
-        let component = HasComponent::get_component(self);
-        ERC721Metadata::name(component)
-    }
-
-    fn symbol(self: @TContractState) -> ByteArray {
-        let component = HasComponent::get_component(self);
-        ERC721Metadata::symbol(component)
-    }
-}
-
-
 #[starknet::contract]
-mod Handles {
+pub mod Handles {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
@@ -41,21 +7,22 @@ mod Handles {
     use core::traits::TryInto;
     use core::poseidon::PoseidonTrait;
     use core::hash::{HashStateTrait, HashStateExTrait};
-    use starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
+    };
     use openzeppelin::{
-        account, access::ownable::OwnableComponent,
-        token::erc721::{
-            ERC721Component, erc721::ERC721Component::InternalTrait as ERC721InternalTrait
-        },
+        access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
     use karst::base::{
         constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray,
         token_uris::handle_token_uri::HandleTokenUri,
     };
-    use karst::interfaces::{
-        IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait}, IHandle::IHandle
-    };
+    use karst::interfaces::{IHandle::IHandle};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -70,6 +37,7 @@ mod Handles {
     impl ERC721Impl = ERC721Component::ERC721Impl<ContractState>;
     #[abi(embed_v0)]
     impl ERC721CamelOnlyImpl = ERC721Component::ERC721CamelOnlyImpl<ContractState>;
+    impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
     // add an owner
     #[abi(embed_v0)]
@@ -80,7 +48,7 @@ mod Handles {
     //                            STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
+    pub struct Storage {
         #[substorage(v0)]
         erc721: ERC721Component::Storage,
         #[substorage(v0)]
@@ -89,7 +57,7 @@ mod Handles {
         ownable: OwnableComponent::Storage,
         admin: ContractAddress,
         total_supply: u256,
-        local_names: LegacyMap::<u256, felt252>,
+        local_names: Map::<u256, felt252>,
     }
 
     // *************************************************************************
@@ -108,7 +76,7 @@ mod Handles {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         ERC721Event: ERC721Component::Event,
         #[flat]
@@ -121,18 +89,18 @@ mod Handles {
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleMinted {
-        local_name: felt252,
-        token_id: u256,
-        to: ContractAddress,
-        block_timestamp: u64,
+        pub local_name: felt252,
+        pub token_id: u256,
+        pub to: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct HandleBurnt {
-        local_name: felt252,
-        token_id: u256,
-        owner: ContractAddress,
-        block_timestamp: u64,
+        pub local_name: felt252,
+        pub token_id: u256,
+        pub owner: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     // *************************************************************************
@@ -166,7 +134,7 @@ mod Handles {
             assert(get_caller_address() == self.erc721.owner_of(token_id), Errors::INVALID_OWNER);
             let current_supply = self.total_supply.read();
             let local_name = self.local_names.read(token_id);
-            self.erc721._burn(token_id);
+            self.erc721.burn(token_id);
             self.total_supply.write(current_supply - 1);
             self.local_names.write(token_id, 0);
             self
@@ -208,7 +176,7 @@ mod Handles {
         /// @notice checks if a handle exists
         /// @param token_id ID of handle to be queried
         fn exists(self: @ContractState, token_id: u256) -> bool {
-            self.erc721._exists(token_id)
+            self.erc721.exists(token_id)
         }
 
         /// @notice returns no. of handles minted
@@ -264,7 +232,7 @@ mod Handles {
             current_total_supply += 1;
             self.total_supply.write(current_total_supply);
 
-            self.erc721._mint(address, token_id);
+            self.erc721.mint(address, token_id);
             self.local_names.write(token_id, local_name);
 
             self
@@ -279,7 +247,8 @@ mod Handles {
             token_id
         }
 
-        /// @notice validates that a local name contains only [a-z,0-9,_] and does not begin with an underscore.
+        /// @notice validates that a local name contains only [a-z,0-9,_] and does not begin with an
+        /// underscore.
         /// @param local_name username to be minted
         fn _validate_local_name(self: @ContractState, local_name: felt252) {
             let mut value: u256 = local_name.into();

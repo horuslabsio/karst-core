@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 // *************************************************************************
-//                              INTERFACE of HANDLE NFT 
+//                              INTERFACE of HANDLE NFT
 // *************************************************************************
 #[starknet::interface]
 pub trait IHandle<TState> {
@@ -20,7 +20,7 @@ pub trait IHandle<TState> {
     fn total_supply(self: @TState) -> u256;
     fn get_token_id(self: @TState, local_name: felt252) -> u256;
     // *************************************************************************
-    //                              METADATA 
+    //                              METADATA
     // *************************************************************************
     fn name(self: @TState) -> ByteArray;
     fn symbol(self: @TState) -> ByteArray;

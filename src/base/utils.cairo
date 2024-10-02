@@ -1,3 +1,3 @@
-mod byte_array_extra;
-mod hubrestricted;
-mod base64_extended;
+pub mod byte_array_extra;
+pub mod hubrestricted;
+pub mod base64_extended;

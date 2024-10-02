@@ -1,33 +1,29 @@
-use starknet::ContractAddress;
-
 #[starknet::component]
-mod ProfileComponent {
+pub mod ProfileComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
-    use core::{traits::TryInto, result::ResultTrait};
+    use core::{traits::TryInto};
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
-        syscalls::deploy_syscall, SyscallResultTrait
+        syscalls::deploy_syscall, SyscallResultTrait,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
     use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-    use karst::interfaces::IRegistry::{
-        IRegistryDispatcher, IRegistryDispatcherTrait, IRegistryLibraryDispatcher
-    };
+    use karst::interfaces::IRegistry::{IRegistryDispatcherTrait, IRegistryLibraryDispatcher};
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::interfaces::IProfile::IProfile;
-    use karst::interfaces::{IFollowNFT::IFollowNFT};
-    use karst::base::{
-        constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,
-        utils::hubrestricted::HubRestricted::hub_only
-    };
+    use karst::base::{constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,};
 
     // *************************************************************************
     //                              STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
-        profile: LegacyMap<ContractAddress, Profile>,
+    pub struct Storage {
+        profile: Map<ContractAddress, Profile>,
         karst_nft_address: ContractAddress,
         hub_address: ContractAddress,
         follow_nft_classhash: ClassHash
@@ -38,18 +34,18 @@ mod ProfileComponent {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         CreatedProfile: CreatedProfile
     }
 
     #[derive(Drop, starknet::Event)]
-    struct CreatedProfile {
+    pub struct CreatedProfile {
         #[key]
-        owner: ContractAddress,
+        pub owner: ContractAddress,
         #[key]
-        profile_address: ContractAddress,
-        token_id: u256,
-        timestamp: u64
+        pub profile_address: ContractAddress,
+        pub token_id: u256,
+        pub timestamp: u64
     }
 
     // *************************************************************************
@@ -134,7 +130,8 @@ mod ProfileComponent {
             profile_address
         }
 
-        /// @notice set profile metadata_uri (`banner_image, description, profile_image` to be uploaded to arweave or ipfs)
+        /// @notice set profile metadata_uri (`banner_image, description, profile_image` to be
+        /// uploaded to arweave or ipfs)
         /// @params profile_address the targeted profile address
         /// @params metadata_uri the profile CID
         fn set_profile_metadata_uri(
@@ -162,7 +159,7 @@ mod ProfileComponent {
         }
 
         /// @notice returns user profile metadata
-        /// @params profile_address the targeted profile address 
+        /// @params profile_address the targeted profile address
         fn get_profile_metadata(
             self: @ComponentState<TContractState>, profile_address: ContractAddress
         ) -> ByteArray {
@@ -181,7 +178,9 @@ mod ProfileComponent {
     }
 
     #[generate_trait]
-    impl Private<TContractState, +HasComponent<TContractState>> of PrivateTrait<TContractState> {
+    pub impl Private<
+        TContractState, +HasComponent<TContractState>
+    > of PrivateTrait<TContractState> {
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
         fn increment_publication_count(

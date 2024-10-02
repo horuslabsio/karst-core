@@ -1,5 +1,4 @@
-mod ProfileSvg {
-    use karst::base::token_uris::traits::color::karstColors;
+pub mod ProfileSvg {
     use karst::base::token_uris::traits::head::head::faceSvgStart;
     use karst::base::token_uris::traits::glass::glass::glassSvgStart;
     use karst::base::token_uris::traits::beard::beard::beardSvgStart;

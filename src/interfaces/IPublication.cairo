@@ -3,7 +3,7 @@
 // *************************************************************************
 use starknet::ContractAddress;
 use karst::base::constants::types::{
-    PostParams, RepostParams, CommentParams, PublicationType, Publication, QuoteParams
+    PostParams, RepostParams, CommentParams, PublicationType, Publication
 };
 
 #[starknet::interface]

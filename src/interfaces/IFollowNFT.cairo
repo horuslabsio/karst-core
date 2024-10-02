@@ -2,7 +2,7 @@ use starknet::ContractAddress;
 use karst::base::constants::types::FollowData;
 
 // *************************************************************************
-//                              INTERFACE of FollowNFT 
+//                              INTERFACE of FollowNFT
 // *************************************************************************
 #[starknet::interface]
 pub trait IFollowNFT<TState> {
@@ -24,7 +24,7 @@ pub trait IFollowNFT<TState> {
     fn get_follow_id(self: @TState, follower_profile_address: ContractAddress) -> u256;
     fn get_follower_count(self: @TState) -> u256;
     // *************************************************************************
-    //                              METADATA 
+    //                              METADATA
     // *************************************************************************
     fn name(self: @TState) -> ByteArray;
     fn symbol(self: @TState) -> ByteArray;
