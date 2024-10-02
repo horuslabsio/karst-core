@@ -64,7 +64,9 @@ pub mod Jolt {
         OwnableEvent: OwnableComponent::Event,
         #[flat]
         UpgradeableEvent: UpgradeableComponent::Event,
-        Jolted: Jolted
+        Jolted: Jolted,
+        JoltRequested: JoltRequested,
+        JoltRequestFullfilled: JoltRequestFullfilled,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -73,6 +75,26 @@ pub mod Jolt {
         jolt_type: felt252,
         sender: ContractAddress,
         recipient: ContractAddress,
+        block_timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct JoltRequested {
+        jolt_id: u256,
+        jolt_type: felt252,
+        sender: ContractAddress,
+        recipient: ContractAddress,
+        expiration_timestamp: u64,
+        block_timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct JoltRequestFullfilled {
+        jolt_id: u256,
+        jolt_type: felt252,
+        sender: ContractAddress,
+        recipient: ContractAddress,
+        expiration_timestamp: u64,
         block_timestamp: u64,
     }
 
@@ -171,7 +193,8 @@ pub mod Jolt {
                         jolt_id, 
                         sender, 
                         jolt_params.recipient, 
-                        jolt_params.amount, 
+                        jolt_params.amount,
+                        jolt_params.expiration_stamp, 
                         erc20_contract_address
                     );
 
@@ -197,11 +220,13 @@ pub mod Jolt {
                 expiration_stamp: jolt_params.expiration_stamp,
                 block_timestamp: tx_timestamp
             };
-            let total_jolts_recieved = self.total_jolts.read(jolt_params.recipient) + amount_in_usd;
 
             // write to storage
+            if(jolt_data.status == JoltStatus::SUCCESSFUL) {
+                let total_jolts_recieved = self.total_jolts.read(jolt_params.recipient) + amount_in_usd;
+                self.total_jolts.write(jolt_params.recipient, total_jolts_recieved);
+            }
             self.jolt.write(jolt_id, jolt_data);
-            self.total_jolts.write(jolt_params.recipient, total_jolts_recieved);
 
             return tx_status;
         }
@@ -209,6 +234,25 @@ pub mod Jolt {
         fn set_fee_address(ref self: ContractState, _fee_address: ContractAddress) {
             self.ownable.assert_only_owner();
             self.fee_address.write(_fee_address);
+        }
+
+        fn fullfill_request(ref self: ContractState, jolt_id: u256, sender: ContractAddress) -> bool {
+            // get jolt details
+            let mut jolt_details = self.jolt.read(jolt_id);
+
+            // validate request
+            assert(jolt_details.status == JoltStatus::PENDING, Errors::INVALID_JOLT);
+            assert(sender == jolt_details.recipient, Errors::INVALID_JOLT_RECIPIENT);
+
+            // if expired write jolt status to expired and exit
+            if (get_block_timestamp() > jolt_details.expiration_stamp) {
+                let jolt_data = joltData { status: JoltStatus::EXPIRED, ..jolt_details };
+                self.jolt.write(jolt_id, jolt_data);
+                return false;
+            }
+
+            // else fulfill request
+            self._fulfill_request(jolt_id, sender, jolt_details)
         }
 
         fn auto_renew(ref self: ContractState, profile: ContractAddress, renewal_id: u256) -> bool {
@@ -363,17 +407,68 @@ pub mod Jolt {
             (true, JoltStatus::SUCCESSFUL)
         }
 
-        // TODO
         fn _request(
             ref self: ContractState, 
             jolt_id: u256, 
             sender: ContractAddress, 
             recipient: ContractAddress,
             amount: u256,
+            expiration_timestamp: u64,
             erc20_contract_address: ContractAddress
         ) -> (bool, JoltStatus) {
-            (true, JoltStatus::SUCCESSFUL)
+            // check that user is not requesting to self or to a non-existent address
+            assert(sender != recipient, Errors::SELF_REQUEST);
+            assert(recipient.is_non_zero(), Errors::INVALID_PROFILE_ADDRESS);
+
+            // emit event
+            self.emit(
+                JoltRequested {
+                    jolt_id,
+                    jolt_type: 'REQUEST',
+                    sender,
+                    recipient: recipient,
+                    expiration_timestamp,
+                    block_timestamp: get_block_timestamp(),
+                }
+            );
+
+            // return txn status
+            (true, JoltStatus::PENDING)
         }
+
+        fn _fulfill_request(ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: joltData) -> bool {
+            // get the appropriate contract address
+            let jolt_currency = @jolt_details.currency;
+            let mut erc20_contract_address: ContractAddress = contract_address_const::<0>();
+            match jolt_currency {
+                JoltCurrency::USDT => erc20_contract_address = Addresses::USDT.try_into().unwrap(),
+                JoltCurrency::USDC => erc20_contract_address = Addresses::USDC.try_into().unwrap(),
+                JoltCurrency::ETH => erc20_contract_address = Addresses::ETH.try_into().unwrap(),
+                JoltCurrency::STRK => erc20_contract_address = Addresses::STRK.try_into().unwrap()
+            };
+            
+            // transfer request amount
+            let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
+            dispatcher.transfer_from(sender, jolt_details.sender, jolt_details.amount);
+
+            // update jolt details
+            let jolt_data = joltData { status: JoltStatus::SUCCESSFUL, ..jolt_details };
+            self.jolt.write(jolt_id, jolt_data);
+
+            // emit events
+            self.emit(
+                JoltRequestFullfilled {
+                    jolt_id,
+                    jolt_type: 'REQUEST',
+                    sender,
+                    recipient: jolt_details.sender,
+                    expiration_timestamp: jolt_details.expiration_stamp,
+                    block_timestamp: get_block_timestamp(),
+                }
+            );
+
+            return true;
+        } 
 
         fn _auto_renew(
             ref self: ContractState,  
@@ -457,3 +552,7 @@ pub mod Jolt {
     }
 }
 
+// TODO:
+// 1. implement request
+// 2. implement fulfill request
+// 3. integrate pragma oracle

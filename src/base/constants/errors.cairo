@@ -22,6 +22,10 @@ pub mod Errors {
     pub const SELF_TIPPING: felt252 = 'Karst: self-tip forbidden!';
     pub const MAX_TIPPING: felt252 = 'Karst: exceeds max tipping!';
     pub const SELF_TRANSFER: felt252 = 'Karst: self-transfer forbidden!';
+    pub const SELF_REQUEST: felt252 = 'Karst: self-request forbidden!';
     pub const INSUFFICIENT_ALLOWANCE: felt252 = 'Karst: insufficient allowance!';
     pub const AUTO_RENEW_DURATION_ENDED: felt252 = 'Karst: auto renew ended!';
+    pub const INVALID_JOLT: felt252 = 'Karst: invalid jolt!';
+    pub const EXPIRED_JOLT: felt252 = 'Karst: jolt is expired!';
+    pub const INVALID_JOLT_RECIPIENT: felt252 = 'Karst: invalid request recipient!';
 }

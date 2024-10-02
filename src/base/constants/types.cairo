@@ -230,5 +230,6 @@ pub enum JoltStatus {
     PENDING,
     SUCCESSFUL,
     EXPIRED,
+    REJECTED,
     FAILED
   }
