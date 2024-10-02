@@ -27,5 +27,5 @@ pub mod Errors {
     pub const AUTO_RENEW_DURATION_ENDED: felt252 = 'Karst: auto renew ended!';
     pub const INVALID_JOLT: felt252 = 'Karst: invalid jolt!';
     pub const EXPIRED_JOLT: felt252 = 'Karst: jolt is expired!';
-    pub const INVALID_JOLT_RECIPIENT: felt252 = 'Karst: invalid request recipient!';
+    pub const INVALID_JOLT_RECIPIENT: felt252 = 'Karst: not request recipient!';
 }

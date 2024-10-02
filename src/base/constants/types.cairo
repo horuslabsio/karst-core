@@ -219,10 +219,10 @@ pub enum JoltCurrency {
 
 #[derive(Drop, Serde, starknet::Store, PartialEq)]
 pub enum JoltType {
-  Tip,
-  Transfer,
-  Subscription,
-  Request
+    Tip,
+    Transfer,
+    Subscription,
+    Request
 }
 
 #[derive(Drop, Serde, starknet::Store, PartialEq)]
@@ -232,4 +232,4 @@ pub enum JoltStatus {
     EXPIRED,
     REJECTED,
     FAILED
-  }
+}
