@@ -37,7 +37,6 @@ pub trait IKarstPublications<TState> {
     fn get_publication_content_uri(
         self: @TState, profile_address: ContractAddress, pub_id: u256
     ) -> ByteArray;
-    fn has_user_voted(self: @TState, profile_address: ContractAddress, pub_id: u256) -> bool;
     fn get_upvote_count(self: @TState, profile_address: ContractAddress, pub_id: u256) -> u256;
     fn get_downvote_count(self: @TState, profile_address: ContractAddress, pub_id: u256) -> u256;
     fn get_tipped_amount(self: @TState, profile_address: ContractAddress, pub_id: u256) -> u256;

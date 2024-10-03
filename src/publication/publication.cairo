@@ -312,7 +312,7 @@ pub mod PublicationComponent {
                 ._get_or_deploy_collect_nft(
                     karst_hub, profile_address, pub_id, collect_nft_impl_class_hash, salt
                 );
-            let token_id = self._mint_collect_nft(collect_nft_address, profile_address);
+            let token_id = self._mint_collect_nft(collect_nft_address);
 
             self
                 .emit(
@@ -361,14 +361,6 @@ pub mod PublicationComponent {
             self._get_publication_type(profile_address, pub_id_assigned)
         }
 
-        /// @notice retrieves a post vote_status
-        /// @param pub_id the ID of the publication whose count is to be retrieved
-        fn has_user_voted(
-            self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
-        ) -> bool {
-            let status = self.vote_status.read((profile_address, pub_id));
-            status
-        }
 
         /// @notice retrieves the upvote count
         /// @param profile_address the the profile address to be queried
@@ -561,6 +553,15 @@ pub mod PublicationComponent {
             }
         }
 
+        /// @notice retrieves a post vote_status
+        /// @param pub_id the ID of the publication whose count is to be retrieved
+        fn _has_user_voted(
+            self: @ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+        ) -> bool {
+            let status = self.vote_status.read((profile_address, pub_id));
+            status
+        }
+
         fn _deploy_collect_nft(
             ref self: ComponentState<TContractState>,
             karst_hub: ContractAddress,
@@ -618,12 +619,10 @@ pub mod PublicationComponent {
             collect_nft_address
         }
         fn _mint_collect_nft(
-            ref self: ComponentState<TContractState>,
-            collect_nft: ContractAddress,
-            profile_address: ContractAddress
+            ref self: ComponentState<TContractState>, collect_nft: ContractAddress,
         ) -> u256 {
-            let token_id = ICollectNFTDispatcher { contract_address: collect_nft }
-                .mint_nft(profile_address);
+            let caller: ContractAddress = get_caller_address();
+            let token_id = ICollectNFTDispatcher { contract_address: collect_nft }.mint_nft(caller);
             token_id
         }
     }

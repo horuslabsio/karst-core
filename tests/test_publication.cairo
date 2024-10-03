@@ -17,6 +17,7 @@ use karst::publication::publication::PublicationComponent::{
 
 use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
 use karst::base::constants::types::{PostParams, RepostParams, CommentParams, PublicationType,};
+use karst::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';
@@ -132,6 +133,16 @@ fn __setup__() -> (
         );
     stop_cheat_caller_address(publication_contract_address);
 
+    //@notice: initialise upvote and downvote state to test that users cannot vote twice
+    // upvote
+    start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_cheat_caller_address(publication_contract_address);
+    // downvote
+    start_cheat_caller_address(publication_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_cheat_caller_address(publication_contract_address);
+
     return (
         nft_contract_address,
         registry_contract_address,
@@ -197,16 +208,9 @@ fn test_upvote() {
         __setup__();
 
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-    start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
-    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    stop_cheat_caller_address(publication_contract_address);
-
-    start_cheat_caller_address(publication_contract_address, USER_THREE.try_into().unwrap());
-    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    stop_cheat_caller_address(publication_contract_address);
     let upvote_count = dispatcher
         .get_upvote_count(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    assert(upvote_count == 2, 'invalid upvote count');
+    assert(upvote_count == 1, 'invalid upvote count');
 }
 
 #[test]
@@ -226,17 +230,9 @@ fn test_downvote() {
     ) =
         __setup__();
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-    // downvote
-    start_cheat_caller_address(publication_contract_address, USER_FOUR.try_into().unwrap());
-    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    stop_cheat_caller_address(publication_contract_address);
-
-    start_cheat_caller_address(publication_contract_address, USER_FIVE.try_into().unwrap());
-    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    stop_cheat_caller_address(publication_contract_address);
     let downvote_count = dispatcher
         .get_downvote_count(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    assert(downvote_count == 2, 'invalid downvote count');
+    assert(downvote_count == 1, 'invalid downvote count');
     stop_cheat_caller_address(publication_contract_address);
 }
 
@@ -303,6 +299,54 @@ fn test_downvote_event_emission() {
     );
 
     spy.assert_emitted(@array![(publication_contract_address, expected_event)]);
+    stop_cheat_caller_address(publication_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: already react to post!',))]
+fn test_upvote_should_fail_if_user_already_upvoted() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        _,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+
+    start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_cheat_caller_address(publication_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: already react to post!',))]
+fn test_downvote_should_fail_if_user_already_downvoted() {
+    let (
+        _,
+        _,
+        publication_contract_address,
+        _,
+        _,
+        user_one_profile_address,
+        _,
+        _,
+        user_one_first_post_pointed_pub_id,
+        _,
+        _
+    ) =
+        __setup__();
+    let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+
+    start_cheat_caller_address(publication_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
     stop_cheat_caller_address(publication_contract_address);
 }
 
@@ -929,8 +973,8 @@ fn test_collect() {
         _,
         _,
         user_one_profile_address,
-        _,
-        _,
+        user_two_profile_address,
+        user_three_profile_address,
         user_one_first_post_pointed_pub_id,
         _,
         collect_nft_classhash
@@ -938,6 +982,7 @@ fn test_collect() {
         __setup__();
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
     start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
+    // Case 1: First collection, expecting new deployment
     let token_id = dispatcher
         .collect(
             HUB_ADDRESS.try_into().unwrap(),
@@ -946,6 +991,32 @@ fn test_collect() {
             collect_nft_classhash,
             23465
         );
-    assert(token_id == 1, 'invalid token id');
+    let collect_nft1 = dispatcher
+        .get_publication(user_one_profile_address, user_one_first_post_pointed_pub_id)
+        .collect_nft;
+    let collect_dispatcher = ICollectNFTDispatcher { contract_address: collect_nft1 };
+    let user2_token_id = collect_dispatcher.get_user_token_id(USER_TWO.try_into().unwrap());
+
+    assert(token_id == user2_token_id, 'invalid token_id');
+    stop_cheat_caller_address(publication_contract_address);
+
+    start_cheat_caller_address(publication_contract_address, USER_THREE.try_into().unwrap());
+    // Case 2: collect the same publication, expecting reuse of the existing contract
+    let token_id2 = dispatcher
+        .collect(
+            HUB_ADDRESS.try_into().unwrap(),
+            user_one_profile_address,
+            user_one_first_post_pointed_pub_id,
+            collect_nft_classhash,
+            234657
+        );
+    let collect_nft2 = dispatcher
+        .get_publication(user_one_profile_address, user_one_first_post_pointed_pub_id)
+        .collect_nft;
+    let collect_dispatcher = ICollectNFTDispatcher { contract_address: collect_nft2 };
+    let user3_token_id = collect_dispatcher.get_user_token_id(USER_THREE.try_into().unwrap());
+
+    assert(collect_nft1 == collect_nft2, 'invalid_ address');
+    assert(token_id2 == user3_token_id, 'invalid token_id');
     stop_cheat_caller_address(publication_contract_address);
 }
