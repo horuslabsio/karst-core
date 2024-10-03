@@ -63,6 +63,9 @@ pub struct Publication {
     pub root_pub_id: u256,
     pub upvote: u256,
     pub downvote: u256,
+    pub channel_id: felt252,
+    pub collect_nft: ContractAddress,
+    pub tipped_amount: u256
 }
 
 // /**
@@ -92,6 +95,7 @@ pub enum PublicationType {
 pub struct PostParams {
     pub content_URI: ByteArray,
     pub profile_address: ContractAddress,
+    pub channel_id: felt252
 }
 
 // /**
@@ -153,35 +157,7 @@ pub struct QuoteParams {
     pub reference_pub_type: PublicationType
 }
 
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct Upvote {
-    pub publication_id: u256,
-    pub transaction_executor: ContractAddress,
-    pub block_timestamp: u64,
-}
 
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct Downvote {
-    pub publication_id: u256,
-    pub transaction_executor: ContractAddress,
-    pub block_timestamp: u64,
-}
-
-// /**
-// * @notice A struct containing the parameters required for the `create_community()` function.
-// *
-// * @param community_owner The address of the profile to the create the community.
-// * @param community_metadata_uri The URI to set for this new community.
-// * @param community_nft_address The nft address of the community.
-// * @param community_premium_status The community is premium or not .
-// */
-// #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-// pub struct CommunityParams {
-//     community_id: u256,
-//     community_owner: ContractAddress,
-//     community_nft_address: ContractAddress,
-//     community_premium_status: bool
-// }
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityDetails {
@@ -211,12 +187,7 @@ pub struct CommunityMember {
     ban_status: bool,
 }
 
-// #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-// pub struct CommunityMod {
-//     community_id: u256,
-//     transaction_executor: ContractAddress,
-//     mod_address: ContractAddress,
-// }
+
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityGateKeepDetails {
