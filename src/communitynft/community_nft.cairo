@@ -8,7 +8,8 @@ pub mod CommunityNft {
     use karst::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
     use karst::base::{
         constants::errors::Errors::{ALREADY_MINTED, NOT_TOKEN_OWNER, TOKEN_DOES_NOT_EXIST},
-        utils::base64_extended::convert_into_byteArray
+        utils::base64_extended::convert_into_byteArray,
+        token_uris::community_token_uri::CommunityTokenUri::get_token_uri,
     };
     use starknet::storage::{
         Map, StoragePointerWriteAccess, StoragePointerReadAccess, StorageMapReadAccess,
@@ -121,13 +122,8 @@ pub mod CommunityNft {
 
         /// @notice returns the token_uri for a particular token_id
         fn token_uri(self: @ContractState, token_id: u256) -> ByteArray {
-            assert(self.erc721.exists(token_id), TOKEN_DOES_NOT_EXIST);
-            let profile_address = self.profile_address.read();
-            let community_id = self.community_id.read();
-            let karst_hub = self.karst_hub.read();
-            let token_uri = IHubDispatcher { contract_address: karst_hub }
-                .get_publication_content_uri(profile_address, community_id);
-            token_uri
+            let mint_timestamp: u64 = self.get_token_mint_timestamp(token_id);
+            get_token_uri(token_id, mint_timestamp)
         }
     }
 }
