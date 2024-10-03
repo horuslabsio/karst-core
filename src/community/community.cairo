@@ -58,7 +58,8 @@ mod CommunityComponent {
         CommunityBanStatusUpdated: CommunityBanStatusUpdated,
         CommunityModRemoved: CommunityModRemoved,
         CommunityUpgraded: CommunityUpgraded,
-        CommunityGatekeeped: CommunityGatekeeped
+        CommunityGatekeeped: CommunityGatekeeped,
+        DeployedCommunityNFT: DeployedCommunityNFT
     }
 
     #[derive(Drop, starknet::Event)]
@@ -106,6 +107,14 @@ mod CommunityComponent {
         community_id: u256,
         transaction_executor: ContractAddress,
         gatekeepType: GateKeepType,
+        block_timestamp: u64,
+    }
+
+    #[derive(Drop, starknet::Event)]
+    pub struct DeployedCommunityNFT {
+        community_id: u256,
+        profile_address: ContractAddress,
+        community_nft: ContractAddress,
         block_timestamp: u64,
     }
 
@@ -505,7 +514,64 @@ mod CommunityComponent {
         }
     }
     // *************************************************************************
-//                            PRIVATE FUNCTIONS
-// *************************************************************************
+    //                            PRIVATE FUNCTIONS
+    // *************************************************************************
 
+    fn _get_or_deploy_collect_nft(
+        ref self: ComponentState<TContractState>,
+        karst_hub: ContractAddress,
+        profile_address: ContractAddress,
+        community_id: u256,
+        community_nft_impl_class_hash: felt252,
+        salt: felt252
+    ) -> ContractAddress {
+        let mut commuity = self.communities(community_id);
+        let community_nft = commuity.community_nft_address;
+        if community_nft.is_zero() {
+            // Deploy a new Collect NFT contract
+            let deployed_collect_nft_address = self
+                ._deploy_community_nft(
+                    karst_hub, profile_address, community_id, community_nft_impl_class_hash, salt
+                );
+
+            // Update the community with the deployed Collect NFT address
+            let updated_community = CommunityDetails {
+                community_nft_address: deployed_collect_nft_address, ..commuity
+            };
+
+            // Write the updated community with the new Community NFT address
+            self.communities.write(community_id, updated_community);
+        }
+        commuity.community_nft_address
+    }
+
+    fn _deploy_community_nft(
+        ref self: ComponentState<TContractState>,
+        karst_hub: ContractAddress,
+        profile_address: ContractAddress,
+        community_id: u256,
+        community_nft_impl_class_hash: felt252,
+        salt: felt252
+    ) -> ContractAddress {
+        let mut constructor_calldata: Array<felt252> = array![
+            karst_hub.into(),
+            profile_address.into(),
+            community_id.low.into(),
+            community_id.high.into()
+        ];
+        let class_hash: ClassHash = community_nft_impl_class_hash.try_into().unwrap();
+        let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);
+        let (account_address, _) = result.unwrap_syscall();
+
+        self
+            .emit(
+                DeployedCommunityNFT {
+                    community_id: community_id,
+                    profile_address: profile_address,
+                    community_nft: account_address,
+                    block_timestamp: get_block_timestamp()
+                }
+            );
+        account_address
+    }
 }
