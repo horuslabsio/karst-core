@@ -1,8 +1,6 @@
-
 #[starknet::contract]
 pub mod KarstChannel {
     use karst::channel::channel::ChannelComponent;
-
     component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
     #[abi(embed_v0)]
     impl channelImpl = ChannelComponent::KarstChannel<ContractState>;
@@ -20,4 +18,3 @@ pub mod KarstChannel {
     }
 }
 
-// creatin the best things in the file thankyous o much that

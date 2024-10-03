@@ -1,8 +1,14 @@
-//TODO make the channel as the componet 
+//TODO make the channel as the componet
 #[starknet::component]
-mod ChannelComponent {
+pub mod ChannelComponent {
     use core::clone::Clone;
-    use core::starknet::{ContractAddress, get_caller_address, get_block_timestamp};
+    use core::starknet::{
+        ContractAddress, get_caller_address, get_block_timestamp,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
+    };
     use karst::interfaces::IChannel::IChannel;
     use karst::base::{
         constants::errors::Errors::{
@@ -11,11 +17,11 @@ mod ChannelComponent {
         constants::types::{channelParams, channelMember}
     };
     #[storage]
-    struct Storage {
-        channels: LegacyMap<u256, channelParams>,
+    pub struct Storage {
+        channels: Map<u256, channelParams>,
         channel_counter: u256,
-        channel_members: LegacyMap<ContractAddress, channelMember>,
-        channel_moderators: LegacyMap<(u256, ContractAddress), bool>,
+        channel_members: Map<ContractAddress, channelMember>,
+        channel_moderators: Map<(u256, ContractAddress), bool>,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -41,7 +47,7 @@ mod ChannelComponent {
         token_id: u256,
         block_timestamp: u64,
     }
-    // this should also contain the IChannel & IChannelNFT implmentation , waht is the self what d. 
+    // this should also contain the IChannel & IChannelNFT implmentation , waht is the self what d.
     #[derive(Drop, starknet::Event)]
     pub struct ChannelModAdded {
         channel_id: u256,
@@ -68,7 +74,7 @@ mod ChannelComponent {
 
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         ChannelCreated: ChannelCreated,
         JoinedChannel: JoinedChannel,
         LeftChannel: LeftChannel,
@@ -78,28 +84,29 @@ mod ChannelComponent {
     }
 
 
-    // mnaking the constructor  to store the onwer , who can set the moderators  
+    // mnaking the constructor  to store the onwer , who can set the moderators
 
-#[embeddable_as(KarstChannel)]
+    #[embeddable_as(KarstChannel)]
     impl ChannelImpl<
-        TContractState, +HasComponent<TContractState>, +Drop<TContractState>> 
-    of IChannel<ComponentState<TContractState>> {
-        ///@notice Create a new channel 
+        TContractState, +HasComponent<TContractState>, +Drop<TContractState>
+    > of IChannel<ComponentState<TContractState>> {
+        ///@notice Create a new channel
         ///@param channel_params: The parameters of the channel
-        fn create_channel(ref self: ComponentState<TContractState>, channel_params: channelParams) -> u256 {
-          
-            let channel_id : u256  = self.channel_counter.read() ; 
+        fn create_channel(
+            ref self: ComponentState<TContractState>, channel_params: channelParams
+        ) -> u256 {
+            let channel_id: u256 = self.channel_counter.read();
             let new_channel = channelParams {
-                channel_id: channel_id ,
+                channel_id: channel_id,
                 channel_owner: channel_params.channel_owner,
                 channel_metadata_uri: channel_params.channel_metadata_uri,
                 channel_nft_address: channel_params.channel_nft_address,
                 channel_total_members: 0,
                 channel_censorship: channel_params.channel_censorship,
             };
-            // increment 
-            self.channels.write(channel_id , new_channel.clone());
-            self.channel_counter.write(channel_id + 1 ); 
+            // increment
+            self.channels.write(channel_id, new_channel.clone());
+            self.channel_counter.write(channel_id + 1);
             self
                 .emit(
                     ChannelCreated {
@@ -117,15 +124,15 @@ mod ChannelComponent {
         /// @notice Join the channel
         /// @param channel_id: The id of the channel
         fn join_channel(ref self: ComponentState<TContractState>, channel_id: u256) {
-            // check that i prioor not baned 
+            // check that i prioor not baned
             let channel_member: channelMember = self.channel_members.read(get_caller_address());
-            assert(channel_member.ban_status, BANNED_FROM_CHANNEL);
+            assert(!channel_member.ban_status, BANNED_FROM_CHANNEL);
 
             let mut new_channel: channelParams = self.channels.read(channel_id);
             new_channel.channel_total_members += 1;
             self.channels.write(channel_id, new_channel);
 
-            // calculate the total channel member add +1  is the new member id 
+            // calculate the total channel member add +1  is the new member id
 
             self
                 .channel_members
@@ -155,14 +162,33 @@ mod ChannelComponent {
 
         /// @notice Leave the channel
         /// @param channel_id: The id of the channel
-        /// @dev The user must be a member of the channel 
+        /// @dev The user must be a member of the channel
         fn leave_channel(ref self: ComponentState<TContractState>, channel_id: u256) {
-            let channel_member: channelParams = self.channels.read(channel_id);
-            assert(channel_member.channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+         
+            assert(
+                self.channel_members.read(get_caller_address()).channel_id == channel_id,
+                NOT_CHANNEL_MEMBER
+            );
+            assert(!self.channel_members.read(get_caller_address()).ban_status, BANNED_FROM_CHANNEL);
+            assert(self.channels.read(channel_id).channel_total_members > 1 , 'total_member  > 1');
 
-            //TODO Delete the mapping at the caller address 
-            // self.channel_members.write(get_caller_address , None  );
-            //TODO : burn the NFT 
+            self.channel_members.write(get_caller_address(), channelMember {
+                profile: get_caller_address(),
+                // todo , what default channel id should set max but not optimize to store 
+                channel_id: 10000000,
+                total_publications: 0,
+                channel_token_id: 0,
+                ban_status: false,
+            });
+
+
+
+            let mut new_channel: channelParams = self.channels.read(channel_id);
+            new_channel.channel_total_members -= 1;
+            self.channels.write(channel_id, new_channel);
+
+            //TODO Delete the mapping at the caller address
+            //TODO : burn the NFT
             self
                 .emit(
                     LeftChannel {
@@ -201,8 +227,8 @@ mod ChannelComponent {
         fn add_channel_mods(
             ref self: ComponentState<TContractState>, channel_id: u256, moderator: ContractAddress
         ) {
-            let channel_member: channelParams = self.channels.read(channel_id);
-            assert(channel_member.channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+
+            assert(self.channels.read(channel_id).channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
 
             self.channel_moderators.write((channel_id, moderator), true);
             self
@@ -224,8 +250,8 @@ mod ChannelComponent {
         fn remove_channel_mods(
             ref self: ComponentState<TContractState>, channel_id: u256, moderator: ContractAddress
         ) {
-            let channel_member: channelParams = self.channels.read(channel_id);
-            assert(channel_member.channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+            // let channel_member: channelParams = self.channels.read(channel_id);
+            assert(self.channels.read(channel_id).channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
 
             self.channel_moderators.write((channel_id, moderator), false);
 
@@ -241,13 +267,13 @@ mod ChannelComponent {
         }
 
 
-        /// @notice Set the censorship status of the channel 
+        /// @notice Set the censorship status of the channel
         /// @param channel_id: The id of the channel
         fn set_channel_censorship_status(
             ref self: ComponentState<TContractState>, channel_id: u256, censorship_status: bool
         ) {
-            let channel_member: channelParams = self.channels.read(channel_id);
-            assert(channel_member.channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+            // let channel_member: channelParams = self.channels.read(channel_id);
+            assert(self.channels.read(channel_id).channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
             let mut new_channel: channelParams = self.channels.read(channel_id);
             new_channel.channel_censorship = censorship_status;
             self.channels.write(channel_id, new_channel);
@@ -264,11 +290,12 @@ mod ChannelComponent {
             profile: ContractAddress,
             ban_status: bool
         ) {
+            // let channel_member: channelParams = self.channels.read(channel_id);
             assert(
-                self.channel_moderators.read((channel_id, get_caller_address())),
+                self.channels.read(channel_id).channel_owner == get_caller_address()
+                    || self.channel_moderators.read((channel_id, get_caller_address())),
                 NOT_CHANNEL_MODERATOR
             );
-
             let mut new_channel_member: channelMember = self.channel_members.read(profile);
             new_channel_member.ban_status = ban_status;
             self.channel_members.write(profile, new_channel_member);
@@ -317,17 +344,17 @@ mod ChannelComponent {
         }
 
 
-        ///TODO :get the total number of mener of the channel 
+        ///TODO :get the total number of mener of the channel
         fn get_total_members(self: @ComponentState<TContractState>, channel_id: u256) -> u256 {
             let channel: channelParams = self.channels.read(channel_id);
             channel.channel_total_members
         }
 
-        ///@notice check for moderator 
-        /// @param channel id 
-        /// @param profile addresss 
+        ///@notice check for moderator
+        /// @param channel id
+        /// @param profile addresss
         fn is_channel_mod(
-            self: @ComponentState<TContractState>, channel_id: u256, profile: ContractAddress
+            self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) -> bool {
             self.channel_moderators.read((channel_id, profile))
         }
@@ -339,7 +366,7 @@ mod ChannelComponent {
             channel.channel_censorship
         }
 
-        ///TODO introduce new storage for ban status 
+        ///TODO introduce new storage for ban status
         fn get_ban_status(self: @ComponentState<TContractState>, profile: ContractAddress) -> bool {
             let channel_member: channelMember = self.channel_members.read(profile);
             channel_member.ban_status

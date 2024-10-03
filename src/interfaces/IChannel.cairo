@@ -6,7 +6,7 @@ pub trait IChannel<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
-    fn create_channel(ref self: TState, channel_params: channelParams) -> u256 ;
+    fn create_channel(ref self: TState, channel_params: channelParams) -> u256;
     fn join_channel(ref self: TState, channel_id: u256);
     fn leave_channel(ref self: TState, channel_id: u256);
     fn set_channel_metadata_uri(ref self: TState, channel_id: u256, metadata_uri: ByteArray);
@@ -21,19 +21,20 @@ pub trait IChannel<TState> {
     //   // *************************************************************************
     fn get_channel(self: @TState, channel_id: u256) -> channelParams;
     fn get_channel_metadata_uri(self: @TState, channel_id: u256) -> ByteArray;
-    // so is the profile is channel member or not we have to say that which channel id , i think it will be good 
+    // so is the profile is channel member or not we have to say that which channel id , i think it
+    // will be good
     fn is_channel_member(self: @TState, profile: ContractAddress, channel_id: u256) -> bool;
-    // what is the means by the paid channel member 
-    // how we can calcualte the get_total_member 
+    // what is the means by the paid channel member
+    // how we can calcualte the get_total_member
 
     fn get_total_members(self: @TState, channel_id: u256) -> u256;
 
     // we have to pass the channel id how is the ch
-    fn is_channel_mod(self: @TState, channel_id: u256, profile: ContractAddress) -> bool;
+    fn is_channel_mod(self: @TState, profile: ContractAddress, channel_id: u256) -> bool;
 
-    // this one is easy 
+    // this one is easy
     fn get_channel_censorship_status(self: @TState, channel_id: u256) -> bool;
 
     fn get_ban_status(self: @TState, profile: ContractAddress) -> bool;
-
 }
+

@@ -47,16 +47,15 @@ pub mod KarstHub {
     // *************************************************************************
     //                              COMPONENTS
     // *************************************************************************
-    component!(path: ChannelComponent , storage : channel , event : ChannelEvent ) ; 
+    component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
     component!(path: PublicationComponent, storage: publication, event: PublicationEvent);
-  
-    
+
+
     impl ChannelImpl = ChannelComponent::KarstChannel<ContractState>;
-    // impl ChannelImpl = ChannelComponent::KarstChannel<ContractState>;
     impl ProfileImpl = ProfileComponent::KarstProfile<ContractState>;
     impl PublicationImpl = PublicationComponent::KarstPublication<ContractState>;
-   
+
 
     // *************************************************************************
     //                              STORAGE
@@ -81,7 +80,7 @@ pub mod KarstHub {
     enum Event {
         ProfileEvent: ProfileComponent::Event,
         PublicationEvent: PublicationComponent::Event,
-        ChannelEvent : ChannelComponent::Event 
+        ChannelEvent: ChannelComponent::Event
     }
 
     // *************************************************************************
