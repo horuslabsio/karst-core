@@ -82,9 +82,6 @@ fn __setup__() -> (ContractAddress, u256, ContractAddress, ByteArray) {
 }
 
 
-
-
-
 // leave channel testing
 #[test]
 fn test_leave_channel() {
@@ -219,7 +216,7 @@ fn test_joining_channel() {
     stop_cheat_caller_address(channel_contract_address);
 }
 
-//todo working fine failed through the contract assert  
+//todo working fine failed through the contract assert
 // if aleready ban does not able to join the channel
 // #[test]
 // fn test_already_ban_cannot_join_channel() {
@@ -231,9 +228,8 @@ fn test_joining_channel() {
 //     dispatcher.set_ban_status(channel_id, USER_THREE.try_into().unwrap(), true);
 //     stop_cheat_caller_address(channel_contract_address);
 
-
 //     // user
-//     // cannot able to join 
+//     // cannot able to join
 //     start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
 //     dispatcher.join_channel(channel_id);
 //     stop_cheat_caller_address(channel_contract_address);
@@ -241,7 +237,6 @@ fn test_joining_channel() {
 //     // is channel member of the channel
 
 // }
-
 
 #[test]
 fn test_channel_member() {

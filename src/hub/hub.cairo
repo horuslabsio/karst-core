@@ -51,7 +51,7 @@ pub mod KarstHub {
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
     component!(path: PublicationComponent, storage: publication, event: PublicationEvent);
 
-
+    #[abi(embed_v0)]
     impl ChannelImpl = ChannelComponent::KarstChannel<ContractState>;
     impl ProfileImpl = ProfileComponent::KarstProfile<ContractState>;
     impl PublicationImpl = PublicationComponent::KarstPublication<ContractState>;

@@ -164,24 +164,28 @@ pub mod ChannelComponent {
         /// @param channel_id: The id of the channel
         /// @dev The user must be a member of the channel
         fn leave_channel(ref self: ComponentState<TContractState>, channel_id: u256) {
-         
             assert(
                 self.channel_members.read(get_caller_address()).channel_id == channel_id,
                 NOT_CHANNEL_MEMBER
             );
-            assert(!self.channel_members.read(get_caller_address()).ban_status, BANNED_FROM_CHANNEL);
-            assert(self.channels.read(channel_id).channel_total_members > 1 , 'total_member  > 1');
+            assert(
+                !self.channel_members.read(get_caller_address()).ban_status, BANNED_FROM_CHANNEL
+            );
+            assert(self.channels.read(channel_id).channel_total_members > 1, 'total_member  > 1');
 
-            self.channel_members.write(get_caller_address(), channelMember {
-                profile: get_caller_address(),
-                // todo , what default channel id should set max but not optimize to store 
-                channel_id: 10000000,
-                total_publications: 0,
-                channel_token_id: 0,
-                ban_status: false,
-            });
-
-
+            self
+                .channel_members
+                .write(
+                    get_caller_address(),
+                    channelMember {
+                        profile: get_caller_address(),
+                        // todo , what default channel id should set max but not optimize to store
+                        channel_id: 10000000,
+                        total_publications: 0,
+                        channel_token_id: 0,
+                        ban_status: false,
+                    }
+                );
 
             let mut new_channel: channelParams = self.channels.read(channel_id);
             new_channel.channel_total_members -= 1;
@@ -227,8 +231,10 @@ pub mod ChannelComponent {
         fn add_channel_mods(
             ref self: ComponentState<TContractState>, channel_id: u256, moderator: ContractAddress
         ) {
-
-            assert(self.channels.read(channel_id).channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+            assert(
+                self.channels.read(channel_id).channel_owner == get_caller_address(),
+                NOT_CHANNEL_OWNER
+            );
 
             self.channel_moderators.write((channel_id, moderator), true);
             self
@@ -251,7 +257,10 @@ pub mod ChannelComponent {
             ref self: ComponentState<TContractState>, channel_id: u256, moderator: ContractAddress
         ) {
             // let channel_member: channelParams = self.channels.read(channel_id);
-            assert(self.channels.read(channel_id).channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+            assert(
+                self.channels.read(channel_id).channel_owner == get_caller_address(),
+                NOT_CHANNEL_OWNER
+            );
 
             self.channel_moderators.write((channel_id, moderator), false);
 
@@ -273,7 +282,10 @@ pub mod ChannelComponent {
             ref self: ComponentState<TContractState>, channel_id: u256, censorship_status: bool
         ) {
             // let channel_member: channelParams = self.channels.read(channel_id);
-            assert(self.channels.read(channel_id).channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
+            assert(
+                self.channels.read(channel_id).channel_owner == get_caller_address(),
+                NOT_CHANNEL_OWNER
+            );
             let mut new_channel: channelParams = self.channels.read(channel_id);
             new_channel.channel_censorship = censorship_status;
             self.channels.write(channel_id, new_channel);
