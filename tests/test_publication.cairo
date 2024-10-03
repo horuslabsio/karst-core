@@ -8,16 +8,14 @@ use core::traits::{TryInto, Into};
 use starknet::{ContractAddress, get_block_timestamp};
 
 use snforge_std::{
-    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events, EventSpyAssertionsTrait, ContractClassTrait,
-    DeclareResultTrait, EventSpy
+    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
+    EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait, EventSpy
 };
 use karst::publication::publication::PublicationComponent::{
     Event as PublicationEvent, Post, CommentCreated, RepostCreated, Upvoted, Downvoted
 };
 use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
-use karst::base::constants::types::{
-    PostParams, RepostParams, CommentParams, PublicationType
-};
+use karst::base::constants::types::{PostParams, RepostParams, CommentParams, PublicationType};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER_ONE: felt252 = 'BOB';

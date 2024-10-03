@@ -585,25 +585,25 @@ pub mod Jolt {
             let erc20_symbol = dispatcher.symbol();
             if (erc20_symbol == "ETH") {
                 KEY = 19514442401534788;
-            }
-            else if(erc20_symbol == "STRK") {
+            } else if (erc20_symbol == "STRK") {
                 KEY = 6004514686061859652;
-            }
-            else if(erc20_symbol == "USDT") {
+            } else if (erc20_symbol == "USDT") {
                 KEY = 6148333044652921668;
-            }
-            else if(erc20_symbol == "USDC") {
+            } else if (erc20_symbol == "USDC") {
                 KEY = 6148332971638477636;
             }
 
-            let oracle_address : ContractAddress = Addresses::PRAGMA_ORACLE.try_into().unwrap();
+            let oracle_address: ContractAddress = Addresses::PRAGMA_ORACLE.try_into().unwrap();
             let price = self._get_asset_price_median(oracle_address, DataType::SpotEntry(KEY));
             price.try_into().unwrap()
         }
 
-        fn _get_asset_price_median(ref self: ContractState, oracle_address: ContractAddress, asset : DataType) -> u128  {
-            let oracle_dispatcher = IPragmaABIDispatcher{contract_address : oracle_address};
-            let output : PragmaPricesResponse= oracle_dispatcher.get_data(asset, AggregationMode::Median(()));
+        fn _get_asset_price_median(
+            ref self: ContractState, oracle_address: ContractAddress, asset: DataType
+        ) -> u128 {
+            let oracle_dispatcher = IPragmaABIDispatcher { contract_address: oracle_address };
+            let output: PragmaPricesResponse = oracle_dispatcher
+                .get_data(asset, AggregationMode::Median(()));
             return output.price;
         }
     }

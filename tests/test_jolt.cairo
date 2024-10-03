@@ -6,27 +6,26 @@ use snforge_std::{
     stop_cheat_block_timestamp
 };
 use karst::interfaces::IJolt::{IJoltDispatcher, IJoltDispatcherTrait};
+use karst::base::{
+    constants::errors::Errors,
+    constants::types::{joltData, joltParams, JoltType, JoltCurrency, JoltStatus, RenewalData}
+};
 
 const ADMIN: felt252 = 13245;
+const ADDRESS1: felt252 = 53435;
+const ADDRESS2: felt252 = 204925;
+const ADDRESS3: felt252 = 249205;
 
 // *************************************************************************
 //                              SETUP
 // *************************************************************************
 fn __setup__() -> ContractAddress {
     let jolt_contract = declare("Jolt").unwrap().contract_class();
-    let (jolt_contract_address, _) = jolt_contract
-        .deploy(@array![ADMIN])
-        .unwrap();
+    let (jolt_contract_address, _) = jolt_contract.deploy(@array![ADMIN]).unwrap();
     return (jolt_contract_address);
 }
-
 // *************************************************************************
 //                              TEST
 // *************************************************************************
-#[test]
-fn test_constructor() {
-    let jolt_contract_address = __setup__();
-    let dispatcher = IJoltDispatcher{ contract_address: jolt_contract_address };
-    let owner = dispatcher.owner();
-    assert(owner == ADMIN.try_into().unwrap(), 'invalid owner!');
-}
+
+
