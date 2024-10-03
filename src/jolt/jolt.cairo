@@ -20,9 +20,13 @@ pub mod Jolt {
         constants::contract_addresses::Addresses,
     };
     use karst::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
+
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::UpgradeableComponent;
     use openzeppelin::upgrades::interface::IUpgradeable;
+
+    use pragma_lib::abi::{IPragmaABIDispatcher, IPragmaABIDispatcherTrait};
+    use pragma_lib::types::{AggregationMode, DataType, PragmaPricesResponse};
 
     // *************************************************************************
     //                            COMPONENTS
@@ -293,6 +297,9 @@ pub mod Jolt {
         }
     }
 
+    // *************************************************************************
+    //                              PRIVATE FUNCTIONS
+    // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
         fn _tip(
@@ -526,12 +533,13 @@ pub mod Jolt {
 
             // get currency
             let mut currency = JoltCurrency::USDT;
-            let erc20_name = dispatcher.name();
-            if (erc20_name == "USDC") {
+            let erc20_symbol = dispatcher.symbol();
+            if (erc20_symbol == "USDC") {
                 currency = JoltCurrency::USDC;
             }
 
             // prefill tx data
+            let amount_in_usd = self._get_usd_equiv(amount, erc20_contract_address);
             let jolt_data = joltData {
                 jolt_id: jolt_id,
                 jolt_type: JoltType::Subscription,
@@ -539,7 +547,7 @@ pub mod Jolt {
                 recipient: fee_address,
                 memo: "auto renew successful",
                 amount: amount,
-                amount_in_usd: amount,
+                amount_in_usd,
                 currency: currency,
                 status: JoltStatus::SUCCESSFUL,
                 expiration_stamp: 0,
@@ -571,7 +579,32 @@ pub mod Jolt {
         fn _get_usd_equiv(
             ref self: ContractState, amount: u256, erc20_contract_address: ContractAddress
         ) -> u256 {
-            100
+            // get oracle key
+            let mut KEY: felt252 = 0;
+            let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
+            let erc20_symbol = dispatcher.symbol();
+            if (erc20_symbol == "ETH") {
+                KEY = 19514442401534788;
+            }
+            else if(erc20_symbol == "STRK") {
+                KEY = 6004514686061859652;
+            }
+            else if(erc20_symbol == "USDT") {
+                KEY = 6148333044652921668;
+            }
+            else if(erc20_symbol == "USDC") {
+                KEY = 6148332971638477636;
+            }
+
+            let oracle_address : ContractAddress = Addresses::PRAGMA_ORACLE.try_into().unwrap();
+            let price = self._get_asset_price_median(oracle_address, DataType::SpotEntry(KEY));
+            price.try_into().unwrap()
+        }
+
+        fn _get_asset_price_median(ref self: ContractState, oracle_address: ContractAddress, asset : DataType) -> u128  {
+            let oracle_dispatcher = IPragmaABIDispatcher{contract_address : oracle_address};
+            let output : PragmaPricesResponse= oracle_dispatcher.get_data(asset, AggregationMode::Median(()));
+            return output.price;
         }
     }
 }

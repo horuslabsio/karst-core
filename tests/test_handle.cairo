@@ -1,7 +1,7 @@
 use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
-use core::traits::{TryInto, Into};
+use core::traits::TryInto;
 use starknet::{ContractAddress, get_block_timestamp};
 
 use snforge_std::{

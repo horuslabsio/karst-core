@@ -5,27 +5,18 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress, class_hash::ClassHash, contract_address_const, get_block_timestamp};
+use starknet::{ContractAddress, get_block_timestamp};
 
 use snforge_std::{
-    declare, start_cheat_caller_address, stop_cheat_caller_address, start_cheat_transaction_hash,
-    start_cheat_nonce, spy_events, EventSpyAssertionsTrait, ContractClass, ContractClassTrait,
-    DeclareResultTrait, start_cheat_block_timestamp, stop_cheat_block_timestamp, EventSpy
+    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events, EventSpyAssertionsTrait, ContractClassTrait,
+    DeclareResultTrait, EventSpy
 };
 use karst::publication::publication::PublicationComponent::{
     Event as PublicationEvent, Post, CommentCreated, RepostCreated, Upvoted, Downvoted
 };
-
-use token_bound_accounts::interfaces::IAccount::{IAccountDispatcher, IAccountDispatcherTrait};
-use token_bound_accounts::presets::account::Account;
-use karst::mocks::registry::Registry;
-use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
-use karst::karstnft::karstnft::KarstNFT;
-use karst::presets::publication::KarstPublication;
-use karst::follownft::follownft::Follow;
 use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
 use karst::base::constants::types::{
-    PostParams, RepostParams, CommentParams, PublicationType, QuoteParams
+    PostParams, RepostParams, CommentParams, PublicationType
 };
 
 const HUB_ADDRESS: felt252 = 'HUB';

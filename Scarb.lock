@@ -59,6 +59,7 @@ version = "0.1.0"
 dependencies = [
  "alexandria_bytes",
  "openzeppelin",
+ "pragma_lib",
  "snforge_std",
  "token_bound_accounts",
 ]
@@ -164,6 +165,11 @@ source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf
 name = "openzeppelin_utils"
 version = "0.17.0"
 source = "git+https://github.com/OpenZeppelin/cairo-contracts.git?tag=v0.17.0#bf5d02c25c989ccc24f3ab42ec649617d3f21289"
+
+[[package]]
+name = "pragma_lib"
+version = "1.0.0"
+source = "git+https://github.com/astraly-labs/pragma-lib#86d7ccdc15b349b8b48d9796fc8464c947bea6e1"
 
 [[package]]
 name = "snforge_scarb_plugin"
