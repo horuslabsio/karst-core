@@ -117,7 +117,7 @@ pub mod Jolt {
         // *************************************************************************
         //                              EXTERNALS
         // *************************************************************************
-        fn jolt(ref self: ContractState, jolt_params: joltParams) -> bool {
+        fn jolt(ref self: ContractState, jolt_params: joltParams) -> u256 {
             let sender = get_caller_address();
             let tx_info = get_tx_info().unbox();
             let tx_timestamp = get_block_timestamp();
@@ -237,7 +237,7 @@ pub mod Jolt {
             }
             self.jolt.write(jolt_id, jolt_data);
 
-            return tx_status;
+            return jolt_id;
         }
 
         fn set_fee_address(ref self: ContractState, _fee_address: ContractAddress) {
