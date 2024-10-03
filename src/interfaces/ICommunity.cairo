@@ -26,7 +26,8 @@ pub trait ICommunity<TState> {
         community_id: u256,
         gate_keep_type: GateKeepType,
         nft_contract_address: ContractAddress,
-        permissioned_addresses: Array<ContractAddress>
+        permissioned_addresses: Array<ContractAddress>,
+        entry_fee: u256
     );
 
     // *************************************************************************
@@ -39,7 +40,7 @@ pub trait ICommunity<TState> {
     ) -> (bool, u256);
     fn get_total_members(self: @TState, community_id: u256) -> u256;
     fn is_community_mod(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
-    fn get_ban_status(self: @TState, profile: ContractAddress, channel_id: u256) -> bool;
+    fn get_ban_status(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
     fn is_premium_community(self: @TState, community_id: u256) -> (bool, CommunityType);
     fn is_gatekeeped(self: @TState, community_id: u256) -> (bool, GateKeepType);
 }

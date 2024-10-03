@@ -15,13 +15,13 @@ pub trait ICommunityNft<TContractState> {
     // *************************************************************************
     //                            GETTERS
     // *************************************************************************
-    fn get_user_token_id(self: @ContractState, user_address: ContractAddress) -> u256;
+    fn get_user_token_id(self: @TContractState, user_address: ContractAddress) -> u256;
 
 
     // *************************************************************************
     //                            METADATA
     // *************************************************************************
-    fn name(self: @TState) -> ByteArray;
-    fn symbol(self: @TState) -> ByteArray;
-    fn token_uri(self: @TState, token_id: u256) -> ByteArray;
+    fn name(self: @TContractState) -> ByteArray;
+    fn symbol(self: @TContractState) -> ByteArray;
+    fn token_uri(self: @TContractState, token_id: u256) -> ByteArray;
 }

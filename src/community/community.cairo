@@ -4,18 +4,25 @@ mod CommunityComponent {
     //                            IMPORT
     // *************************************************************************
     use core::{traits::TryInto, result::ResultTrait};
+    use core::num::traits::zero::Zero;
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
-        syscalls::deploy_syscall, SyscallResultTrait
+        syscalls::deploy_syscall, SyscallResultTrait,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess, Vec, VecTrait, MutableVecTrait
+        }
     };
     use karst::interfaces::ICommunity::ICommunity;
+    use karst::interfaces::ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait};
+    // ICommunityNft
 
     //  use karst::interfaces::ICommunity::{
     //     ICommunityDispatcher, ICommunityDispatcherTrait, ICommunityLibraryDispatcher
     // };
 
     use karst::base::constants::types::{
-        CommunityDetails, GateKeepType, CommunityType, CommunityMod
+        CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
     };
 
     use karst::base::constants::errors::{
@@ -30,21 +37,25 @@ mod CommunityComponent {
     #[storage]
     struct Storage {
         community_counter: u256,
-        community_owner: LegacyMap<u256, ContractAddress>, // map<owner_address, community_id>
-        communities: LegacyMap<u256, CommunityDetails>, // map <community_id, community_details>
-        community_membership_status: LegacyMap<(u256, ContractAddress), bool>,
-        member_community_id: LegacyMap<
-            ContractAddress, u256
-        >, // map <memeber address, community id>
-        community_member: LegacyMap<(u256, ContractAddress), CommunityMember>,
+        community_owner: Map<u256, ContractAddress>, // map<owner_address, community_id>
+        communities: Map<u256, CommunityDetails>, // map <community_id, community_details>
+        community_membership_status: Map<(u256, ContractAddress), bool>,
+        member_community_id: Map<ContractAddress, u256>, // map <memeber address, community id>
+        community_member: Map<
+            (u256, ContractAddress), CommunityMember
+        >, // map<(community_id, member_address), Memeber_details>
         // <
         //     ContractAddress, Vec<CommunityMember>
         // >, //  map <member_address, CommunityMember>
-        community_mod: LegacyMap<u256, Vec<ContractAddress>>, // map <community id mod_address>
-        community_gate_keep: LegacyMap<
+        community_mod: Map<
+            (u256, ContractAddress), bool
+        >, // <u256, Vec<ContractAddress>>, // map <community id mod_address>
+        community_gate_keep: Map<
             u256, CommunityGateKeepDetails
         >, // map <community, CommunityGateKeepDetails>
-        gate_keep_permissioned_addresses: LegacyMap<u256, Array<ContractAddress>>,
+        gate_keep_permissioned_addresses: Map<
+            (u256, ContractAddress), bool
+        >, // <u256, Array<ContractAddress>>,
     }
 
     // *************************************************************************
@@ -134,14 +145,18 @@ mod CommunityComponent {
             let community_id = community_counter + 1;
 
             // deploy a new NFT and save the address in community_nft_address
+            //  let community_nft_address = self
+            //     ._get_or_deploy_community_nft(
+            //         karst_hub, profile_address, pub_id, collect_nft_impl_class_hash, salt
+            //     );
             let community_details = CommunityDetails {
                 community_id: community_id,
                 community_owner: community_owner,
-                community_metadata_uri: "",
-                community_nft_address: "",
+                community_metadata_uri: "Community URI",
+                community_nft_address: community_owner,
                 community_premium_status: false,
                 community_total_members: 0,
-                community_type: "Free",
+                community_type: CommunityType::Free,
             };
 
             self.communities.write(community_id, community_details);
@@ -152,7 +167,7 @@ mod CommunityComponent {
                     CommunityCreated {
                         community_id: community_id,
                         community_owner: community_owner,
-                        community_nft_address: community_param.community_nft_address,
+                        community_nft_address: community_owner,
                         block_timestamp: get_block_timestamp()
                     }
                 );
@@ -161,13 +176,13 @@ mod CommunityComponent {
         fn join_community(ref self: ComponentState<TContractState>, community_id: u256) {
             let member_address = get_caller_address();
             let community = self.communities.read(community_id);
-            if (!community) {
-                panic('Community does not exist')
-            }
+            // if (!community) {
+            //     panic('Community does not exist')
+            // }
 
             let community_member = self
                 .community_membership_status
-                .read(community_id, member_address);
+                .read((community_id, member_address));
             assert(community_member == true, ALREADY_MEMBER);
 
             // let member_community_id = self.member_community_id.read(member_address);
@@ -180,49 +195,51 @@ mod CommunityComponent {
                 profile_address: member_address,
                 community_id: community_id,
                 total_publications: 0,
-                community_token_id: community.community_token_id,
+                community_token_id: 1, // community.community_token_id, COMING BACK TO THIS 
                 ban_status: false
             };
-            //  self.member_community_id.write(member_address, community.community_id);
+
             self.community_membership_status.write((community_id, member_address), true);
-            // let member_details = self.community_member.read(member_address);
-            let member_details = self.community_member.read(community_id, member_address);
-            member_details.append(community_member);
-            self.community_member.write((community_id, member_address), member_details);
+
+            self.community_member.write((community_id, member_address), community_member);
 
             // update community member count
-            community.community_total_members = community.community_total_members + 1;
-            self.communities.write(community_id, community);
+
+            let community_total_members = community.community_total_members + 1;
+            let updated_community = CommunityDetails {
+                community_total_members: community_total_members, ..community
+            };
+            self.communities.write(community_id, updated_community);
         }
         fn leave_community(ref self: ComponentState<TContractState>, community_id: u256) {
             let member_address = get_caller_address();
             let community = self.communities.read(community_id);
-            if (!community) {
-                panic('Community does not exist')
-            }
+
             let community_member = self
                 .community_membership_status
-                .read(community_id, member_address);
+                .read((community_id, member_address));
             assert(community_member != true, NOT_MEMBER);
 
             // remove the member_community_id
             self.community_membership_status.write((community_id, member_address), false);
 
             // remove member details
-            let community_member = CommunityMember {
+            let leave_community_member = CommunityMember {
                 profile_address: member_address,
                 community_id: 0,
                 total_publications: 0,
                 community_token_id: 0,
                 ban_status: true
             };
-            let member_details = self.community_member.read(member_address);
-            member_details.append(community_member);
-            self.community_member.write((community_id, member_address), member_details);
+
+            self.community_member.write((community_id, member_address), leave_community_member);
 
             // update community member count
-            community.community_total_members = community.community_total_members - 1;
-            self.communities.write(community_id, community);
+            let community_total_members = community.community_total_members - 1;
+            let updated_community = CommunityDetails {
+                community_total_members: community_total_members, ..community
+            };
+            self.communities.write(community_id, updated_community);
             // this function will also burn the nft on leaving
         // call the burn function from the community nft contract
 
@@ -235,8 +252,11 @@ mod CommunityComponent {
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
             let community_details = self.communities.read(community_id);
-            community_details.community_metadata_uri = metadata_uri;
-            self.communities.write(community_id, community_details)
+
+            let updated_community = CommunityDetails {
+                community_metadata_uri: metadata_uri, ..community_details
+            };
+            self.communities.write(community_id, updated_community)
         }
 
         fn add_community_mods(
@@ -245,14 +265,11 @@ mod CommunityComponent {
             // only community owner should be able to set a mod
 
             let community_owner = self.community_owner.read(community_id);
-            assert(community_owner == get_caller_address, NOT_COMMUNITY_OWNER);
+            assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
             let community = self.communities.read(community_id);
 
-            let mut community_mods = self.community_mod.read(owner_community_id);
-            community_mods.append().write(moderator);
-
-            self.community_mod.write(community_id, community_mods);
+            self.community_mod.write((community_id, moderator), true);
 
             self
                 .emit(
@@ -260,7 +277,6 @@ mod CommunityComponent {
                         community_id: community_id,
                         transaction_executor: community_owner,
                         mod_address: moderator,
-                        community_nft_address: community.community_nft_address,
                         block_timestamp: get_block_timestamp()
                     }
                 )
@@ -270,30 +286,19 @@ mod CommunityComponent {
             ref self: ComponentState<TContractState>, community_id: u256, moderator: ContractAddress
         ) {
             let community_owner = self.community_owner.read(community_id);
-            assert(community_owner == get_caller_address, NOT_COMMUNITY_OWNER);
+            assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
             let community = self.communities.read(community_id);
 
-            let community_mods = self.community_mod.read(community_id);
+            let community_mods = self.community_mod.read((community_id, moderator));
 
-            let mut index = 0;
-            while index < community_mods.len() {
-                let mod_address = community_mods.at(index);
-                if mod_address == moderator {
-                    community_mod.append().write(0x0);
-                    self.community_mod.write(community_id, community_mods);
-                    break ();
-                }
-                index = index + 1;
-            }
-
-            self.community_mod.write(community_id, community_mod);
+            self.community_mod.write((community_id, moderator), false);
             self
                 .emit(
                     CommunityModRemoved {
                         community_id: community_id,
+                        mod_address: moderator,
                         transaction_executor: community_owner,
-                        community_nft_address: community.community_nft_address,
                         block_timestamp: get_block_timestamp()
                     }
                 );
@@ -308,52 +313,43 @@ mod CommunityComponent {
             let caller = get_caller_address();
             let mut caller_is_mod = false;
 
-            let community_mods = self.community_mod.read(community_id);
-
-            let mut index = 0;
-            while index < community_mods.len() {
-                let mod_address = community_mods.at(index);
-                if mod_address == caller {
-                    caller_is_mod = true;
-                    break ();
-                }
-                index = index + 1;
+            let is_community_mod = self.community_mod.read((community_id, caller));
+            if (is_community_mod) {
+                caller_is_mod = true
             }
 
             // if call is not mod,
             // check for community onwer
-            let community_owner_adddress = self.community_owner.read(community_id);
+            let community_owner_address = self.community_owner.read(community_id);
 
             let caller_is_owner = caller == community_owner_address;
 
             // If caller is neither a mod nor the owner, throw an error
-            if !caller_is_mod && !caller_is_owner {
+            if (!caller_is_mod && !caller_is_owner) {
                 panic!("Only community moderator or the owner can ban members");
             }
 
-            let community = self.communities.read(community_id);
-            if (!community) {
-                panic('Community does not exist');
-            }
+            // let community = self.communities.read(community_id);
+            // if (!communityis_none()) {
+            //     panic('Community does not exist');
+            // }
 
-            assert(commuity.community_owner == community_owner_adddress, NOT_COMMUNITY_OWNER);
+            let community = self.communities.read(community_id);
+            assert(community.community_owner == community_owner_address, NOT_COMMUNITY_OWNER);
 
             let member_community_id = self.member_community_id.read(profile);
             assert(member_community_id == community_id, NOT_MEMBER);
 
-            let community_members = self.community_member.read(profile);
-            let memeber_details = community_members
-                .iter()
-                .find((community_member), community_member.profile_address == profile);
-            member_details.ban_status = ban_status;
-            community_members.append(memeber_details);
-            self.community_member.write((community_id, profile), member_details);
+            let community_member = self.community_member.read((community_id, profile));
+
+            let updated_member = CommunityMember { ban_status: ban_status, ..community_member };
+            self.community_member.write((community_id, profile), updated_member);
 
             self
                 .emit(
                     CommunityBanStatusUpdated {
                         community_id: community_id,
-                        transaction_executor: community_owner,
+                        transaction_executor: caller,
                         profile: profile,
                         block_timestamp: get_block_timestamp()
                     }
@@ -365,23 +361,19 @@ mod CommunityComponent {
             community_id: u256,
             upgrade_type: CommunityType
         ) {
+            let caller = get_caller_address();
             let community = self.communities.read(community_id);
-            if (!community) {
-                panic('Community does not exist');
-            }
-
             // only owner can upgrade community
-            assert(commuity.community_owner == community_owner, NOT_COMMUNITY_OWNER);
-            community.community_type = upgrade_type;
-            community.community_premium_status = true;
-            self.communities.write(community_id, community);
-
+            assert(community.community_owner == caller, NOT_COMMUNITY_OWNER);
+            let updated_community = CommunityDetails { community_type: upgrade_type, ..community };
+            self.communities.write(community_id, updated_community);
+            let community_event = self.communities.read(community_id);
             self
                 .emit(
                     CommunityUpgraded {
                         community_id: community_id,
-                        transaction_executor: community_owner,
-                        premiumType: upgrade_type,
+                        transaction_executor: caller,
+                        premiumType: community_event.community_type,
                         block_timestamp: get_block_timestamp()
                     }
                 );
@@ -392,30 +384,30 @@ mod CommunityComponent {
             community_id: u256,
             gate_keep_type: GateKeepType,
             nft_contract_address: ContractAddress,
-            permissioned_addresses: Array<ContractAddress>
+            permissioned_addresses: Array<ContractAddress>,
+            entry_fee: u256,
         ) {
-            let community = self.communities.read(community_id);
-            if (!community) {
-                panic('Community does not exist');
-            }
-
             // only community owner can set gate keep type
             let community_owner = self.community_owner.read(community_id);
-            assert(community_owner == get_caller_address, NOT_COMMUNITY_OWNER);
+            assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
             let community_details = self.communities.read(community_id);
 
-            let community_gate_keep_details = CommunityGateKeepDetails {
-                community_id: comminuty_main_id,
-                gate_keep_type: gatekeep_type,
+            let mut community_gate_keep_details = CommunityGateKeepDetails {
+                community_id: community_id,
+                gate_keep_type: gate_keep_type.clone(),
                 community_nft_address: community_details.community_nft_address,
+                entry_fee: 0
             };
 
-            // if(gate_keep_type == GateKeepType::Paid){
-            //     community_gate_keep_details.insert("entry_fee", 0)
-            // }
+            if (gate_keep_type == GateKeepType::Paid) {
+                community_gate_keep_details =
+                    CommunityGateKeepDetails {
+                        entry_fee: entry_fee, ..community_gate_keep_details
+                    };
+            }
 
-            self.community_gate_keep.write(comminuty_main_id, community_gate_keep_details);
+            self.community_gate_keep.write(community_id, community_gate_keep_details);
 
             if (gate_keep_type == GateKeepType::PermissionedGating) {
                 let length = permissioned_addresses.len();
@@ -423,18 +415,17 @@ mod CommunityComponent {
                 let mut arr_permissioned_addresses: Array<ContractAddress> = ArrayTrait::new();
 
                 while index < length {
-                    arr_permissioned_addresses.append(*permissioned_addresses[index])
+                    //  arr_permissioned_addresses.append(permissioned_addresses.at(index));
+                    self
+                        .gate_keep_permissioned_addresses
+                        .write((community_id, *permissioned_addresses.at(index)), true);
                     index += 1;
-                }
-
-                self
-                    .gate_keep_permissioned_addresses
-                    .write(community_id, arr_permissioned_addresses)
-            }
+                };
+            };
             // emint event
             self
                 .emit(
-                    CommunityGateKeep {
+                    CommunityGatekeeped {
                         community_id: community_id,
                         transaction_executor: community_owner,
                         gatekeepType: gate_keep_type,
@@ -446,7 +437,7 @@ mod CommunityComponent {
         fn get_community(
             self: @ComponentState<TContractState>, community_id: u256
         ) -> CommunityDetails {
-            self.communities.read(community_id);
+            self.communities.read(community_id)
         }
         fn get_community_metadata_uri(
             self: @ComponentState<TContractState>, community_id: u256
@@ -457,11 +448,14 @@ mod CommunityComponent {
         fn is_community_member(
             self: @ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) -> (bool, u256) {
-            let is_community_member_id = self.member_community_id.read(profile);
-            if (is_community_member_id != community_id) {
+            let is_community_member_id = self
+                .community_membership_status
+                .read((community_id, profile));
+            if (is_community_member_id) {
+                (true, community_id)
+            } else {
                 (false, community_id)
             }
-            (true, community_id)
         }
         fn get_total_members(self: @ComponentState<TContractState>, community_id: u256) -> u256 {
             let community = self.communities.read(community_id);
@@ -471,25 +465,20 @@ mod CommunityComponent {
         fn is_community_mod(
             self: @ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) -> bool {
-            let community_mod = self.community_mod.read(community_id);
-            let moderator_details = community_mods
-                .iter()
-                .find((community_mod), community_mod.mod_address == moderator);
+            let community_mod = self.community_mod.read((community_id, profile));
 
-            if (moderator_details) {
+            if (community_mod) {
                 true
+            } else {
+                false
             }
-            false
         }
 
         fn get_ban_status(
             self: @ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) -> bool {
-            let community_members = self.community_member.read(profile);
-            let memeber_details = community_members
-                .iter()
-                .find((community_member), community_member.profile_address == profile);
-            memeber_details.ban_status
+            let community_member = self.community_member.read((community_id, profile));
+            community_member.ban_status
         }
         fn is_premium_community(
             self: @ComponentState<TContractState>, community_id: u256
@@ -499,17 +488,10 @@ mod CommunityComponent {
         }
 
         fn is_gatekeeped(
-            ref self: @ComponentState<TContractState>, community_id: u256
+            self: @ComponentState<TContractState>, community_id: u256
         ) -> (bool, GateKeepType) {
-            let community = self.communities.read(community_id);
-            if (!community) {
-                panic('Community does not exist');
-            };
-
             let gate_keep = self.community_gate_keep.read(community_id);
-            if (!gate_keep) {
-                (false, GateKeepType::None)
-            }
+
             (true, gate_keep.gate_keep_type)
         }
     }
@@ -517,61 +499,88 @@ mod CommunityComponent {
     //                            PRIVATE FUNCTIONS
     // *************************************************************************
 
-    fn _get_or_deploy_collect_nft(
-        ref self: ComponentState<TContractState>,
-        karst_hub: ContractAddress,
-        profile_address: ContractAddress,
-        community_id: u256,
-        community_nft_impl_class_hash: felt252,
-        salt: felt252
-    ) -> ContractAddress {
-        let mut commuity = self.communities(community_id);
-        let community_nft = commuity.community_nft_address;
-        if community_nft.is_zero() {
-            // Deploy a new Collect NFT contract
-            let deployed_collect_nft_address = self
-                ._deploy_community_nft(
-                    karst_hub, profile_address, community_id, community_nft_impl_class_hash, salt
-                );
+    #[generate_trait]
+    impl InternalImpl<
+        TContractState, +HasComponent<TContractState>, +Drop<TContractState>,
+    > of InternalTrait<TContractState> {
+        fn _get_or_deploy_community_nft(
+            ref self: ComponentState<TContractState>,
+            karst_hub: ContractAddress,
+            profile_address: ContractAddress,
+            community_id: u256,
+            community_nft_impl_class_hash: felt252,
+            salt: felt252
+        ) -> ContractAddress {
+            let mut community = self.communities.read(community_id);
+            let community_nft = community.community_nft_address;
+            if community_nft.is_zero() {
+                // Deploy a new Collect NFT contract
+                let deployed_collect_nft_address = self
+                    ._deploy_community_nft(
+                        karst_hub,
+                        profile_address,
+                        community_id,
+                        community_nft_impl_class_hash,
+                        salt
+                    );
 
-            // Update the community with the deployed Collect NFT address
-            let updated_community = CommunityDetails {
-                community_nft_address: deployed_collect_nft_address, ..commuity
-            };
+                // Update the community with the deployed Collect NFT address
+                let updated_community = CommunityDetails {
+                    community_nft_address: deployed_collect_nft_address, ..community
+                };
 
-            // Write the updated community with the new Community NFT address
-            self.communities.write(community_id, updated_community);
+                // Write the updated community with the new Community NFT address
+                self.communities.write(community_id, updated_community);
+            }
+            community.community_nft_address
         }
-        commuity.community_nft_address
-    }
 
-    fn _deploy_community_nft(
-        ref self: ComponentState<TContractState>,
-        karst_hub: ContractAddress,
-        profile_address: ContractAddress,
-        community_id: u256,
-        community_nft_impl_class_hash: felt252,
-        salt: felt252
-    ) -> ContractAddress {
-        let mut constructor_calldata: Array<felt252> = array![
-            karst_hub.into(),
-            profile_address.into(),
-            community_id.low.into(),
-            community_id.high.into()
-        ];
-        let class_hash: ClassHash = community_nft_impl_class_hash.try_into().unwrap();
-        let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);
-        let (account_address, _) = result.unwrap_syscall();
+        fn _deploy_community_nft(
+            ref self: ComponentState<TContractState>,
+            karst_hub: ContractAddress,
+            profile_address: ContractAddress,
+            community_id: u256,
+            community_nft_impl_class_hash: felt252,
+            salt: felt252
+        ) -> ContractAddress {
+            let mut constructor_calldata: Array<felt252> = array![
+                karst_hub.into(),
+                profile_address.into(),
+                community_id.low.into(),
+                community_id.high.into()
+            ];
+            let class_hash: ClassHash = community_nft_impl_class_hash.try_into().unwrap();
+            let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);
+            let (account_address, _) = result.unwrap_syscall();
 
-        self
-            .emit(
-                DeployedCommunityNFT {
-                    community_id: community_id,
-                    profile_address: profile_address,
-                    community_nft: account_address,
-                    block_timestamp: get_block_timestamp()
-                }
-            );
-        account_address
+            self
+                .emit(
+                    DeployedCommunityNFT {
+                        community_id: community_id,
+                        profile_address: profile_address,
+                        community_nft: account_address,
+                        block_timestamp: get_block_timestamp()
+                    }
+                );
+            account_address
+        }
+        fn _mint_community_nft(
+            ref self: ComponentState<TContractState>, community_nft_address: ContractAddress
+        ) -> u256 {
+            let caller: ContractAddress = get_caller_address();
+            let token_id = ICommunityNftDispatcher { contract_address: community_nft_address }
+                .mint_nft(caller);
+            token_id
+        }
+
+        fn _burn_community_nft(
+            ref self: ComponentState<TContractState>,
+            community_nft_address: ContractAddress,
+            token_id: u256
+        ) {
+            let caller: ContractAddress = get_caller_address();
+            ICommunityNftDispatcher { contract_address: community_nft_address }
+                .burn_nft(caller, token_id);
+        }
     }
 }

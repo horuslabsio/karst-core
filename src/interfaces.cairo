@@ -9,4 +9,5 @@ pub mod IHandleRegistry;
 pub mod IHub;
 pub mod ICommunity;
 pub mod ICollectNFT;
+pub mod ICommunityNft;
 

@@ -1,6 +1,7 @@
 #[starknet::contract]
 pub mod CommunityNft {
     use starknet::{ContractAddress, get_block_timestamp, get_caller_address};
+    use core::num::traits::zero::Zero;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
 
@@ -19,7 +20,6 @@ pub mod CommunityNft {
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
     // ERC721 Mixin
-    #[abi(embed_v0)]
     impl ERC721MixinImpl = ERC721Component::ERC721MixinImpl<ContractState>;
     impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
@@ -66,7 +66,7 @@ pub mod CommunityNft {
 
         /// @notice mints the user community NFT
         /// @param address address of user trying to mint the community NFT token
-        fn mint(ref self: ContractState, user_address: ContractAddress) -> u256 {
+        fn mint_nft(ref self: ContractState, user_address: ContractAddress) -> u256 {
             let balance = self.erc721.balance_of(user_address);
             assert(balance.is_zero(), ALREADY_MINTED);
 
@@ -81,8 +81,8 @@ pub mod CommunityNft {
 
         /// @notice burn the user community NFT
         /// @param address address of user trying to burn the community NFT token
-        fn burn(ref self: ContractState, user_address: ContractAddress, token_id: u256) {
-            let user_token_id = self.user_token_id.read();
+        fn burn_nft(ref self: ContractState, user_address: ContractAddress, token_id: u256) {
+            let user_token_id = self.user_token_id.read(user_address);
             assert(user_token_id == token_id, NOT_TOKEN_OWNER);
             // check the token exist in erc721
             assert(self.erc721.exists(token_id), TOKEN_DOES_NOT_EXIST);
@@ -122,8 +122,8 @@ pub mod CommunityNft {
 
         /// @notice returns the token_uri for a particular token_id
         fn token_uri(self: @ContractState, token_id: u256) -> ByteArray {
-            let mint_timestamp: u64 = self.get_token_mint_timestamp(token_id);
-            get_token_uri(token_id, mint_timestamp)
+            let token_mint_timestamp = self.mint_timestamp.read(token_id);
+            get_token_uri(token_id, token_mint_timestamp)
         }
     }
 }

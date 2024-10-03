@@ -160,13 +160,13 @@ pub struct QuoteParams {
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityDetails {
-    community_id: u256,
-    community_owner: ContractAddress,
-    community_metadata_uri: ByteArray,
-    community_nft_address: ContractAddress,
-    community_total_members: u256,
-    community_premium_status: bool,
-    community_type: ByteArray
+    pub community_id: u256,
+    pub community_owner: ContractAddress,
+    pub community_metadata_uri: ByteArray,
+    pub community_nft_address: ContractAddress,
+    pub community_total_members: u256,
+    pub community_premium_status: bool,
+    pub community_type: CommunityType
 }
 
 // /**
@@ -179,20 +179,20 @@ pub struct CommunityDetails {
 // */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityMember {
-    profile_address: ContractAddress,
-    community_id: u256,
-    total_publications: u256,
-    community_token_id: u256,
-    ban_status: bool,
+    pub profile_address: ContractAddress,
+    pub community_id: u256,
+    pub total_publications: u256,
+    pub community_token_id: u256,
+    pub ban_status: bool,
 }
 
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityGateKeepDetails {
-    community_id: u256,
-    gate_keep_type: ByteArray,
-    community_nft_address: ContractAddress,
-    entry_fee: u256
+    pub community_id: u256,
+    pub gate_keep_type: GateKeepType,
+    pub community_nft_address: ContractAddress,
+    pub entry_fee: u256
 }
 
 // permissioned_addresses: Vec<ContractAddress>,
