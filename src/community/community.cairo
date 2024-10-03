@@ -214,7 +214,7 @@ mod CommunityComponent {
             // update community member count
             community.community_total_members = community.community_total_members - 1;
             self.communities.write(community_id, community);
-        // this function will also burn the nft on leaving
+            // this function will also burn the nft on leaving
         // call the burn function from the community nft contract
 
         }
@@ -233,7 +233,7 @@ mod CommunityComponent {
         fn add_community_mods(
             ref self: ComponentState<TContractState>, community_id: u256, moderator: ContractAddress
         ) {
-            // only community owner should be able to set a mod 
+            // only community owner should be able to set a mod
 
             let community_owner = self.community_owner.read(community_id);
             assert(community_owner == get_caller_address, NOT_COMMUNITY_OWNER);
@@ -268,16 +268,15 @@ mod CommunityComponent {
             let community_mods = self.community_mod.read(community_id);
 
             let mut index = 0;
-            while index < community_mods
-                .len() {
-                    let mod_address = community_mods.at(index);
-                    if mod_address == moderator {
-                        community_mod.append().write(0x0);
-                        self.community_mod.write(community_id, community_mods);
-                        break ();
-                    }
-                    index = index + 1;
+            while index < community_mods.len() {
+                let mod_address = community_mods.at(index);
+                if mod_address == moderator {
+                    community_mod.append().write(0x0);
+                    self.community_mod.write(community_id, community_mods);
+                    break ();
                 }
+                index = index + 1;
+            }
 
             self.community_mod.write(community_id, community_mod);
             self
@@ -303,18 +302,17 @@ mod CommunityComponent {
             let community_mods = self.community_mod.read(community_id);
 
             let mut index = 0;
-            while index < community_mods
-                .len() {
-                    let mod_address = community_mods.at(index);
-                    if mod_address == caller {
-                        caller_is_mod = true;
-                        break ();
-                    }
-                    index = index + 1;
+            while index < community_mods.len() {
+                let mod_address = community_mods.at(index);
+                if mod_address == caller {
+                    caller_is_mod = true;
+                    break ();
                 }
+                index = index + 1;
+            }
 
-            // if call is not mod, 
-            // check for community onwer   
+            // if call is not mod,
+            // check for community onwer
             let community_owner_adddress = self.community_owner.read(community_id);
 
             let caller_is_owner = caller == community_owner_address;
@@ -506,4 +504,9 @@ mod CommunityComponent {
             (true, gate_keep.gate_keep_type)
         }
     }
+
+     // *************************************************************************
+    //                            PRIVATE FUNCTIONS
+    // *************************************************************************
+    
 }

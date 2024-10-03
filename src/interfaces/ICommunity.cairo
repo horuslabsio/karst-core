@@ -1,7 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{
-    GateKeepType, CommunityType, CommunityDetails, CommunityGateKeepDetails
-};
+use karst::base::constants::types::{GateKeepType, CommunityType, CommunityDetails};
 
 // *************************************************************************
 //                              INTERFACE of ICommunity

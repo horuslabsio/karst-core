@@ -229,7 +229,7 @@ pub struct CommunityGateKeepDetails {
 // permissioned_addresses: Vec<ContractAddress>,
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
-enum GateKeepType {
+pub enum GateKeepType {
     None,
     NFTGating,
     PermissionedGating,
@@ -238,7 +238,7 @@ enum GateKeepType {
 
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
-enum CommunityType {
+pub enum CommunityType {
     Free,
     Standard,
     Business
