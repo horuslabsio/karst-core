@@ -9,3 +9,4 @@ pub mod namespaces;
 pub mod presets;
 pub mod hub;
 pub mod collectnft;
+pub mod channel;
