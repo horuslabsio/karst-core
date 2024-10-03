@@ -981,7 +981,7 @@ fn test_collect() {
     ) =
         __setup__();
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-    start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
+    start_cheat_caller_address(publication_contract_address, user_two_profile_address);
     // Case 1: First collection, expecting new deployment
     let token_id = dispatcher
         .collect(
@@ -995,12 +995,12 @@ fn test_collect() {
         .get_publication(user_one_profile_address, user_one_first_post_pointed_pub_id)
         .collect_nft;
     let collect_dispatcher = ICollectNFTDispatcher { contract_address: collect_nft1 };
-    let user2_token_id = collect_dispatcher.get_user_token_id(USER_TWO.try_into().unwrap());
+    let user2_token_id = collect_dispatcher.get_user_token_id(user_two_profile_address);
 
     assert(token_id == user2_token_id, 'invalid token_id');
     stop_cheat_caller_address(publication_contract_address);
 
-    start_cheat_caller_address(publication_contract_address, USER_THREE.try_into().unwrap());
+    start_cheat_caller_address(publication_contract_address, user_three_profile_address);
     // Case 2: collect the same publication, expecting reuse of the existing contract
     let token_id2 = dispatcher
         .collect(
@@ -1014,8 +1014,7 @@ fn test_collect() {
         .get_publication(user_one_profile_address, user_one_first_post_pointed_pub_id)
         .collect_nft;
     let collect_dispatcher = ICollectNFTDispatcher { contract_address: collect_nft2 };
-    let user3_token_id = collect_dispatcher.get_user_token_id(USER_THREE.try_into().unwrap());
-
+    let user3_token_id = collect_dispatcher.get_user_token_id(user_three_profile_address);
     assert(collect_nft1 == collect_nft2, 'invalid_ address');
     assert(token_id2 == user3_token_id, 'invalid token_id');
     stop_cheat_caller_address(publication_contract_address);

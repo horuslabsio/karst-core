@@ -619,7 +619,7 @@ pub mod PublicationComponent {
             collect_nft_address
         }
         fn _mint_collect_nft(
-            ref self: ComponentState<TContractState>, collect_nft: ContractAddress,
+            ref self: ComponentState<TContractState>, collect_nft: ContractAddress
         ) -> u256 {
             let caller: ContractAddress = get_caller_address();
             let token_id = ICollectNFTDispatcher { contract_address: collect_nft }.mint_nft(caller);
