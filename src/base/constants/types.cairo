@@ -158,7 +158,6 @@ pub struct QuoteParams {
 }
 
 
-
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityDetails {
     community_id: u256,
@@ -186,7 +185,6 @@ pub struct CommunityMember {
     community_token_id: u256,
     ban_status: bool,
 }
-
 
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]

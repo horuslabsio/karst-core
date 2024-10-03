@@ -25,6 +25,4 @@ pub mod Errors {
     pub const NOT_MEMBER: felt252 = 'Karst: Not a Community  Member';
     pub const NOT_TOKEN_OWNER: felt252 = 'Karst: Not a Token Owner';
     pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: Token does not exist';
-    pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: token_id does not exist!';
-
 }
