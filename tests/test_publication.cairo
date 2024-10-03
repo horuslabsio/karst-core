@@ -133,16 +133,6 @@ fn __setup__() -> (
         );
     stop_cheat_caller_address(publication_contract_address);
 
-    //@notice: initialise upvote and downvote state to test that users cannot vote twice
-    // upvote
-    start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
-    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    stop_cheat_caller_address(publication_contract_address);
-    // downvote
-    start_cheat_caller_address(publication_contract_address, USER_FOUR.try_into().unwrap());
-    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
-    stop_cheat_caller_address(publication_contract_address);
-
     return (
         nft_contract_address,
         registry_contract_address,
@@ -208,6 +198,10 @@ fn test_upvote() {
         __setup__();
 
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_cheat_caller_address(publication_contract_address);
+
     let upvote_count = dispatcher
         .get_upvote_count(user_one_profile_address, user_one_first_post_pointed_pub_id);
     assert(upvote_count == 1, 'invalid upvote count');
@@ -230,6 +224,9 @@ fn test_downvote() {
     ) =
         __setup__();
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
+    start_cheat_caller_address(publication_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    stop_cheat_caller_address(publication_contract_address);
     let downvote_count = dispatcher
         .get_downvote_count(user_one_profile_address, user_one_first_post_pointed_pub_id);
     assert(downvote_count == 1, 'invalid downvote count');
@@ -323,6 +320,7 @@ fn test_upvote_should_fail_if_user_already_upvoted() {
 
     start_cheat_caller_address(publication_contract_address, USER_TWO.try_into().unwrap());
     dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
+    dispatcher.upvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
     stop_cheat_caller_address(publication_contract_address);
 }
 
@@ -346,6 +344,7 @@ fn test_downvote_should_fail_if_user_already_downvoted() {
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
 
     start_cheat_caller_address(publication_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
     dispatcher.downvote(user_one_profile_address, user_one_first_post_pointed_pub_id);
     stop_cheat_caller_address(publication_contract_address);
 }
