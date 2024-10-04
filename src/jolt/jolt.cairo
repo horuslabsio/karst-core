@@ -8,7 +8,7 @@ pub mod Jolt {
     use core::pedersen::PedersenTrait;
     use starknet::{
         ContractAddress, ClassHash, get_caller_address, get_contract_address, get_block_timestamp,
-        get_tx_info, contract_address_const,
+        get_tx_info,
         storage::{
             StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
             StorageMapWriteAccess
@@ -16,17 +16,13 @@ pub mod Jolt {
     };
     use karst::base::{
         constants::errors::Errors,
-        constants::types::{joltData, joltParams, JoltType, JoltCurrency, JoltStatus, RenewalData},
-        constants::contract_addresses::Addresses,
+        constants::types::{JoltData, JoltParams, JoltType, JoltStatus, RenewalData}
     };
     use karst::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
 
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::upgrades::UpgradeableComponent;
     use openzeppelin::upgrades::interface::IUpgradeable;
-
-    use pragma_lib::abi::{IPragmaABIDispatcher, IPragmaABIDispatcherTrait};
-    use pragma_lib::types::{AggregationMode, DataType, PragmaPricesResponse};
 
     // *************************************************************************
     //                            COMPONENTS
@@ -52,8 +48,7 @@ pub mod Jolt {
         #[substorage(v0)]
         upgradeable: UpgradeableComponent::Storage,
         fee_address: ContractAddress,
-        jolt: Map::<u256, joltData>,
-        total_jolts: Map::<ContractAddress, u256>,
+        jolt: Map::<u256, JoltData>,
         renewals: Map::<(ContractAddress, u256), RenewalData>,
     }
 
@@ -62,7 +57,7 @@ pub mod Jolt {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         #[flat]
         OwnableEvent: OwnableComponent::Event,
         #[flat]
@@ -74,31 +69,31 @@ pub mod Jolt {
 
     #[derive(Drop, starknet::Event)]
     pub struct Jolted {
-        jolt_id: u256,
-        jolt_type: felt252,
-        sender: ContractAddress,
-        recipient: ContractAddress,
-        block_timestamp: u64,
+        pub jolt_id: u256,
+        pub jolt_type: felt252,
+        pub sender: ContractAddress,
+        pub recipient: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct JoltRequested {
-        jolt_id: u256,
-        jolt_type: felt252,
-        sender: ContractAddress,
-        recipient: ContractAddress,
-        expiration_timestamp: u64,
-        block_timestamp: u64,
+        pub jolt_id: u256,
+        pub jolt_type: felt252,
+        pub sender: ContractAddress,
+        pub recipient: ContractAddress,
+        pub expiration_timestamp: u64,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct JoltRequestFullfilled {
-        jolt_id: u256,
-        jolt_type: felt252,
-        sender: ContractAddress,
-        recipient: ContractAddress,
-        expiration_timestamp: u64,
-        block_timestamp: u64,
+        pub jolt_id: u256,
+        pub jolt_type: felt252,
+        pub sender: ContractAddress,
+        pub recipient: ContractAddress,
+        pub expiration_timestamp: u64,
+        pub block_timestamp: u64,
     }
 
     const MAX_TIP: u256 = 1000;
@@ -111,13 +106,12 @@ pub mod Jolt {
         self.ownable.initializer(owner);
     }
 
-
     #[abi(embed_v0)]
     impl JoltImpl of IJolt<ContractState> {
         // *************************************************************************
         //                              EXTERNALS
         // *************************************************************************
-        fn jolt(ref self: ContractState, jolt_params: joltParams) -> u256 {
+        fn jolt(ref self: ContractState, jolt_params: JoltParams) -> u256 {
             let sender = get_caller_address();
             let tx_info = get_tx_info().unbox();
             let tx_timestamp = get_block_timestamp();
@@ -133,25 +127,14 @@ pub mod Jolt {
 
             let jolt_id: u256 = jolt_hash.try_into().unwrap();
 
-            // get the appropriate contract address
-            let mut erc20_contract_address: ContractAddress = contract_address_const::<0>();
-            let jolt_currency = @jolt_params.currency;
-
-            match jolt_currency {
-                JoltCurrency::USDT => erc20_contract_address = Addresses::USDT.try_into().unwrap(),
-                JoltCurrency::USDC => erc20_contract_address = Addresses::USDC.try_into().unwrap(),
-                JoltCurrency::ETH => erc20_contract_address = Addresses::ETH.try_into().unwrap(),
-                JoltCurrency::STRK => erc20_contract_address = Addresses::STRK.try_into().unwrap()
-            };
-
             // jolt
-            let mut tx_status = false;
             let mut jolt_status = JoltStatus::PENDING;
+            let erc20_contract_address = jolt_params.erc20_contract_address;
 
             let jolt_type = @jolt_params.jolt_type;
             match jolt_type {
                 JoltType::Tip => {
-                    let (_tx_status, _jolt_status) = self
+                    let  _jolt_status = self
                         ._tip(
                             jolt_id,
                             sender,
@@ -159,12 +142,10 @@ pub mod Jolt {
                             jolt_params.amount,
                             erc20_contract_address
                         );
-
-                    tx_status = _tx_status;
                     jolt_status = _jolt_status;
                 },
                 JoltType::Transfer => {
-                    let (_tx_status, _jolt_status) = self
+                    let _jolt_status = self
                         ._transfer(
                             jolt_id,
                             sender,
@@ -172,18 +153,10 @@ pub mod Jolt {
                             jolt_params.amount,
                             erc20_contract_address
                         );
-
-                    tx_status = _tx_status;
                     jolt_status = _jolt_status;
                 },
                 JoltType::Subscription => {
-                    // check that currency is a stable
-                    if (jolt_currency != @JoltCurrency::USDT
-                        || jolt_currency != @JoltCurrency::USDC) {
-                        panic!("Karst: subscription can only be done with stables!");
-                    }
-
-                    let (_tx_status, _jolt_status) = self
+                    let _jolt_status = self
                         ._subscribe(
                             jolt_id,
                             sender,
@@ -191,12 +164,10 @@ pub mod Jolt {
                             jolt_params.auto_renewal,
                             erc20_contract_address
                         );
-
-                    tx_status = _tx_status;
                     jolt_status = _jolt_status;
                 },
                 JoltType::Request => {
-                    let (_tx_status, _jolt_status) = self
+                    let _jolt_status = self
                         ._request(
                             jolt_id,
                             sender,
@@ -205,38 +176,25 @@ pub mod Jolt {
                             jolt_params.expiration_stamp,
                             erc20_contract_address
                         );
-
-                    tx_status = _tx_status;
                     jolt_status = _jolt_status;
                 }
             };
 
-            // get jolt amount in usd
-            let mut amount_in_usd = self._get_usd_equiv(jolt_params.amount, erc20_contract_address);
-
             // prefill tx data
-            let jolt_data = joltData {
+            let jolt_data = JoltData {
                 jolt_id: jolt_id,
                 jolt_type: jolt_params.jolt_type,
                 sender: sender,
                 recipient: jolt_params.recipient,
                 memo: jolt_params.memo,
                 amount: jolt_params.amount,
-                amount_in_usd: amount_in_usd,
-                currency: jolt_params.currency,
                 status: jolt_status,
                 expiration_stamp: jolt_params.expiration_stamp,
-                block_timestamp: tx_timestamp
+                block_timestamp: tx_timestamp,
+                erc20_contract_address: jolt_params.erc20_contract_address
             };
 
-            // write to storage
-            if (jolt_data.status == JoltStatus::SUCCESSFUL) {
-                let total_jolts_recieved = self.total_jolts.read(jolt_params.recipient)
-                    + amount_in_usd;
-                self.total_jolts.write(jolt_params.recipient, total_jolts_recieved);
-            }
             self.jolt.write(jolt_id, jolt_data);
-
             return jolt_id;
         }
 
@@ -257,7 +215,7 @@ pub mod Jolt {
 
             // if expired write jolt status to expired and exit
             if (get_block_timestamp() > jolt_details.expiration_stamp) {
-                let jolt_data = joltData { status: JoltStatus::EXPIRED, ..jolt_details };
+                let jolt_data = JoltData { status: JoltStatus::EXPIRED, ..jolt_details };
                 self.jolt.write(jolt_id, jolt_data);
                 return false;
             }
@@ -273,12 +231,8 @@ pub mod Jolt {
         // *************************************************************************
         //                              GETTERS
         // *************************************************************************
-        fn get_jolt(self: @ContractState, jolt_id: u256) -> joltData {
+        fn get_jolt(self: @ContractState, jolt_id: u256) -> JoltData {
             self.jolt.read(jolt_id)
-        }
-
-        fn total_jolts_received(self: @ContractState, profile: ContractAddress) -> u256 {
-            self.total_jolts.read(profile)
         }
 
         fn get_fee_address(self: @ContractState) -> ContractAddress {
@@ -309,18 +263,13 @@ pub mod Jolt {
             recipient: ContractAddress,
             amount: u256,
             erc20_contract_address: ContractAddress
-        ) -> (bool, JoltStatus) {
+        ) -> JoltStatus {
             // check that user is not self-tipping or tipping a non-existent address
             assert(sender != recipient, Errors::SELF_TIPPING);
             assert(recipient.is_non_zero(), Errors::INVALID_PROFILE_ADDRESS);
 
-            // check that tip does not exceed maximum tip
-            let tipped_amount = self._get_usd_equiv(amount, erc20_contract_address);
-            assert(tipped_amount <= MAX_TIP, Errors::MAX_TIPPING);
-
             // tip user
-            let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
-            dispatcher.transfer_from(sender, recipient, amount);
+            self._transfer_helper(erc20_contract_address, sender, recipient, amount);
 
             // emit event
             self
@@ -335,7 +284,7 @@ pub mod Jolt {
                 );
 
             // return txn status
-            (true, JoltStatus::SUCCESSFUL)
+            JoltStatus::SUCCESSFUL
         }
 
         fn _transfer(
@@ -345,14 +294,13 @@ pub mod Jolt {
             recipient: ContractAddress,
             amount: u256,
             erc20_contract_address: ContractAddress
-        ) -> (bool, JoltStatus) {
+        ) -> JoltStatus {
             // check that user is not transferring to self or to a non-existent address
             assert(sender != recipient, Errors::SELF_TRANSFER);
             assert(recipient.is_non_zero(), Errors::INVALID_PROFILE_ADDRESS);
 
             // transfer to recipient
-            let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
-            dispatcher.transfer_from(sender, recipient, amount);
+            self._transfer_helper(erc20_contract_address, sender, recipient, amount);
 
             // emit event
             self
@@ -367,7 +315,7 @@ pub mod Jolt {
                 );
 
             // return txn status
-            (true, JoltStatus::SUCCESSFUL)
+            JoltStatus::SUCCESSFUL
         }
 
         fn _subscribe(
@@ -377,17 +325,17 @@ pub mod Jolt {
             amount: u256,
             auto_renewal: (bool, u256),
             erc20_contract_address: ContractAddress
-        ) -> (bool, JoltStatus) {
-            let (renewal_status, renewal_duration_in_months) = auto_renewal;
+        ) -> JoltStatus {
+            let (renewal_status, renewal_duration) = auto_renewal;
             let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
             let this_contract = get_contract_address();
             let tx_info = get_tx_info().unbox();
 
-            if (renewal_status) {
+            if (renewal_status == true) {
                 // check allowances match auto-renew duration
                 let allowance = dispatcher.allowance(sender, this_contract);
                 assert(
-                    allowance == renewal_duration_in_months * amount, Errors::INSUFFICIENT_ALLOWANCE
+                    allowance >= renewal_duration * amount, Errors::INSUFFICIENT_ALLOWANCE
                 );
 
                 // generate renewal ID
@@ -403,7 +351,7 @@ pub mod Jolt {
 
                 // write renewal details to storage
                 let renewal_data = RenewalData {
-                    renewal_duration: renewal_duration_in_months,
+                    renewal_duration: renewal_duration,
                     renewal_amount: amount,
                     erc20_contract_address
                 };
@@ -412,7 +360,7 @@ pub mod Jolt {
 
             // send subscription amount to fee address
             let fee_address = self.fee_address.read();
-            dispatcher.transfer_from(sender, fee_address, amount);
+            self._transfer_helper(erc20_contract_address, sender, fee_address, amount);
 
             // emit event
             self
@@ -427,7 +375,7 @@ pub mod Jolt {
                 );
 
             // return txn status
-            (true, JoltStatus::SUCCESSFUL)
+            JoltStatus::SUCCESSFUL
         }
 
         fn _request(
@@ -438,7 +386,7 @@ pub mod Jolt {
             amount: u256,
             expiration_timestamp: u64,
             erc20_contract_address: ContractAddress
-        ) -> (bool, JoltStatus) {
+        ) -> JoltStatus {
             // check that user is not requesting to self or to a non-existent address
             assert(sender != recipient, Errors::SELF_REQUEST);
             assert(recipient.is_non_zero(), Errors::INVALID_PROFILE_ADDRESS);
@@ -457,28 +405,22 @@ pub mod Jolt {
                 );
 
             // return txn status
-            (true, JoltStatus::PENDING)
+            JoltStatus::PENDING
         }
 
         fn _fulfill_request(
-            ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: joltData
+            ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
         ) -> bool {
-            // get the appropriate contract address
-            let jolt_currency = @jolt_details.currency;
-            let mut erc20_contract_address: ContractAddress = contract_address_const::<0>();
-            match jolt_currency {
-                JoltCurrency::USDT => erc20_contract_address = Addresses::USDT.try_into().unwrap(),
-                JoltCurrency::USDC => erc20_contract_address = Addresses::USDC.try_into().unwrap(),
-                JoltCurrency::ETH => erc20_contract_address = Addresses::ETH.try_into().unwrap(),
-                JoltCurrency::STRK => erc20_contract_address = Addresses::STRK.try_into().unwrap()
-            };
-
             // transfer request amount
-            let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
-            dispatcher.transfer_from(sender, jolt_details.sender, jolt_details.amount);
+            self._transfer_helper(
+                jolt_details.erc20_contract_address, 
+                jolt_details.sender, 
+                jolt_details.recipient, 
+                jolt_details.amount
+            );
 
             // update jolt details
-            let jolt_data = joltData { status: JoltStatus::SUCCESSFUL, ..jolt_details };
+            let jolt_data = JoltData { status: JoltStatus::SUCCESSFUL, ..jolt_details };
             self.jolt.write(jolt_id, jolt_data);
 
             // emit events
@@ -505,14 +447,13 @@ pub mod Jolt {
                 .renewals
                 .read((sender, renewal_id))
                 .erc20_contract_address;
-            let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
 
             // check duration is greater than 0 else shouldn't auto renew
             assert(duration > 0, Errors::AUTO_RENEW_DURATION_ENDED);
 
             // send subscription amount to fee address
             let fee_address = self.fee_address.read();
-            dispatcher.transfer_from(sender, fee_address, amount);
+            self._transfer_helper(erc20_contract_address, sender, fee_address, amount);
 
             // generate jolt_id
             let jolt_hash = PedersenTrait::new(0)
@@ -531,33 +472,22 @@ pub mod Jolt {
             };
             self.renewals.write((sender, renewal_id), renewal_data);
 
-            // get currency
-            let mut currency = JoltCurrency::USDT;
-            let erc20_symbol = dispatcher.symbol();
-            if (erc20_symbol == "USDC") {
-                currency = JoltCurrency::USDC;
-            }
-
             // prefill tx data
-            let amount_in_usd = self._get_usd_equiv(amount, erc20_contract_address);
-            let jolt_data = joltData {
+            let jolt_data = JoltData {
                 jolt_id: jolt_id,
                 jolt_type: JoltType::Subscription,
                 sender: sender,
                 recipient: fee_address,
                 memo: "auto renew successful",
                 amount: amount,
-                amount_in_usd,
-                currency: currency,
                 status: JoltStatus::SUCCESSFUL,
                 expiration_stamp: 0,
-                block_timestamp: get_block_timestamp()
+                block_timestamp: get_block_timestamp(),
+                erc20_contract_address
             };
-            let total_jolts_recieved = self.total_jolts.read(fee_address) + amount;
 
             // write to storage
             self.jolt.write(jolt_id, jolt_data);
-            self.total_jolts.write(fee_address, total_jolts_recieved);
 
             // emit event
             self
@@ -575,36 +505,21 @@ pub mod Jolt {
             return true;
         }
 
-        // TODO: convert jolt amount to usd equivalent
-        fn _get_usd_equiv(
-            ref self: ContractState, amount: u256, erc20_contract_address: ContractAddress
-        ) -> u256 {
-            // get oracle key
-            let mut KEY: felt252 = 0;
+        fn _transfer_helper(
+            ref self: ContractState, 
+            erc20_contract_address: ContractAddress, 
+            sender: ContractAddress, 
+            recipient: ContractAddress, 
+            amount: u256
+        ) {
             let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
-            let erc20_symbol = dispatcher.symbol();
-            if (erc20_symbol == "ETH") {
-                KEY = 19514442401534788;
-            } else if (erc20_symbol == "STRK") {
-                KEY = 6004514686061859652;
-            } else if (erc20_symbol == "USDT") {
-                KEY = 6148333044652921668;
-            } else if (erc20_symbol == "USDC") {
-                KEY = 6148332971638477636;
-            }
 
-            let oracle_address: ContractAddress = Addresses::PRAGMA_ORACLE.try_into().unwrap();
-            let price = self._get_asset_price_median(oracle_address, DataType::SpotEntry(KEY));
-            price.try_into().unwrap()
-        }
+            // check allowance
+            let allowance = dispatcher.allowance(sender, get_contract_address());
+            assert(allowance >= amount, Errors::INSUFFICIENT_ALLOWANCE);
 
-        fn _get_asset_price_median(
-            ref self: ContractState, oracle_address: ContractAddress, asset: DataType
-        ) -> u128 {
-            let oracle_dispatcher = IPragmaABIDispatcher { contract_address: oracle_address };
-            let output: PragmaPricesResponse = oracle_dispatcher
-                .get_data(asset, AggregationMode::Median(()));
-            return output.price;
+            // transfer to recipient
+            dispatcher.transfer_from(sender, recipient, amount);
         }
     }
 }

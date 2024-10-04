@@ -177,29 +177,28 @@ pub struct FollowData {
 //                            JOLT
 // *************************************************************************
 #[derive(Drop, Serde, starknet::Store)]
-pub struct joltData {
+pub struct JoltData {
     pub jolt_id: u256,
     pub jolt_type: JoltType,
     pub sender: ContractAddress,
     pub recipient: ContractAddress,
     pub memo: ByteArray,
     pub amount: u256,
-    pub amount_in_usd: u256,
-    pub currency: JoltCurrency,
     pub status: JoltStatus,
     pub expiration_stamp: u64,
-    pub block_timestamp: u64
+    pub block_timestamp: u64,
+    pub erc20_contract_address: ContractAddress
 }
 
 #[derive(Drop, Serde)]
-pub struct joltParams {
+pub struct JoltParams {
     pub jolt_type: JoltType,
     pub recipient: ContractAddress,
     pub memo: ByteArray,
     pub amount: u256,
-    pub currency: JoltCurrency,
     pub expiration_stamp: u64,
     pub auto_renewal: (bool, u256),
+    pub erc20_contract_address: ContractAddress,
 }
 
 #[derive(Drop, Serde, starknet::Store)]
@@ -207,14 +206,6 @@ pub struct RenewalData {
     pub renewal_duration: u256,
     pub renewal_amount: u256,
     pub erc20_contract_address: ContractAddress
-}
-
-#[derive(Drop, Serde, starknet::Store, PartialEq)]
-pub enum JoltCurrency {
-    USDT,
-    USDC,
-    ETH,
-    STRK
 }
 
 #[derive(Drop, Serde, starknet::Store, PartialEq)]

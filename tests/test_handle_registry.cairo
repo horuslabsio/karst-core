@@ -178,7 +178,7 @@ fn test_unlink_fails_if_caller_is_not_owner() {
 }
 
 #[test]
-fn test_emmit_linked_event() {
+fn test_linked_event_emission() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
         contract_address: handle_registry_address
@@ -207,7 +207,7 @@ fn test_emmit_linked_event() {
 }
 
 #[test]
-fn test_emmit_unlinked_event() {
+fn test_unlinked_event_emission() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
         contract_address: handle_registry_address
