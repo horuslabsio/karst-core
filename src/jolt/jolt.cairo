@@ -134,7 +134,7 @@ pub mod Jolt {
             let jolt_type = @jolt_params.jolt_type;
             match jolt_type {
                 JoltType::Tip => {
-                    let  _jolt_status = self
+                    let _jolt_status = self
                         ._tip(
                             jolt_id,
                             sender,
@@ -203,13 +203,13 @@ pub mod Jolt {
             self.fee_address.write(_fee_address);
         }
 
-        fn fullfill_request(
-            ref self: ContractState, jolt_id: u256, sender: ContractAddress
-        ) -> bool {
+        fn fulfill_request(ref self: ContractState, jolt_id: u256) -> bool {
             // get jolt details
             let mut jolt_details = self.jolt.read(jolt_id);
+            let sender = get_caller_address();
 
             // validate request
+            assert(jolt_details.jolt_type == JoltType::Request, Errors::INVALID_JOLT);
             assert(jolt_details.status == JoltStatus::PENDING, Errors::INVALID_JOLT);
             assert(sender == jolt_details.recipient, Errors::INVALID_JOLT_RECIPIENT);
 
@@ -334,9 +334,7 @@ pub mod Jolt {
             if (renewal_status == true) {
                 // check allowances match auto-renew duration
                 let allowance = dispatcher.allowance(sender, this_contract);
-                assert(
-                    allowance >= renewal_duration * amount, Errors::INSUFFICIENT_ALLOWANCE
-                );
+                assert(allowance >= renewal_duration * amount, Errors::INSUFFICIENT_ALLOWANCE);
 
                 // generate renewal ID
                 let renewal_hash = PedersenTrait::new(0)
@@ -387,9 +385,11 @@ pub mod Jolt {
             expiration_timestamp: u64,
             erc20_contract_address: ContractAddress
         ) -> JoltStatus {
-            // check that user is not requesting to self or to a non-existent address
+            // check that user is not requesting to self or to a non-existent address and expiration
+            // time exceeds current time
             assert(sender != recipient, Errors::SELF_REQUEST);
             assert(recipient.is_non_zero(), Errors::INVALID_PROFILE_ADDRESS);
+            assert(expiration_timestamp > get_block_timestamp(), Errors::INVALID_EXPIRATION_STAMP);
 
             // emit event
             self
@@ -412,12 +412,13 @@ pub mod Jolt {
             ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
         ) -> bool {
             // transfer request amount
-            self._transfer_helper(
-                jolt_details.erc20_contract_address, 
-                jolt_details.sender, 
-                jolt_details.recipient, 
-                jolt_details.amount
-            );
+            self
+                ._transfer_helper(
+                    jolt_details.erc20_contract_address,
+                    sender,
+                    jolt_details.sender,
+                    jolt_details.amount
+                );
 
             // update jolt details
             let jolt_data = JoltData { status: JoltStatus::SUCCESSFUL, ..jolt_details };
@@ -428,8 +429,8 @@ pub mod Jolt {
                 .emit(
                     JoltRequestFullfilled {
                         jolt_id,
-                        jolt_type: 'REQUEST',
-                        sender,
+                        jolt_type: 'REQUEST FULFILLMENT',
+                        sender: jolt_details.recipient,
                         recipient: jolt_details.sender,
                         expiration_timestamp: jolt_details.expiration_stamp,
                         block_timestamp: get_block_timestamp(),
@@ -506,10 +507,10 @@ pub mod Jolt {
         }
 
         fn _transfer_helper(
-            ref self: ContractState, 
-            erc20_contract_address: ContractAddress, 
-            sender: ContractAddress, 
-            recipient: ContractAddress, 
+            ref self: ContractState,
+            erc20_contract_address: ContractAddress,
+            sender: ContractAddress,
+            recipient: ContractAddress,
             amount: u256
         ) {
             let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
