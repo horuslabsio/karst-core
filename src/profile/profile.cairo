@@ -188,13 +188,7 @@ pub mod ProfileComponent {
         ) -> u256 {
             let mut profile: Profile = self.profile.read(profile_address);
             let new_pub_count = profile.pub_count + 1;
-            let updated_profile = Profile {
-                profile_address: profile.profile_address,
-                profile_owner: profile.profile_owner,
-                pub_count: new_pub_count,
-                metadata_URI: profile.metadata_URI,
-                follow_nft: profile.follow_nft
-            };
+            let updated_profile = Profile { pub_count: new_pub_count, ..profile };
 
             self.profile.write(profile_address, updated_profile);
             new_pub_count

@@ -49,6 +49,9 @@ pub struct Publication {
     pub root_pub_id: u256,
     pub upvote: u256,
     pub downvote: u256,
+    pub channel_id: felt252,
+    pub collect_nft: ContractAddress,
+    pub tipped_amount: u256
 }
 
 // /**
@@ -78,6 +81,7 @@ pub enum PublicationType {
 pub struct PostParams {
     pub content_URI: ByteArray,
     pub profile_address: ContractAddress,
+    pub channel_id: felt252
 }
 
 // /**

@@ -27,4 +27,5 @@ pub mod Errors {
     pub const AUTO_RENEW_DURATION_ENDED: felt252 = 'Karst: auto renew ended!';
     pub const INVALID_JOLT: felt252 = 'Karst: invalid jolt!';
     pub const INVALID_JOLT_RECIPIENT: felt252 = 'Karst: not request recipient!';
+    pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: token_id does not exist!';
 }
