@@ -33,13 +33,11 @@ pub mod KarstHub {
     };
     use karst::profile::profile::ProfileComponent;
     use karst::publication::publication::PublicationComponent;
-    use karst::channel::channel::ChannelComponent;
     use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
     use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
     use karst::interfaces::IHandleRegistry::{
         IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait
     };
-
     use karst::base::constants::errors::Errors::{
         BLOCKED_STATUS, INVALID_PROFILE_ADDRESS, SELF_FOLLOWING
     };
@@ -47,15 +45,12 @@ pub mod KarstHub {
     // *************************************************************************
     //                              COMPONENTS
     // *************************************************************************
-    component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
     component!(path: PublicationComponent, storage: publication, event: PublicationEvent);
 
     #[abi(embed_v0)]
-    impl ChannelImpl = ChannelComponent::KarstChannel<ContractState>;
     impl ProfileImpl = ProfileComponent::KarstProfile<ContractState>;
     impl PublicationImpl = PublicationComponent::KarstPublication<ContractState>;
-
 
     // *************************************************************************
     //                              STORAGE
@@ -66,8 +61,6 @@ pub mod KarstHub {
         profile: ProfileComponent::Storage,
         #[substorage(v0)]
         publication: PublicationComponent::Storage,
-        #[substorage(v0)]
-        channel: ChannelComponent::Storage,
         handle_contract_address: ContractAddress,
         handle_registry_contract_address: ContractAddress
     }
@@ -79,8 +72,7 @@ pub mod KarstHub {
     #[derive(Drop, starknet::Event)]
     enum Event {
         ProfileEvent: ProfileComponent::Event,
-        PublicationEvent: PublicationComponent::Event,
-        ChannelEvent: ChannelComponent::Event
+        PublicationEvent: PublicationComponent::Event
     }
 
     // *************************************************************************
