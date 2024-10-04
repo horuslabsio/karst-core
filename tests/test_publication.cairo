@@ -14,9 +14,8 @@ use snforge_std::{
 use karst::publication::publication::PublicationComponent::{
     Event as PublicationEvent, Post, CommentCreated, RepostCreated, Upvoted, Downvoted
 };
-
 use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
-use karst::base::constants::types::{PostParams, RepostParams, CommentParams, PublicationType,};
+use karst::base::constants::types::{PostParams, RepostParams, CommentParams, PublicationType};
 use karst::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';

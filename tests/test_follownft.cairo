@@ -2,9 +2,8 @@
 //                              FOLLOW NFT TEST
 // *************************************************************************
 use core::option::OptionTrait;
-use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
-use core::traits::{TryInto, Into};
+use core::traits::TryInto;
 use starknet::{ContractAddress, get_block_timestamp};
 
 use snforge_std::{
@@ -14,7 +13,6 @@ use snforge_std::{
 };
 
 use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
-use karst::follownft::follownft::Follow;
 use karst::follownft::follownft::Follow::{Event as FollowEvent, Followed};
 use karst::follownft::follownft::Follow::{Event as UnfollowEvent, Unfollowed};
 use karst::follownft::follownft::Follow::{Event as FollowerBlockedEvent, FollowerBlocked};

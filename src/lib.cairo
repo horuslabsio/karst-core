@@ -8,4 +8,5 @@ pub mod publication;
 pub mod namespaces;
 pub mod presets;
 pub mod hub;
+pub mod jolt;
 pub mod collectnft;

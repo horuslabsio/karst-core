@@ -1,7 +1,7 @@
 use core::num::traits::zero::Zero;
 use core::starknet::SyscallResultTrait;
-use core::traits::{TryInto, Into};
-use starknet::{ContractAddress};
+use core::traits::TryInto;
+use starknet::ContractAddress;
 
 use snforge_std::{
     declare, start_cheat_caller_address, stop_cheat_caller_address, ContractClassTrait,
@@ -11,7 +11,6 @@ use snforge_std::{
 use openzeppelin::{token::erc721::interface::{ERC721ABIDispatcher, ERC721ABIDispatcherTrait}};
 
 use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-use karst::base::constants::errors::Errors::ALREADY_MINTED;
 
 const ADMIN: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
