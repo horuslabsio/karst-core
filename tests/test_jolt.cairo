@@ -1210,7 +1210,7 @@ fn test_upgrade() {
     let upgraded_class = declare("JoltUpgrade").unwrap().contract_class();
     let new_class_hash = *upgraded_class.class_hash;
 
-    // set fee address
+    // upgrade
     start_cheat_caller_address(jolt_contract_address, ADMIN.try_into().unwrap());
     upgrade_dispatcher.upgrade(new_class_hash);
     stop_cheat_caller_address(jolt_contract_address);
@@ -1228,7 +1228,7 @@ fn test_upgrade_fails_if_not_admin() {
     let upgraded_class = declare("JoltUpgrade").unwrap().contract_class();
     let new_class_hash = *upgraded_class.class_hash;
 
-    // set fee address
+    // try to upgrade
     start_cheat_caller_address(jolt_contract_address, ADDRESS1.try_into().unwrap());
     upgrade_dispatcher.upgrade(new_class_hash);
     stop_cheat_caller_address(jolt_contract_address);
