@@ -207,7 +207,7 @@ pub struct JoltParams {
 
 #[derive(Drop, Serde, starknet::Store)]
 pub struct RenewalData {
-    pub renewal_duration: u256,
+    pub renewal_iterations: u256,
     pub renewal_amount: u256,
     pub erc20_contract_address: ContractAddress
 }

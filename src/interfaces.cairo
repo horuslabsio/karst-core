@@ -10,3 +10,4 @@ pub mod IHandleRegistry;
 pub mod IHub;
 pub mod IJolt;
 pub mod ICollectNFT;
+pub mod IUpgradeable;

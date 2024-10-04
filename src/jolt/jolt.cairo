@@ -111,6 +111,9 @@ pub mod Jolt {
         // *************************************************************************
         //                              EXTERNALS
         // *************************************************************************
+
+        /// @notice multi-faceted transfer logic
+        /// @param jolt_params required jolting parameters
         fn jolt(ref self: ContractState, jolt_params: JoltParams) -> u256 {
             let sender = get_caller_address();
             let tx_info = get_tx_info().unbox();
@@ -198,11 +201,8 @@ pub mod Jolt {
             return jolt_id;
         }
 
-        fn set_fee_address(ref self: ContractState, _fee_address: ContractAddress) {
-            self.ownable.assert_only_owner();
-            self.fee_address.write(_fee_address);
-        }
-
+        /// @notice fulfills a pending jolt request
+        /// @param jolt_id id of jolt request to be fulfilled
         fn fulfill_request(ref self: ContractState, jolt_id: u256) -> bool {
             // get jolt details
             let mut jolt_details = self.jolt.read(jolt_id);
@@ -224,17 +224,43 @@ pub mod Jolt {
             self._fulfill_request(jolt_id, sender, jolt_details)
         }
 
-        fn auto_renew(ref self: ContractState, profile: ContractAddress, renewal_id: u256) -> bool {
-            self._auto_renew(profile, renewal_id)
+        /// @notice contains logic for auto renewal of subscriptions
+        /// @dev can be automated using cron jobs in a backend service
+        /// @param jolt_id id of jolt subscription to auto-renew
+        fn auto_renew(ref self: ContractState, profile: ContractAddress, jolt_id: u256) -> bool {
+            self._auto_renew(profile, jolt_id)
+        }
+
+        /// @notice sets the fee address which receives subscription payments and maybe actual fees
+        /// in the future?
+        /// @param _fee_address address to be set
+        fn set_fee_address(ref self: ContractState, _fee_address: ContractAddress) {
+            self.ownable.assert_only_owner();
+            self.fee_address.write(_fee_address);
         }
 
         // *************************************************************************
         //                              GETTERS
         // *************************************************************************
+
+        /// @notice gets the associated data for a jolt id
+        /// @param jolt_id id of jolt who's data is to be gotten
+        /// @returns JoltData struct containing jolt details
         fn get_jolt(self: @ContractState, jolt_id: u256) -> JoltData {
             self.jolt.read(jolt_id)
         }
 
+        /// @notice gets the renewal data for a particular jolt id
+        /// @param jolt_id id of jolt who's renewal data is to be gotten
+        /// @returns RenewalData struct containing jolt renewal details
+        fn get_renewal_data(
+            self: @ContractState, profile: ContractAddress, jolt_id: u256
+        ) -> RenewalData {
+            self.renewals.read((profile, jolt_id))
+        }
+
+        /// @notice gets the fee address
+        /// @returns the fee address for contract
         fn get_fee_address(self: @ContractState) -> ContractAddress {
             self.fee_address.read()
         }
@@ -245,6 +271,8 @@ pub mod Jolt {
     // *************************************************************************
     #[abi(embed_v0)]
     impl UpgradeableImpl of IUpgradeable<ContractState> {
+        /// @notice upgrades the contract
+        /// @param new_class_hash the class hash to upgrade to
         fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
             self.ownable.assert_only_owner();
             self.upgradeable.upgrade(new_class_hash);
@@ -256,6 +284,13 @@ pub mod Jolt {
     // *************************************************************************
     #[generate_trait]
     impl Private of PrivateTrait {
+        /// @notice contains the tipping logic
+        /// @param jolt_id id of txn
+        /// @param sender the profile performing the tipping
+        /// @param recipient the profile being tipped
+        /// @param amount the amount to be tipped
+        /// @param erc20_contract_address the address of token used in tipping
+        /// @returns JoltStatus status of the txn
         fn _tip(
             ref self: ContractState,
             jolt_id: u256,
@@ -287,6 +322,13 @@ pub mod Jolt {
             JoltStatus::SUCCESSFUL
         }
 
+        /// @notice contains the transfer logic
+        /// @param jolt_id id of txn
+        /// @param sender the profile performing the transfer
+        /// @param recipient the profile being transferred to
+        /// @param amount the amount to be transferred
+        /// @param erc20_contract_address the address of token used
+        /// @returns JoltStatus status of the txn
         fn _transfer(
             ref self: ContractState,
             jolt_id: u256,
@@ -318,6 +360,13 @@ pub mod Jolt {
             JoltStatus::SUCCESSFUL
         }
 
+        /// @notice contains the subscription logic
+        /// @param jolt_id id of txn
+        /// @param sender the profile performing the subscription
+        /// @param amount the amount to pay
+        /// @param auto_renewal a tuple containing renewal status and renewal_iterations
+        /// @param erc20_contract_address the address of token used
+        /// @returns JoltStatus status of the txn
         fn _subscribe(
             ref self: ContractState,
             jolt_id: u256,
@@ -326,34 +375,22 @@ pub mod Jolt {
             auto_renewal: (bool, u256),
             erc20_contract_address: ContractAddress
         ) -> JoltStatus {
-            let (renewal_status, renewal_duration) = auto_renewal;
+            let (renewal_status, renewal_iterations) = auto_renewal;
             let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
             let this_contract = get_contract_address();
-            let tx_info = get_tx_info().unbox();
 
             if (renewal_status == true) {
-                // check allowances match auto-renew duration
+                // check allowances match auto-renew iterations
                 let allowance = dispatcher.allowance(sender, this_contract);
-                assert(allowance >= renewal_duration * amount, Errors::INSUFFICIENT_ALLOWANCE);
-
-                // generate renewal ID
-                let renewal_hash = PedersenTrait::new(0)
-                    .update(sender.into())
-                    .update(jolt_id.low.into())
-                    .update(jolt_id.high.into())
-                    .update(tx_info.nonce)
-                    .update(4)
-                    .finalize();
-
-                let renewal_id: u256 = renewal_hash.try_into().unwrap();
+                assert(allowance >= renewal_iterations * amount, Errors::INSUFFICIENT_ALLOWANCE);
 
                 // write renewal details to storage
                 let renewal_data = RenewalData {
-                    renewal_duration: renewal_duration,
+                    renewal_iterations: renewal_iterations,
                     renewal_amount: amount,
                     erc20_contract_address
                 };
-                self.renewals.write((sender, renewal_id), renewal_data);
+                self.renewals.write((sender, jolt_id), renewal_data);
             }
 
             // send subscription amount to fee address
@@ -376,6 +413,14 @@ pub mod Jolt {
             JoltStatus::SUCCESSFUL
         }
 
+        /// @notice contains the request logic
+        /// @param jolt_id id of txn
+        /// @param sender the profile performing the request
+        /// @param recipient the profile being requested of
+        /// @param amount the amount to be tipped
+        /// @param expiration_timestamp timestamp of when the request will expire
+        /// @param erc20_contract_address the address of token used
+        /// @returns JoltStatus status of the txn
         fn _request(
             ref self: ContractState,
             jolt_id: u256,
@@ -408,6 +453,10 @@ pub mod Jolt {
             JoltStatus::PENDING
         }
 
+        /// @notice internal logic to fulfill a request
+        /// @param sender the profile fulfilling the request
+        /// @param jolt_details details of the jolt to be fulfilled
+        /// @returns bool status of the txn
         fn _fulfill_request(
             ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
         ) -> bool {
@@ -440,17 +489,21 @@ pub mod Jolt {
             return true;
         }
 
+        /// @notice internal logic to auto renew a subscription
+        /// @param sender the profile renewing a subscription
+        /// @param renewal_id id jolt to be renewed
+        /// @returns bool status of the txn
         fn _auto_renew(ref self: ContractState, sender: ContractAddress, renewal_id: u256) -> bool {
             let tx_info = get_tx_info().unbox();
             let amount = self.renewals.read((sender, renewal_id)).renewal_amount;
-            let duration = self.renewals.read((sender, renewal_id)).renewal_duration;
+            let iteration = self.renewals.read((sender, renewal_id)).renewal_iterations;
             let erc20_contract_address = self
                 .renewals
                 .read((sender, renewal_id))
                 .erc20_contract_address;
 
-            // check duration is greater than 0 else shouldn't auto renew
-            assert(duration > 0, Errors::AUTO_RENEW_DURATION_ENDED);
+            // check iteration is greater than 0 else shouldn't auto renew
+            assert(iteration > 0, Errors::AUTO_RENEW_DURATION_ENDED);
 
             // send subscription amount to fee address
             let fee_address = self.fee_address.read();
@@ -467,9 +520,9 @@ pub mod Jolt {
 
             let jolt_id: u256 = jolt_hash.try_into().unwrap();
 
-            // reduce duration by one month
+            // reduce iteration by one month
             let renewal_data = RenewalData {
-                renewal_duration: duration - 1, renewal_amount: amount, erc20_contract_address
+                renewal_iterations: iteration - 1, renewal_amount: amount, erc20_contract_address
             };
             self.renewals.write((sender, renewal_id), renewal_data);
 
@@ -506,6 +559,11 @@ pub mod Jolt {
             return true;
         }
 
+        /// @notice internal logic to perform an ERC20 transfer
+        /// @param erc20_contract_address address of the token to be transferred
+        /// @param sender profile sending the token
+        /// @param recipient profile receiving the token
+        /// @param amount amount to be transferred
         fn _transfer_helper(
             ref self: ContractState,
             erc20_contract_address: ContractAddress,
