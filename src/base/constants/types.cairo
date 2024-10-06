@@ -212,3 +212,89 @@ pub enum CommunityType {
     Standard,
     Business
 }
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct Upvote {
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
+}
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct Downvote {
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
+}
+
+// *************************************************************************
+//                            FOLLOW
+// *************************************************************************
+// /**
+// * @notice A struct containing token follow-related data.
+// *
+// * @param followed_profile_address The ID of the profile being followed.
+// * @param follower_profile_address The ID of the profile following.
+// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
+// follow.
+// * @param block_status true if follower is blocked, false otherwise
+// */
+#[derive(Drop, Serde, starknet::Store)]
+pub struct FollowData {
+    pub followed_profile_address: ContractAddress,
+    pub follower_profile_address: ContractAddress,
+    pub follow_timestamp: u64,
+    pub block_status: bool,
+}
+
+// *************************************************************************
+//                            JOLT
+// *************************************************************************
+#[derive(Drop, Serde, starknet::Store)]
+pub struct JoltData {
+    pub jolt_id: u256,
+    pub jolt_type: JoltType,
+    pub sender: ContractAddress,
+    pub recipient: ContractAddress,
+    pub memo: ByteArray,
+    pub amount: u256,
+    pub status: JoltStatus,
+    pub expiration_stamp: u64,
+    pub block_timestamp: u64,
+    pub erc20_contract_address: ContractAddress
+}
+
+#[derive(Drop, Serde)]
+pub struct JoltParams {
+    pub jolt_type: JoltType,
+    pub recipient: ContractAddress,
+    pub memo: ByteArray,
+    pub amount: u256,
+    pub expiration_stamp: u64,
+    pub auto_renewal: (bool, u256),
+    pub erc20_contract_address: ContractAddress,
+}
+
+#[derive(Drop, Serde, starknet::Store)]
+pub struct RenewalData {
+    pub renewal_iterations: u256,
+    pub renewal_amount: u256,
+    pub erc20_contract_address: ContractAddress
+}
+
+#[derive(Drop, Serde, starknet::Store, PartialEq)]
+pub enum JoltType {
+    Tip,
+    Transfer,
+    Subscription,
+    Request
+}
+
+#[derive(Drop, Serde, starknet::Store, PartialEq)]
+pub enum JoltStatus {
+    PENDING,
+    SUCCESSFUL,
+    EXPIRED,
+    REJECTED,
+    FAILED
+}
