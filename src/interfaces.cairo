@@ -11,8 +11,6 @@ pub mod IHub;
 pub mod ICommunity;
 pub mod ICollectNFT;
 pub mod ICommunityNft;
-
 pub mod IJolt;
-pub mod ICollectNFT;
 pub mod IUpgradeable;
 
