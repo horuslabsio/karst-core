@@ -184,11 +184,7 @@ pub mod CommunityComponent {
         fn join_community(
             ref self: ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) {
-            //  let member_address = get_caller_address();
             let community = self.communities.read(community_id);
-            // if (!community) {
-            //     panic('Community does not exist')
-            // }
 
             let community_member = self.community_membership_status.read((community_id, profile));
             assert(community_member != true, ALREADY_MEMBER);
@@ -200,7 +196,7 @@ pub mod CommunityComponent {
                 profile_address: profile,
                 community_id: community_id,
                 total_publications: 0,
-                community_token_id: 1, // community.community_token_id, COMING BACK TO THIS 
+                community_token_id: 1, // COMING BACK TO THIS 
                 ban_status: false
             };
 
@@ -222,7 +218,7 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
 
             let community_member = self.community_membership_status.read((community_id, profile));
-            // println!("Before inside leave_community is member: {}", community_member);
+
             assert(community_member == true, NOT_MEMBER);
 
             // remove the member_community_id
@@ -342,14 +338,7 @@ pub mod CommunityComponent {
 
             let caller_is_owner = caller == community_owner_address;
 
-            // If caller is neither a mod nor the owner, throw an error
-
             assert(caller_is_mod || caller_is_owner, 'Cannot ban member');
-
-            // let community = self.communities.read(community_id);
-            // if (!communityis_none()) {
-            //     panic('Community does not exist');
-            // }
 
             let community = self.communities.read(community_id);
             assert(community.community_owner == community_owner_address, NOT_COMMUNITY_OWNER);
@@ -435,13 +424,13 @@ pub mod CommunityComponent {
                 let mut arr_permissioned_addresses: Array<ContractAddress> = ArrayTrait::new();
 
                 while index < length {
-                    //  arr_permissioned_addresses.append(permissioned_addresses.at(index));
                     self
                         .gate_keep_permissioned_addresses
                         .write((community_id, *permissioned_addresses.at(index)), true);
                     index += 1;
                 };
             };
+
             // emint event
             self
                 .emit(
