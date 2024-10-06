@@ -77,58 +77,58 @@ pub mod CommunityComponent {
 
     #[derive(Drop, starknet::Event)]
     pub struct CommunityCreated {
-        community_id: u256,
-        community_owner: ContractAddress,
-        community_nft_address: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub community_owner: ContractAddress,
+        pub community_nft_address: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommunityModAdded {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        mod_address: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub mod_address: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommunityModRemoved {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        mod_address: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub mod_address: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommunityBanStatusUpdated {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        profile: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub profile: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommunityUpgraded {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        premiumType: CommunityType,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub premiumType: CommunityType,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct CommunityGatekeeped {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        gatekeepType: GateKeepType,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub gatekeepType: GateKeepType,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct DeployedCommunityNFT {
-        community_id: u256,
-        profile_address: ContractAddress,
-        community_nft: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub profile_address: ContractAddress,
+        pub community_nft: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     // *************************************************************************
@@ -383,7 +383,9 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
             // only owner can upgrade community
             assert(community.community_owner == caller, NOT_COMMUNITY_OWNER);
-            let updated_community = CommunityDetails { community_type: upgrade_type, ..community };
+            let updated_community = CommunityDetails {
+                community_type: upgrade_type, community_premium_status: true, ..community
+            };
             self.communities.write(community_id, updated_community);
             let community_event = self.communities.read(community_id);
             self
@@ -414,7 +416,7 @@ pub mod CommunityComponent {
             let mut community_gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,
                 gate_keep_type: gate_keep_type.clone(),
-                community_nft_address: community_details.community_nft_address,
+                community_nft_address: nft_contract_address,
                 entry_fee: 0
             };
 

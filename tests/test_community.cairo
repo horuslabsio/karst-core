@@ -19,7 +19,7 @@ use karst::mocks::registry::Registry;
 use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
 use karst::karstnft::karstnft::KarstNFT;
 use karst::presets::community::KarstCommunity;
-
+use karst::community::community::CommunityComponent;
 use karst::base::constants::types::{
     CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
 };
@@ -32,6 +32,7 @@ const USER_THREE: felt252 = 'ROB';
 const USER_FOUR: felt252 = 'DAN';
 const USER_FIVE: felt252 = 'RANDY';
 const USER_SIX: felt252 = 'JOE';
+const NFT_ONE: felt252 = 'JOE_NFT';
 
 // *************************************************************************
 //                              SETUP
@@ -454,5 +455,183 @@ fn test_should_panic_set_ban_status() {
 
     start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+}
+
+#[test]
+fn test_community_upgrade() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    let community = communityDispatcher.get_community(community_id);
+    assert(community.community_type == CommunityType::Standard, 'Community Upgrade failed');
+    stop_cheat_caller_address(community_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: Not Community owner',))]
+fn test_should_panic_community_upgrade_by_wrong_owner() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+
+    stop_cheat_caller_address(community_contract_address);
+
+    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    let community = communityDispatcher.get_community(community_id);
+    assert(community.community_type == CommunityType::Standard, 'Community Upgrade failed');
+}
+
+#[test]
+fn test_community_upgrade_emits_event() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    // spy on emitted events
+    let mut spy = spy_events();
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+
+    // check events are emitted
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    community_contract_address,
+                    CommunityComponent::Event::CommunityUpgraded(
+                        CommunityComponent::CommunityUpgraded {
+                            community_id: community_id,
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            premiumType: CommunityType::Standard,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+#[test]
+fn test_community_gatekeep_permission() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::PermissionedGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            0
+        );
+
+    // check is_gatekeeped
+    let (is_gatekeeped, _) = communityDispatcher.is_gatekeeped(community_id);
+    assert(is_gatekeeped == true, 'Community gatekeep failed');
+    stop_cheat_caller_address(community_contract_address);
+}
+
+#[test]
+fn test_community_gatekeep_paid() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+    communityDispatcher
+        .gatekeep(
+            community_id, GateKeepType::Paid, NFT_ONE.try_into().unwrap(), permission_addresses, 450
+        );
+
+    // check is_gatekeeped
+    let (is_gatekeeped, _) = communityDispatcher.is_gatekeeped(community_id);
+    assert(is_gatekeeped == true, 'Community gatekeep failed');
+    stop_cheat_caller_address(community_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: Not Community owner',))]
+fn test_should_panic_community_gatekeep() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+
+    stop_cheat_caller_address(community_contract_address);
+
+    // Wrong owner trying to gate keep
+    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+    communityDispatcher
+        .gatekeep(
+            community_id, GateKeepType::Paid, NFT_ONE.try_into().unwrap(), permission_addresses, 450
+        );
+}
+
+#[test]
+fn test_community_gatekeep_emits_event() {
+    let (community_contract_address, _, _, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+
+    // spy on emitted events
+    let mut spy = spy_events();
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty();
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::PermissionedGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            0
+        );
+
+    // check events are emitted
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    community_contract_address,
+                    CommunityComponent::Event::CommunityGatekeeped(
+                        CommunityComponent::CommunityGatekeeped {
+                            community_id: community_id,
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            gatekeepType: GateKeepType::PermissionedGating,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    )
+                )
+            ]
+        );
 }
 
