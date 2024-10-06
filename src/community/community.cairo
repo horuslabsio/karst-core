@@ -181,32 +181,32 @@ pub mod CommunityComponent {
                 );
             community_id
         }
-        fn join_community(ref self: ComponentState<TContractState>, community_id: u256) {
-            let member_address = get_caller_address();
+        fn join_community(
+            ref self: ComponentState<TContractState>, profile: ContractAddress, community_id: u256
+        ) {
+            //  let member_address = get_caller_address();
             let community = self.communities.read(community_id);
             // if (!community) {
             //     panic('Community does not exist')
             // }
 
-            let community_member = self
-                .community_membership_status
-                .read((community_id, member_address));
+            let community_member = self.community_membership_status.read((community_id, profile));
             assert(community_member != true, ALREADY_MEMBER);
 
             // community_token_id
             // a token is minted from the comunity token contract address
 
             let community_member = CommunityMember {
-                profile_address: member_address,
+                profile_address: profile,
                 community_id: community_id,
                 total_publications: 0,
                 community_token_id: 1, // community.community_token_id, COMING BACK TO THIS 
                 ban_status: false
             };
 
-            self.community_membership_status.write((community_id, member_address), true);
+            self.community_membership_status.write((community_id, profile), true);
 
-            self.community_member.write((community_id, member_address), community_member);
+            self.community_member.write((community_id, profile), community_member);
 
             // update community member count
 
@@ -216,29 +216,28 @@ pub mod CommunityComponent {
             };
             self.communities.write(community_id, updated_community);
         }
-        fn leave_community(ref self: ComponentState<TContractState>, community_id: u256) {
-            let member_address = get_caller_address();
+        fn leave_community(
+            ref self: ComponentState<TContractState>, profile: ContractAddress, community_id: u256
+        ) {
             let community = self.communities.read(community_id);
 
-            let community_member = self
-                .community_membership_status
-                .read((community_id, member_address));
-            println!("Before inside leave_community is member: {}", community_member);
+            let community_member = self.community_membership_status.read((community_id, profile));
+            // println!("Before inside leave_community is member: {}", community_member);
             assert(community_member == true, NOT_MEMBER);
 
             // remove the member_community_id
-            self.community_membership_status.write((community_id, member_address), false);
+            self.community_membership_status.write((community_id, profile), false);
 
             // remove member details
             let leave_community_member = CommunityMember {
-                profile_address: member_address,
+                profile_address: profile,
                 community_id: 0,
                 total_publications: 0,
                 community_token_id: 0,
                 ban_status: true
             };
 
-            self.community_member.write((community_id, member_address), leave_community_member);
+            self.community_member.write((community_id, profile), leave_community_member);
 
             // update community member count
             let community_total_members = community.community_total_members - 1;
@@ -272,6 +271,19 @@ pub mod CommunityComponent {
 
             let community_owner = self.community_owner.read(community_id);
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
+
+            // Mod must join the community
+            let community_member = CommunityMember {
+                profile_address: moderator,
+                community_id: community_id,
+                total_publications: 0,
+                community_token_id: 1, // community.community_token_id, COMING BACK TO THIS 
+                ban_status: false
+            };
+
+            self.community_membership_status.write((community_id, moderator), true);
+
+            self.community_member.write((community_id, moderator), community_member);
 
             let community = self.communities.read(community_id);
 
@@ -331,9 +343,8 @@ pub mod CommunityComponent {
             let caller_is_owner = caller == community_owner_address;
 
             // If caller is neither a mod nor the owner, throw an error
-            if (!caller_is_mod && !caller_is_owner) {
-                panic!("Only community moderator or the owner can ban members");
-            }
+
+            assert(caller_is_mod || caller_is_owner, 'Cannot ban member');
 
             // let community = self.communities.read(community_id);
             // if (!communityis_none()) {
@@ -343,8 +354,9 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
             assert(community.community_owner == community_owner_address, NOT_COMMUNITY_OWNER);
 
-            let member_community_id = self.member_community_id.read(profile);
-            assert(member_community_id == community_id, NOT_MEMBER);
+            let community_member = self.community_membership_status.read((community_id, profile));
+            println!("Before inside leave_community is member: {}", community_member);
+            assert(community_member == true, NOT_MEMBER);
 
             let community_member = self.community_member.read((community_id, profile));
 
