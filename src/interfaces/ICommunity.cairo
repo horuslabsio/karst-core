@@ -1,4 +1,4 @@
-use starknet::ContractAddress;
+use starknet::{ContractAddress};
 use karst::base::constants::types::{GateKeepType, CommunityType, CommunityDetails};
 
 // *************************************************************************
@@ -10,7 +10,9 @@ pub trait ICommunity<TState> {
     // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************
-    fn initializer(ref self: TState,);
+    fn initializer(
+        ref self: TState, hub_address: ContractAddress, community_nft_classhash: felt252
+    );
     fn create_comminuty(ref self: TState) -> u256;
     fn join_community(ref self: TState, community_id: u256);
     fn leave_community(ref self: TState, community_id: u256);

@@ -1,5 +1,5 @@
 #[starknet::component]
-mod CommunityComponent {
+pub mod CommunityComponent {
     // *************************************************************************
     //                            IMPORT
     // *************************************************************************
@@ -35,7 +35,7 @@ mod CommunityComponent {
     //                              STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
+    pub struct Storage {
         community_counter: u256,
         community_owner: Map<u256, ContractAddress>, // map<owner_address, community_id>
         communities: Map<u256, CommunityDetails>, // map <community_id, community_details>
@@ -56,6 +56,8 @@ mod CommunityComponent {
         gate_keep_permissioned_addresses: Map<
             (u256, ContractAddress), bool
         >, // <u256, Array<ContractAddress>>,
+        hub_address: ContractAddress,
+        community_nft_classhash: felt252
     }
 
     // *************************************************************************
@@ -63,7 +65,7 @@ mod CommunityComponent {
     // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
-    enum Event {
+    pub enum Event {
         CommunityCreated: CommunityCreated,
         CommunityModAdded: CommunityModAdded,
         CommunityBanStatusUpdated: CommunityBanStatusUpdated,
@@ -132,14 +134,20 @@ mod CommunityComponent {
     // *************************************************************************
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(Community)]
+    #[embeddable_as(KarstCommunity)]
     impl CommunityImpl<
         TContractState, +HasComponent<TContractState>
     > of ICommunity<ComponentState<TContractState>> {
-        fn initializer(ref self: ComponentState<TContractState>,) {
+        fn initializer(
+            ref self: ComponentState<TContractState>,
+            hub_address: ContractAddress,
+            community_nft_classhash: felt252
+        ) {
             self.community_counter.write(0);
+            self.hub_address.write(hub_address);
+            self.community_nft_classhash.write(community_nft_classhash);
         }
-        fn create_comminuty(ref self: ComponentState<TContractState>,) -> u256 {
+        fn create_comminuty(ref self: ComponentState<TContractState>) -> u256 {
             let community_owner = get_caller_address();
             let community_counter = self.community_counter.read();
             let community_id = community_counter + 1;
@@ -147,7 +155,7 @@ mod CommunityComponent {
             // deploy a new NFT and save the address in community_nft_address
             //  let community_nft_address = self
             //     ._get_or_deploy_community_nft(
-            //         karst_hub, profile_address, pub_id, collect_nft_impl_class_hash, salt
+            //         karst_hub, community_owner, community_id, collect_nft_impl_class_hash, salt
             //     );
             let community_details = CommunityDetails {
                 community_id: community_id,
@@ -183,10 +191,7 @@ mod CommunityComponent {
             let community_member = self
                 .community_membership_status
                 .read((community_id, member_address));
-            assert(community_member == true, ALREADY_MEMBER);
-
-            // let member_community_id = self.member_community_id.read(member_address);
-            // assert(member_community_id != community_id, "Already a member");
+            assert(community_member != true, ALREADY_MEMBER);
 
             // community_token_id
             // a token is minted from the comunity token contract address
@@ -218,7 +223,8 @@ mod CommunityComponent {
             let community_member = self
                 .community_membership_status
                 .read((community_id, member_address));
-            assert(community_member != true, NOT_MEMBER);
+            println!("Before inside leave_community is member: {}", community_member);
+            assert(community_member == true, NOT_MEMBER);
 
             // remove the member_community_id
             self.community_membership_status.write((community_id, member_address), false);
@@ -451,11 +457,7 @@ mod CommunityComponent {
             let is_community_member_id = self
                 .community_membership_status
                 .read((community_id, profile));
-            if (is_community_member_id) {
-                (true, community_id)
-            } else {
-                (false, community_id)
-            }
+            (is_community_member_id, community_id)
         }
         fn get_total_members(self: @ComponentState<TContractState>, community_id: u256) -> u256 {
             let community = self.communities.read(community_id);
@@ -499,14 +501,15 @@ mod CommunityComponent {
     //                            PRIVATE FUNCTIONS
     // *************************************************************************
 
+    // #[generate_trait]
     #[generate_trait]
-    impl InternalImpl<
+    impl CommunityPrivateImpl<
         TContractState, +HasComponent<TContractState>, +Drop<TContractState>,
-    > of InternalTrait<TContractState> {
+    > of CommunityPrivateTrait<TContractState> {
         fn _get_or_deploy_community_nft(
             ref self: ComponentState<TContractState>,
             karst_hub: ContractAddress,
-            profile_address: ContractAddress,
+            community_owner_address: ContractAddress,
             community_id: u256,
             community_nft_impl_class_hash: felt252,
             salt: felt252
@@ -518,7 +521,7 @@ mod CommunityComponent {
                 let deployed_collect_nft_address = self
                     ._deploy_community_nft(
                         karst_hub,
-                        profile_address,
+                        community_owner_address,
                         community_id,
                         community_nft_impl_class_hash,
                         salt
