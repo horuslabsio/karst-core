@@ -454,7 +454,5 @@ fn test_should_panic_set_ban_status() {
 
     start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
-
 }
-
 
