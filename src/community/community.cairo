@@ -520,7 +520,7 @@ pub mod CommunityComponent {
             if community_nft.is_zero() {
                 // Deploy a new Collect NFT contract
                 let deployed_collect_nft_address = self
-                    .nft_test(karst_hub, community_id, community_nft_impl_class_hash, salt);
+                    ._deploy_community_nft(karst_hub, community_id, community_nft_impl_class_hash, salt);
 
                 // Update the community with the deployed Collect NFT address
                 let updated_community = CommunityDetails {
@@ -534,15 +534,7 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
             community.community_nft_address
         }
-        fn nft_test(
-            ref self: ComponentState<TContractState>,
-            karst_hub: ContractAddress,
-            community_id: u256,
-            community_nft_impl_class_hash: ClassHash,
-            salt: felt252
-        ) -> ContractAddress {
-            'Demo'.try_into().unwrap()
-        }
+
         fn _deploy_community_nft(
             ref self: ComponentState<TContractState>,
             karst_hub: ContractAddress,
