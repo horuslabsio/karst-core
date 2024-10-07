@@ -520,7 +520,9 @@ pub mod CommunityComponent {
             if community_nft.is_zero() {
                 // Deploy a new Collect NFT contract
                 let deployed_collect_nft_address = self
-                    ._deploy_community_nft(karst_hub, community_id, community_nft_impl_class_hash, salt);
+                    ._deploy_community_nft(
+                        karst_hub, community_id, community_nft_impl_class_hash, salt
+                    );
 
                 // Update the community with the deployed Collect NFT address
                 let updated_community = CommunityDetails {
