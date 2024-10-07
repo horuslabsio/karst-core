@@ -15,11 +15,7 @@ pub mod CommunityComponent {
     };
     use karst::interfaces::ICommunity::ICommunity;
     use karst::interfaces::ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait};
-    // ICommunityNft
 
-    //  use karst::interfaces::ICommunity::{
-    //     ICommunityDispatcher, ICommunityDispatcherTrait, ICommunityLibraryDispatcher
-    // };
 
     use karst::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
@@ -57,7 +53,7 @@ pub mod CommunityComponent {
             (u256, ContractAddress), bool
         >, // <u256, Array<ContractAddress>>,
         hub_address: ContractAddress,
-        community_nft_classhash: felt252
+        community_nft_classhash: ClassHash
     }
 
     // *************************************************************************
@@ -126,7 +122,6 @@ pub mod CommunityComponent {
     #[derive(Drop, starknet::Event)]
     pub struct DeployedCommunityNFT {
         pub community_id: u256,
-        pub profile_address: ContractAddress,
         pub community_nft: ContractAddress,
         pub block_timestamp: u64,
     }
@@ -145,23 +140,26 @@ pub mod CommunityComponent {
         ) {
             self.community_counter.write(0);
             self.hub_address.write(hub_address);
-            self.community_nft_classhash.write(community_nft_classhash);
+            self.community_nft_classhash.write(community_nft_classhash.try_into().unwrap());
         }
-        fn create_comminuty(ref self: ComponentState<TContractState>) -> u256 {
+        fn create_comminuty(ref self: ComponentState<TContractState>, salt: felt252) -> u256 {
             let community_owner = get_caller_address();
             let community_counter = self.community_counter.read();
+
             let community_id = community_counter + 1;
+            let karst_hub = self.hub_address.read();
+            let community_nft_classhash = self.community_nft_classhash.read();
 
             // deploy a new NFT and save the address in community_nft_address
-            //  let community_nft_address = self
+            // let community_nft_address = self
             //     ._get_or_deploy_community_nft(
-            //         karst_hub, community_owner, community_id, collect_nft_impl_class_hash, salt
+            //         karst_hub, community_id, community_nft_classhash, salt
             //     );
             let community_details = CommunityDetails {
                 community_id: community_id,
                 community_owner: community_owner,
                 community_metadata_uri: "Community URI",
-                community_nft_address: community_owner,
+                community_nft_address: community_owner, // community_nft_address, -- COMING BACK
                 community_premium_status: false,
                 community_total_members: 0,
                 community_type: CommunityType::Free,
@@ -191,12 +189,12 @@ pub mod CommunityComponent {
 
             // community_token_id
             // a token is minted from the comunity token contract address
-
+            //  let mint_token_id = self._mint_community_nft(community.community_nft_address);
             let community_member = CommunityMember {
                 profile_address: profile,
                 community_id: community_id,
                 total_publications: 0,
-                community_token_id: 1, // COMING BACK TO THIS 
+                community_token_id: 45, //mint_token_id,
                 ban_status: false
             };
 
@@ -221,6 +219,7 @@ pub mod CommunityComponent {
 
             assert(community_member == true, NOT_MEMBER);
 
+            let community_member_details = self.community_member.read((community_id, profile));
             // remove the member_community_id
             self.community_membership_status.write((community_id, profile), false);
 
@@ -244,6 +243,10 @@ pub mod CommunityComponent {
             // this function will also burn the nft on leaving
         // call the burn function from the community nft contract
 
+            // self
+        //     ._burn_community_nft(
+        //         community.community_nft_address, community_member_details.community_token_id
+        //     );
         }
         fn set_community_metadata_uri(
             ref self: ComponentState<TContractState>, community_id: u256, metadata_uri: ByteArray
@@ -344,7 +347,7 @@ pub mod CommunityComponent {
             assert(community.community_owner == community_owner_address, NOT_COMMUNITY_OWNER);
 
             let community_member = self.community_membership_status.read((community_id, profile));
-            println!("Before inside leave_community is member: {}", community_member);
+
             assert(community_member == true, NOT_MEMBER);
 
             let community_member = self.community_member.read((community_id, profile));
@@ -500,21 +503,16 @@ pub mod CommunityComponent {
             (true, gate_keep.gate_keep_type)
         }
     }
-    // *************************************************************************
-    //                            PRIVATE FUNCTIONS
-    // *************************************************************************
 
-    // #[generate_trait]
     #[generate_trait]
-    impl CommunityPrivateImpl<
-        TContractState, +HasComponent<TContractState>, +Drop<TContractState>,
-    > of CommunityPrivateTrait<TContractState> {
+    pub impl Private<
+        TContractState, +HasComponent<TContractState>
+    > of PrivateTrait<TContractState> {
         fn _get_or_deploy_community_nft(
             ref self: ComponentState<TContractState>,
             karst_hub: ContractAddress,
-            community_owner_address: ContractAddress,
             community_id: u256,
-            community_nft_impl_class_hash: felt252,
+            community_nft_impl_class_hash: ClassHash,
             salt: felt252
         ) -> ContractAddress {
             let mut community = self.communities.read(community_id);
@@ -522,13 +520,7 @@ pub mod CommunityComponent {
             if community_nft.is_zero() {
                 // Deploy a new Collect NFT contract
                 let deployed_collect_nft_address = self
-                    ._deploy_community_nft(
-                        karst_hub,
-                        community_owner_address,
-                        community_id,
-                        community_nft_impl_class_hash,
-                        salt
-                    );
+                    .nft_test(karst_hub, community_id, community_nft_impl_class_hash, salt);
 
                 // Update the community with the deployed Collect NFT address
                 let updated_community = CommunityDetails {
@@ -538,32 +530,39 @@ pub mod CommunityComponent {
                 // Write the updated community with the new Community NFT address
                 self.communities.write(community_id, updated_community);
             }
+
+            let community = self.communities.read(community_id);
             community.community_nft_address
         }
-
+        fn nft_test(
+            ref self: ComponentState<TContractState>,
+            karst_hub: ContractAddress,
+            community_id: u256,
+            community_nft_impl_class_hash: ClassHash,
+            salt: felt252
+        ) -> ContractAddress {
+            'Demo'.try_into().unwrap()
+        }
         fn _deploy_community_nft(
             ref self: ComponentState<TContractState>,
             karst_hub: ContractAddress,
-            profile_address: ContractAddress,
             community_id: u256,
-            community_nft_impl_class_hash: felt252,
+            community_nft_impl_class_hash: ClassHash,
             salt: felt252
         ) -> ContractAddress {
             let mut constructor_calldata: Array<felt252> = array![
-                karst_hub.into(),
-                profile_address.into(),
-                community_id.low.into(),
-                community_id.high.into()
+                karst_hub.into(), community_id.low.into(), community_id.high.into()
             ];
-            let class_hash: ClassHash = community_nft_impl_class_hash.try_into().unwrap();
-            let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);
-            let (account_address, _) = result.unwrap_syscall();
+
+            let (account_address, _) = deploy_syscall(
+                community_nft_impl_class_hash, salt, constructor_calldata.span(), true
+            )
+                .unwrap_syscall();
 
             self
                 .emit(
                     DeployedCommunityNFT {
                         community_id: community_id,
-                        profile_address: profile_address,
                         community_nft: account_address,
                         block_timestamp: get_block_timestamp()
                     }
@@ -578,7 +577,6 @@ pub mod CommunityComponent {
                 .mint_nft(caller);
             token_id
         }
-
         fn _burn_community_nft(
             ref self: ComponentState<TContractState>,
             community_nft_address: ContractAddress,

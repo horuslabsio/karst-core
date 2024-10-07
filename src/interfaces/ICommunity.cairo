@@ -13,7 +13,7 @@ pub trait ICommunity<TState> {
     fn initializer(
         ref self: TState, hub_address: ContractAddress, community_nft_classhash: felt252
     );
-    fn create_comminuty(ref self: TState) -> u256;
+    fn create_comminuty(ref self: TState, salt: felt252) -> u256;
     fn join_community(ref self: TState, profile: ContractAddress, community_id: u256);
     fn leave_community(ref self: TState, profile: ContractAddress, community_id: u256);
     fn set_community_metadata_uri(ref self: TState, community_id: u256, metadata_uri: ByteArray);

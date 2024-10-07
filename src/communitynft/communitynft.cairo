@@ -33,7 +33,6 @@ pub mod CommunityNft {
         last_minted_id: u256,
         mint_timestamp: Map<u256, u64>,
         user_token_id: Map<ContractAddress, u256>,
-        profile_address: ContractAddress,
         community_id: u256
     }
 
@@ -49,12 +48,11 @@ pub mod CommunityNft {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        karst_hub: ContractAddress,
-        profile_address: ContractAddress,
+        karst_hub: ContractAddress, //  profile_address: ContractAddress,
         community_id: u256
     ) {
         self.karst_hub.write(karst_hub);
-        self.profile_address.write(profile_address);
+
         self.community_id.write(community_id);
     }
 
@@ -105,10 +103,10 @@ pub mod CommunityNft {
         /// @notice returns the community name
         fn name(self: @ContractState) -> ByteArray {
             let mut collection_name = ArrayTrait::<felt252>::new();
-            let profile_address_felt252: felt252 = self.profile_address.read().into();
+            //  let profile_address_felt252: felt252 = self.profile_address.read().into();
             let community_id_felt252: felt252 = self.community_id.read().try_into().unwrap();
             collection_name.append('Karst Community | Profile #');
-            collection_name.append(profile_address_felt252);
+            //  collection_name.append(profile_address_felt252);
             collection_name.append('- Community #');
             collection_name.append(community_id_felt252);
             let collection_name_byte = convert_into_byteArray(ref collection_name);
