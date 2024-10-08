@@ -8,6 +8,9 @@ pub mod IPublication;
 pub mod IHandle;
 pub mod IHandleRegistry;
 pub mod IHub;
-pub mod IJolt;
+pub mod ICommunity;
 pub mod ICollectNFT;
+pub mod ICommunityNft;
+pub mod IJolt;
 pub mod IUpgradeable;
+

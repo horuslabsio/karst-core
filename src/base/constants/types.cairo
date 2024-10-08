@@ -1,8 +1,9 @@
+// *************************************************************************
+//                              TYPES
+// *************************************************************************
 use starknet::ContractAddress;
 
-// *************************************************************************
-//                            PROFILE
-// *************************************************************************
+
 // * @notice A struct containing profile data.
 // * profile_address The profile ID of a karst profile
 // * profile_owner The address that created the profile_address
@@ -19,9 +20,6 @@ pub struct Profile {
     pub follow_nft: ContractAddress
 }
 
-// *************************************************************************
-//                            PUBLICATION
-// *************************************************************************
 // /**
 // * @notice A struct containing publication data.
 // *
@@ -141,6 +139,62 @@ pub struct QuoteParams {
     pub pointed_profile_address: ContractAddress,
     pub pointed_pub_id: u256,
     pub reference_pub_type: PublicationType
+}
+
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityDetails {
+    pub community_id: u256,
+    pub community_owner: ContractAddress,
+    pub community_metadata_uri: ByteArray,
+    pub community_nft_address: ContractAddress,
+    pub community_total_members: u256,
+    pub community_premium_status: bool,
+    pub community_type: CommunityType
+}
+
+// /**
+// * @notice A struct containing the parameters required for the `join_community()` function.
+// *
+// * @param profile_address The address of the profile of the community member.
+// * @param community_id The id of the community he join.
+// * @param total_publications The toal publication of the member in the community.
+// * @param community_token_id The community token ID of the member.
+// */
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityMember {
+    pub profile_address: ContractAddress,
+    pub community_id: u256,
+    pub total_publications: u256,
+    pub community_token_id: u256,
+    pub ban_status: bool,
+}
+
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct CommunityGateKeepDetails {
+    pub community_id: u256,
+    pub gate_keep_type: GateKeepType,
+    pub community_nft_address: ContractAddress,
+    pub entry_fee: u256
+}
+
+// permissioned_addresses: Vec<ContractAddress>,
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
+pub enum GateKeepType {
+    None,
+    NFTGating,
+    PermissionedGating,
+    Paid,
+}
+
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
+pub enum CommunityType {
+    Free,
+    Standard,
+    Business
 }
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]

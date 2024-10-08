@@ -19,6 +19,12 @@ pub mod Errors {
     pub const INVALID_PROFILE_ADDRESS: felt252 = 'Karst: invalid profile address!';
     pub const SELF_FOLLOWING: felt252 = 'Karst: self follow is forbidden';
     pub const ALREADY_REACTED: felt252 = 'Karst: already react to post!';
+    pub const ALREADY_MEMBER: felt252 = 'Karst: already a Member';
+    pub const COMMUNITY_DOES_NOT_EXIST: felt252 = 'Karst: Community does not exist';
+    pub const NOT_COMMUNITY_OWNER: felt252 = 'Karst: Not Community owner';
+    pub const NOT_MEMBER: felt252 = 'Karst: Not a Community  Member';
+    pub const NOT_TOKEN_OWNER: felt252 = 'Karst: Not a Token Owner';
+    pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: Token does not exist';
     pub const SELF_TIPPING: felt252 = 'Karst: self-tip forbidden!';
     pub const SELF_TRANSFER: felt252 = 'Karst: self-transfer forbidden!';
     pub const SELF_REQUEST: felt252 = 'Karst: self-request forbidden!';
@@ -27,5 +33,4 @@ pub mod Errors {
     pub const AUTO_RENEW_DURATION_ENDED: felt252 = 'Karst: auto renew ended!';
     pub const INVALID_JOLT: felt252 = 'Karst: invalid jolt!';
     pub const INVALID_JOLT_RECIPIENT: felt252 = 'Karst: not request recipient!';
-    pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: token_id does not exist!';
 }
