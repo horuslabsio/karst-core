@@ -37,55 +37,20 @@ const NFT_ONE: felt252 = 'JOE_NFT';
 // *************************************************************************
 //                              SETUP
 // *************************************************************************
-fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress) {
-    // deploy Karst NFT
-    let nft_class_hash = declare("KarstNFT").unwrap().contract_class();
-    let mut calldata: Array<felt252> = array![USER_ONE];
-    let (karst_nft_contract_address, _) = nft_class_hash.deploy(@calldata).unwrap_syscall();
-
-    // deploy handle contract
-    let handle_class_hash = declare("Handles").unwrap().contract_class();
-    let mut calldata: Array<felt252> = array![USER_ONE];
-    let (handle_contract_address, _) = handle_class_hash.deploy(@calldata).unwrap_syscall();
-
-    // deploy handle registry contract
-    let handle_registry_class_hash = declare("HandleRegistry").unwrap().contract_class();
-    let mut calldata: Array<felt252> = array![handle_contract_address.into()];
-    let (handle_registry_contract_address, _) = handle_registry_class_hash
-        .deploy(@calldata)
-        .unwrap_syscall();
-
+fn __setup__() -> ContractAddress {
     // deploy community nft
     let community_nft_class_hash = declare("CommunityNft").unwrap().contract_class();
-
-    // declare follownft
-    let follow_nft_classhash = declare("Follow").unwrap().contract_class();
-
-    // deploy hub contract
-    let hub_class_hash = declare("KarstHub").unwrap().contract_class();
-    let mut calldata: Array<felt252> = array![
-        karst_nft_contract_address.into(),
-        handle_contract_address.into(),
-        handle_registry_contract_address.into(),
-        (*follow_nft_classhash.class_hash).into()
-    ];
-    let (hub_contract_address, _) = hub_class_hash.deploy(@calldata).unwrap_syscall();
 
     // deploy community preset contract
     let community_contract = declare("KarstCommunity").unwrap().contract_class();
     let mut community_constructor_calldata: Array<felt252> = array![
-        hub_contract_address.into(), (*community_nft_class_hash.class_hash).into(),
+        (*community_nft_class_hash.class_hash).into(),
     ];
     let (community_contract_address, _) = community_contract
         .deploy(@community_constructor_calldata)
         .unwrap();
 
-    return (
-        community_contract_address,
-        karst_nft_contract_address,
-        handle_contract_address,
-        handle_registry_contract_address,
-    );
+    return (community_contract_address);
 }
 
 // *************************************************************************
@@ -93,7 +58,7 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
 // *************************************************************************
 #[test]
 fn test_creation_community() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = '5t74rhufhu5';
@@ -103,9 +68,25 @@ fn test_creation_community() {
     stop_cheat_caller_address(community_contract_address);
 }
 
+// smart_nft
+// #[test]
+// fn test_smart_nft() {
+//     let community_contract_address = __setup__();
+
+//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
+//     };
+//     let salt: felt252 = '5t74rhufhu5';
+//     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+//     let community_id = communityDispatcher.create_comminuty(salt);
+//     let community_address = communityDispatcher.smart_nft(salt, community_id);
+//     println!("NFT Contract Address: {:?}", community_address);
+//     //  assert(community_id == 1, 'invalid community creation');
+//     stop_cheat_caller_address(community_contract_address);
+// }
+
 #[test]
 fn test_creation_community_emit_events() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
@@ -139,7 +120,7 @@ fn test_creation_community_emit_events() {
 
 #[test]
 fn test_join_community() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'ngkylu349586';
@@ -158,7 +139,7 @@ fn test_join_community() {
 #[test]
 #[should_panic(expected: ('Karst: already a Member',))]
 fn test_should_panic_join_one_community_twice() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkn49586';
@@ -173,7 +154,7 @@ fn test_should_panic_join_one_community_twice() {
 
 #[test]
 fn test_leave_community() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkn4t76349586';
@@ -206,7 +187,7 @@ fn test_leave_community() {
 #[test]
 #[should_panic(expected: ('Karst: Not a Community  Member',))]
 fn test_should_panic_not_member() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkn092346';
@@ -226,7 +207,7 @@ fn test_should_panic_not_member() {
 
 #[test]
 fn test_set_community_metadata_uri() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'dlosheyr586';
@@ -248,7 +229,7 @@ fn test_set_community_metadata_uri() {
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_set_community_metadata_uri() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'o0ijh9586';
@@ -265,7 +246,7 @@ fn test_should_panic_set_community_metadata_uri() {
 
 #[test]
 fn test_add_community_mod() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'lkkhjfegky';
@@ -283,7 +264,7 @@ fn test_add_community_mod() {
 
 #[test]
 fn test_add_community_mod_emit_event() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
@@ -317,7 +298,7 @@ fn test_add_community_mod_emit_event() {
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_add_community_mod() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'dfghopeuryljk';
@@ -335,7 +316,7 @@ fn test_should_panic_add_community_mod() {
 
 #[test]
 fn test_remove_community_mod() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djsdfghk9586';
@@ -358,7 +339,7 @@ fn test_remove_community_mod() {
 
 #[test]
 fn test_remove_community_mod_emit_event() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'dddfhjk86';
@@ -395,7 +376,7 @@ fn test_remove_community_mod_emit_event() {
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_remove_community_mod() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkngkylu349586';
@@ -421,7 +402,7 @@ fn test_should_panic_remove_community_mod() {
 
 #[test]
 fn test_set_ban_status_owner() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkngkylu349586';
@@ -445,7 +426,7 @@ fn test_set_ban_status_owner() {
 
 #[test]
 fn test_set_ban_status_by_mod() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'sdery586';
@@ -473,7 +454,7 @@ fn test_set_ban_status_by_mod() {
 
 #[test]
 fn test_set_ban_status_emit_event() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = '495ksjdhfgjrkf86';
@@ -516,7 +497,7 @@ fn test_set_ban_status_emit_event() {
 #[test]
 #[should_panic(expected: ('Cannot ban member',))]
 fn test_should_panic_set_ban_status() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkrtyhjejfg6';
@@ -538,7 +519,7 @@ fn test_should_panic_set_ban_status() {
 
 #[test]
 fn test_community_upgrade() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'sfhkmpkippe86';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
@@ -552,7 +533,7 @@ fn test_community_upgrade() {
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_community_upgrade_by_wrong_owner() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djkdgjlorityi86';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
@@ -568,7 +549,7 @@ fn test_should_panic_community_upgrade_by_wrong_owner() {
 
 #[test]
 fn test_community_upgrade_emits_event() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     let salt: felt252 = 'djcxbvnk586';
     // spy on emitted events
@@ -599,7 +580,7 @@ fn test_community_upgrade_emits_event() {
 
 #[test]
 fn test_community_gatekeep_permission() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
@@ -626,7 +607,7 @@ fn test_community_gatekeep_permission() {
 
 #[test]
 fn test_community_gatekeep_paid() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
@@ -650,7 +631,7 @@ fn test_community_gatekeep_paid() {
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_community_gatekeep() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
@@ -673,7 +654,7 @@ fn test_should_panic_community_gatekeep() {
 
 #[test]
 fn test_community_gatekeep_emits_event() {
-    let (community_contract_address, _, _, _) = __setup__();
+    let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();

@@ -29,7 +29,6 @@ pub mod CommunityNft {
         erc721: ERC721Component::Storage,
         #[substorage(v0)]
         src5: SRC5Component::Storage,
-        karst_hub: ContractAddress,
         last_minted_id: u256,
         mint_timestamp: Map<u256, u64>,
         user_token_id: Map<ContractAddress, u256>,
@@ -46,13 +45,7 @@ pub mod CommunityNft {
     }
 
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        karst_hub: ContractAddress, //  profile_address: ContractAddress,
-        community_id: u256
-    ) {
-        self.karst_hub.write(karst_hub);
-
+    fn constructor(ref self: ContractState, community_id: u256) {
         self.community_id.write(community_id);
     }
 
@@ -72,6 +65,7 @@ pub mod CommunityNft {
             self.erc721.mint(user_address, token_id);
             let timestamp: u64 = get_block_timestamp();
             self.user_token_id.write(user_address, token_id);
+
             self.last_minted_id.write(token_id);
             self.mint_timestamp.write(token_id, timestamp);
             self.last_minted_id.read()
