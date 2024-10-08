@@ -1,12 +1,12 @@
 #[starknet::contract]
 pub mod CommunityNft {
-    use starknet::{ContractAddress, get_block_timestamp, get_caller_address};
+    use starknet::{ContractAddress, get_block_timestamp};
     use core::num::traits::zero::Zero;
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
 
     use karst::interfaces::ICommunityNft::ICommunityNft;
-    use karst::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
+
     use karst::base::{
         constants::errors::Errors::{ALREADY_MINTED, NOT_TOKEN_OWNER, TOKEN_DOES_NOT_EXIST},
         utils::base64_extended::convert_into_byteArray,

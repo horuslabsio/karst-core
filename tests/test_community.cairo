@@ -5,24 +5,15 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress, class_hash::ClassHash, contract_address_const, get_block_timestamp};
+use starknet::{ContractAddress, get_block_timestamp};
 
 use snforge_std::{
-    declare, start_cheat_caller_address, stop_cheat_caller_address, start_cheat_transaction_hash,
-    start_cheat_nonce, spy_events, EventSpyAssertionsTrait, ContractClass, ContractClassTrait,
-    DeclareResultTrait, start_cheat_block_timestamp, stop_cheat_block_timestamp, EventSpy
+    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
+    EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait, EventSpy
 };
 
-use token_bound_accounts::interfaces::IAccount::{IAccountDispatcher, IAccountDispatcherTrait};
-use token_bound_accounts::presets::account::Account;
-use karst::mocks::registry::Registry;
-use karst::interfaces::IRegistry::{IRegistryDispatcher, IRegistryDispatcherTrait};
-use karst::karstnft::karstnft::KarstNFT;
-use karst::presets::community::KarstCommunity;
 use karst::community::community::CommunityComponent;
-use karst::base::constants::types::{
-    CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
-};
+use karst::base::constants::types::{GateKeepType, CommunityType};
 use karst::interfaces::ICommunity::{ICommunityDispatcher, ICommunityDispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';
@@ -68,21 +59,6 @@ fn test_creation_community() {
     stop_cheat_caller_address(community_contract_address);
 }
 
-// smart_nft
-// #[test]
-// fn test_smart_nft() {
-//     let community_contract_address = __setup__();
-
-//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
-//     };
-//     let salt: felt252 = '5t74rhufhu5';
-//     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-//     let community_id = communityDispatcher.create_comminuty(salt);
-//     let community_address = communityDispatcher.smart_nft(salt, community_id);
-//     println!("NFT Contract Address: {:?}", community_address);
-//     //  assert(community_id == 1, 'invalid community creation');
-//     stop_cheat_caller_address(community_contract_address);
-// }
 
 #[test]
 fn test_creation_community_emit_events() {
@@ -213,7 +189,6 @@ fn test_set_community_metadata_uri() {
     let salt: felt252 = 'dlosheyr586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(salt);
-    //  let metadata_uri: ByteArray = "ipfs://helloworld";
 
     communityDispatcher
         .set_community_metadata_uri(

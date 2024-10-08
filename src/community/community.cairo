@@ -22,8 +22,7 @@ pub mod CommunityComponent {
     };
 
     use karst::base::constants::errors::{
-        Errors::ALREADY_MEMBER, Errors::COMMUNITY_DOES_NOT_EXIST, Errors::NOT_COMMUNITY_OWNER,
-        Errors::NOT_MEMBER,
+        Errors::ALREADY_MEMBER, Errors::NOT_COMMUNITY_OWNER, Errors::NOT_MEMBER,
     };
 
 
@@ -277,8 +276,6 @@ pub mod CommunityComponent {
 
             self.community_member.write((community_id, moderator), community_member);
 
-            let community = self.communities.read(community_id);
-
             self.community_mod.write((community_id, moderator), true);
 
             self
@@ -297,10 +294,6 @@ pub mod CommunityComponent {
         ) {
             let community_owner = self.community_owner.read(community_id);
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
-
-            let community = self.communities.read(community_id);
-
-            let community_mods = self.community_mod.read((community_id, moderator));
 
             self.community_mod.write((community_id, moderator), false);
             self
@@ -396,8 +389,6 @@ pub mod CommunityComponent {
             let community_owner = self.community_owner.read(community_id);
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
-            let community_details = self.communities.read(community_id);
-
             let mut community_gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,
                 gate_keep_type: gate_keep_type.clone(),
@@ -417,7 +408,6 @@ pub mod CommunityComponent {
             if (gate_keep_type == GateKeepType::PermissionedGating) {
                 let length = permissioned_addresses.len();
                 let mut index: u32 = 0;
-                let mut arr_permissioned_addresses: Array<ContractAddress> = ArrayTrait::new();
 
                 while index < length {
                     self
@@ -511,7 +501,6 @@ pub mod CommunityComponent {
                 community_id.low.into(), community_id.high.into()
             ];
 
-            println!("inside _deploy_community_nft");
             let (account_address, _) = deploy_syscall(
                 community_nft_impl_class_hash, salt, constructor_calldata.span(), true
             )
