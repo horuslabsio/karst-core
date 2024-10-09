@@ -20,8 +20,10 @@ pub mod Errors {
     pub const SELF_FOLLOWING: felt252 = 'Karst: self follow is forbidden';
     pub const ALREADY_REACTED: felt252 = 'Karst: already react to post!';
     pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: token_id does not exist!';
-    pub const NOT_CHANNEL_OWNER: felt252 = 'Channel: not channel owner ';
+    pub const NOT_CHANNEL_OWNER: felt252 = 'Channel: not channel owner';
     pub const NOT_CHANNEL_MODERATOR: felt252 = 'Channel: not channel moderator';
     pub const NOT_CHANNEL_MEMBER: felt252 = 'Channel: not channel member';
     pub const BANNED_FROM_CHANNEL: felt252 = 'Channel: banned from channel';
+    pub const CHANNEL_HAS_NO_MEMBER: felt252 = 'Channel has no members';
+    pub const UNAUTHORIZED_ACESS: felt252 = 'Karst : Unauthorized access';
 }
