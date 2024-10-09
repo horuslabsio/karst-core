@@ -10,12 +10,6 @@ pub trait IComposable<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
-    fn initializer(
-        ref self: TState,
-        karst_nft_address: ContractAddress,
-        hub_address: ContractAddress,
-        follow_nft_classhash: felt252
-    );
     fn create_profile(
         ref self: TState,
         karstnft_contract_address: ContractAddress,

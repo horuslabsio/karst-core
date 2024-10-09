@@ -52,29 +52,26 @@ fn __setup__() -> (
     let registry_class_hash = declare("Registry").unwrap().contract_class();
     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
 
+    // declare follownft
+    let follow_nft_classhash = declare("Follow").unwrap().contract_class();
+
     // deploy publication
     let publication_contract = declare("KarstPublication").unwrap().contract_class();
-    let mut publication_constructor_calldata = array![];
+    let mut publication_constructor_calldata = array![
+        nft_contract_address.into(), HUB_ADDRESS, (*follow_nft_classhash.class_hash).into()
+    ];
     let (publication_contract_address, _) = publication_contract
         .deploy(@publication_constructor_calldata)
         .unwrap_syscall();
+
     // declare account
     let account_class_hash = declare("Account").unwrap().contract_class();
-
-    // declare follownft
-    let follow_nft_classhash = declare("Follow").unwrap().contract_class();
 
     //declare collectnft
     let collect_nft_classhash = declare("CollectNFT").unwrap().contract_class();
 
-    // create dispatcher, initialize profile contract
+    // create dispatcher
     let dispatcher = IComposableDispatcher { contract_address: publication_contract_address };
-    dispatcher
-        .initializer(
-            nft_contract_address,
-            HUB_ADDRESS.try_into().unwrap(),
-            (*follow_nft_classhash.class_hash).into()
-        );
 
     // deploying karst Profile for USER 1
     start_cheat_caller_address(publication_contract_address, USER_ONE.try_into().unwrap());
