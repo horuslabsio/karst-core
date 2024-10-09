@@ -56,13 +56,16 @@ fn test_community_creation() {
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(salt);
     assert(community_id == 1, 'invalid community creation');
-    // TEST TODO: use assert to check for every single item within CommunityDetails structs to ensure they were instantiated with the correct values
-    // TEST TODO: check that community nft was deployed correctly and you received an address
-    // TEST TODO: use assert to check for every single item within CommunityGateKeepDetails structs to ensure they were instantiated with the correct values
+    // TEST TODO: use assert to check for every single item within CommunityDetails structs to
+    // ensure they were instantiated with the correct values TEST TODO: check that community nft was
+    // deployed correctly and you received an address TEST TODO: use assert to check for every
+    // single item within CommunityGateKeepDetails structs to ensure they were instantiated with the
+    // correct values
     stop_cheat_caller_address(community_contract_address);
 }
 
-// TEST TODO: create a new test fn called `test_community_upgrade_on_creation` where you pass in a premium package type and checks upgrade was successful
+// TEST TODO: create a new test fn called `test_community_upgrade_on_creation` where you pass in a
+// premium package type and checks upgrade was successful
 
 #[test]
 fn test_create_community_emits_events() {
@@ -298,7 +301,8 @@ fn should_panic_if_caller_adding_mod_is_not_owner() {
     communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
 }
 
-// TEST TODO: write an extra test called `should_panic_if_mod_is_not_member` to check that a mod must first be a community member
+// TEST TODO: write an extra test called `should_panic_if_mod_is_not_member` to check that a mod
+// must first be a community member
 
 #[test]
 fn test_remove_community_mod() {
@@ -503,7 +507,8 @@ fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
 }
 
-// TEST TODO: create a test fn called `test_can_only_set_ban_status_for_members` to check that you can only ban existing members
+// TEST TODO: create a test fn called `test_can_only_set_ban_status_for_members` to check that you
+// can only ban existing members
 
 #[test]
 fn test_community_upgrade() {
@@ -515,7 +520,7 @@ fn test_community_upgrade() {
     communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
     let community = communityDispatcher.get_community(community_id);
     assert(community.community_type == CommunityType::Standard, 'Community Upgrade failed');
-    // TEST TODO: check that upgraded communities have a premium status 
+    // TEST TODO: check that upgraded communities have a premium status
     stop_cheat_caller_address(community_contract_address);
 }
 
@@ -618,8 +623,10 @@ fn test_paid_gatekeeping() {
 }
 
 // TEST TODO: add test fn `test_nft_gatekeeping` for NFTGating
-// TEST TODO: add test fn `test_only_premium_communities_can_be_paid_gated` to test that only premium communities can enforce PaidGating
-// TEST TODO: add test fn `test_only_premium_communities_can_be_nft_gated` to test that only premium communities can enforce NFTGating
+// TEST TODO: add test fn `test_only_premium_communities_can_be_paid_gated` to test that only
+// premium communities can enforce PaidGating TEST TODO: add test fn
+// `test_only_premium_communities_can_be_nft_gated` to test that only premium communities can
+// enforce NFTGating
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]

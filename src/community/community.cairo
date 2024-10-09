@@ -17,7 +17,10 @@ pub mod CommunityComponent {
     use karst::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
     };
-    use karst::base::constants::errors::Errors::{ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED, ONLY_PREMIUM_COMMUNITIES};
+    use karst::base::constants::errors::Errors::{
+        ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED,
+        ONLY_PREMIUM_COMMUNITIES
+    };
 
 
     // *************************************************************************
@@ -28,10 +31,18 @@ pub mod CommunityComponent {
         community_owner: Map<u256, ContractAddress>, // map<owner_address, community_id>
         communities: Map<u256, CommunityDetails>, // map <community_id, community_details>
         member_community_id: Map<ContractAddress, u256>, // map <member address, community id>
-        community_member: Map<(u256, ContractAddress), CommunityMember>, // map<(community_id, member address), Member_details>
-        community_mod: Map<(u256, ContractAddress), bool>, // map <(community id, mod_address), bool>
-        community_gate_keep: Map<u256, CommunityGateKeepDetails>, // map <community, CommunityGateKeepDetails>
-        gate_keep_permissioned_addresses: Map<(u256, ContractAddress), bool>, // map <(u256, ContractAddress), bool>,
+        community_member: Map<
+            (u256, ContractAddress), CommunityMember
+        >, // map<(community_id, member address), Member_details>
+        community_mod: Map<
+            (u256, ContractAddress), bool
+        >, // map <(community id, mod_address), bool>
+        community_gate_keep: Map<
+            u256, CommunityGateKeepDetails
+        >, // map <community, CommunityGateKeepDetails>
+        gate_keep_permissioned_addresses: Map<
+            (u256, ContractAddress), bool
+        >, // map <(u256, ContractAddress), bool>,
         community_nft_classhash: ClassHash,
         community_counter: u256,
     }
@@ -136,14 +147,18 @@ pub mod CommunityComponent {
     > of ICommunity<ComponentState<TContractState>> {
         // TODO: Enforce gatekeeping
         /// @notice creates a new community
-        fn create_comminuty(ref self: ComponentState<TContractState>, community_type: CommunityType) -> u256 {
+        fn create_comminuty(
+            ref self: ComponentState<TContractState>, community_type: CommunityType
+        ) -> u256 {
             let community_owner = get_caller_address();
             let community_counter = self.community_counter.read();
             let community_nft_classhash = self.community_nft_classhash.read();
             let community_id = community_counter + 1;
 
             let community_nft_address = self
-                ._deploy_community_nft(community_id, community_nft_classhash, community_id.try_into().unwrap());  // use community_id as salt since its unique
+                ._deploy_community_nft(
+                    community_id, community_nft_classhash, community_id.try_into().unwrap()
+                ); // use community_id as salt since its unique
 
             // write to storage
             let community_details = CommunityDetails {
@@ -169,7 +184,7 @@ pub mod CommunityComponent {
             self.community_counter.write(community_counter + 1);
 
             // upgrade if community type is not free
-            if(community_type != CommunityType::Free) {
+            if (community_type != CommunityType::Free) {
                 self._upgrade_community(community_id, community_type);
             }
 
@@ -201,7 +216,8 @@ pub mod CommunityComponent {
             assert(is_banned != true, BANNED_MEMBER);
 
             // mint a community token to new joiner
-            let minted_token_id = self._mint_community_nft(profile, community.community_nft_address);
+            let minted_token_id = self
+                ._mint_community_nft(profile, community.community_nft_address);
 
             let community_member = CommunityMember {
                 profile_address: profile,
@@ -220,15 +236,16 @@ pub mod CommunityComponent {
             self.communities.write(community_id, updated_community);
 
             // emit event
-            self.emit(
-                JoinedCommunity {
-                    community_id: community_id,
-                    transaction_executor: get_caller_address(),
-                    token_id: minted_token_id,
-                    profile: profile,
-                    block_timestamp: get_block_timestamp(),
-                }
-            );
+            self
+                .emit(
+                    JoinedCommunity {
+                        community_id: community_id,
+                        transaction_executor: get_caller_address(),
+                        token_id: minted_token_id,
+                        profile: profile,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
         }
 
         /// @notice removes a member from a community
@@ -257,7 +274,7 @@ pub mod CommunityComponent {
                 community_total_members: community_total_members, ..community
             };
             self.communities.write(community_id, updated_community);
-            
+
             // burn user's community token
             self
                 ._burn_community_nft(
@@ -265,15 +282,16 @@ pub mod CommunityComponent {
                 );
 
             // emit event
-            self.emit(
-                LeftCommunity {
-                    community_id: community_id,
-                    transaction_executor: get_caller_address(),
-                    token_id: community_member_details.community_token_id,
-                    profile: profile,
-                    block_timestamp: get_block_timestamp(),
-                }
-            );
+            self
+                .emit(
+                    LeftCommunity {
+                        community_id: community_id,
+                        transaction_executor: get_caller_address(),
+                        token_id: community_member_details.community_token_id,
+                        profile: profile,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
         }
 
         /// @notice set community metadata uri
@@ -420,8 +438,11 @@ pub mod CommunityComponent {
 
             // check that only premium communities can do NFTGating or PaidGating
             let community_details = self.communities.read(community_id);
-            if(gate_keep_type == GateKeepType::NFTGating || gate_keep_type == GateKeepType::PaidGating){
-                assert(community_details.community_premium_status == true, ONLY_PREMIUM_COMMUNITIES);
+            if (gate_keep_type == GateKeepType::NFTGating
+                || gate_keep_type == GateKeepType::PaidGating) {
+                assert(
+                    community_details.community_premium_status == true, ONLY_PREMIUM_COMMUNITIES
+                );
             }
 
             let mut community_gate_keep_details = CommunityGateKeepDetails {
@@ -432,7 +453,7 @@ pub mod CommunityComponent {
             };
 
             // permissioned gatekeeping
-            if(gate_keep_type == GateKeepType::PermissionedGating) {
+            if (gate_keep_type == GateKeepType::PermissionedGating) {
                 self._permissioned_gatekeeping(community_id, permissioned_addresses);
             }
 
@@ -536,7 +557,7 @@ pub mod CommunityComponent {
         ) -> (bool, CommunityGateKeepDetails) {
             let gatekeep_details = self.community_gate_keep.read(community_id);
 
-            if(gatekeep_details.gate_keep_type == GateKeepType::None){
+            if (gatekeep_details.gate_keep_type == GateKeepType::None) {
                 return (false, gatekeep_details);
             }
 
@@ -553,7 +574,9 @@ pub mod CommunityComponent {
     > of PrivateTrait<TContractState> {
         /// @notice initalizes community component
         /// @param community_nft_classhash classhash of community NFT
-        fn _initializer(ref self: ComponentState<TContractState>, community_nft_classhash: felt252) {
+        fn _initializer(
+            ref self: ComponentState<TContractState>, community_nft_classhash: felt252
+        ) {
             self.community_counter.write(0);
             self.community_nft_classhash.write(community_nft_classhash.try_into().unwrap());
         }
@@ -561,8 +584,12 @@ pub mod CommunityComponent {
         // TODO: JOLT UPGRADE SUBSCRIPTION
         /// @notice internal function to upgrade community
         /// @param community_id id of community to be upgraded
-        /// @param upgrade_type 
-        fn _upgrade_community(ref self: ComponentState<TContractState>, community_id: u256, upgrade_type: CommunityType) {
+        /// @param upgrade_type
+        fn _upgrade_community(
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            upgrade_type: CommunityType
+        ) {
             let community = self.communities.read(community_id);
 
             // update storage
@@ -585,9 +612,12 @@ pub mod CommunityComponent {
         }
 
         /// @notice internal function for permissioned gatekeeping
-        /// @param community_id id of community to be gatekeeped 
-        fn _permissioned_gatekeeping(ref self: ComponentState<TContractState>, community_id: u256,
-            permissioned_addresses: Array<ContractAddress>) {
+        /// @param community_id id of community to be gatekeeped
+        fn _permissioned_gatekeeping(
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            permissioned_addresses: Array<ContractAddress>
+        ) {
             // for permissioned gating update array of addresses
             let length = permissioned_addresses.len();
             let mut index: u32 = 0;
@@ -602,7 +632,7 @@ pub mod CommunityComponent {
 
         /// @notice internal function to deploy a community nft
         /// @param community_id id of community
-        /// @param salt for randomization 
+        /// @param salt for randomization
         fn _deploy_community_nft(
             ref self: ComponentState<TContractState>,
             community_id: u256,
