@@ -190,7 +190,7 @@ pub enum GateKeepType {
     None,
     NFTGating,
     PermissionedGating,
-    Paid,
+    PaidGating,
 }
 
 

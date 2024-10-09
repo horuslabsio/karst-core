@@ -17,7 +17,7 @@ pub mod CommunityComponent {
     use karst::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
     };
-    use karst::base::constants::errors::Errors::{ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED};
+    use karst::base::constants::errors::Errors::{ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED, ONLY_PREMIUM_COMMUNITIES};
 
 
     // *************************************************************************
@@ -134,6 +134,7 @@ pub mod CommunityComponent {
     impl CommunityImpl<
         TContractState, +HasComponent<TContractState>
     > of ICommunity<ComponentState<TContractState>> {
+        // TODO: Enforce gatekeeping
         /// @notice creates a new community
         fn create_comminuty(ref self: ComponentState<TContractState>, community_type: CommunityType) -> u256 {
             let community_owner = get_caller_address();
@@ -416,6 +417,12 @@ pub mod CommunityComponent {
             // assert caller is community owner
             let community_owner = self.community_owner.read(community_id);
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
+
+            // check that only premium communities can do NFTGating or PaidGating
+            let community_details = self.communities.read(community_id);
+            if(gate_keep_type == GateKeepType::NFTGating || gate_keep_type == GateKeepType::PaidGating){
+                assert(community_details.community_premium_status == true, ONLY_PREMIUM_COMMUNITIES);
+            }
 
             let mut community_gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,

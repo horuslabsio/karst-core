@@ -23,6 +23,7 @@ pub mod Errors {
     pub const ALREADY_MEMBER: felt252 = 'Karst: already a Member';
     pub const COMMUNITY_DOES_NOT_EXIST: felt252 = 'Karst: Community does not exist';
     pub const NOT_COMMUNITY_OWNER: felt252 = 'Karst: Not Community owner';
+    pub const ONLY_PREMIUM_COMMUNITIES: felt252 = 'Karst: only premium communities';
     pub const NOT_MEMBER: felt252 = 'Karst: Not a Community  Member';
     pub const BANNED_MEMBER: felt252 = 'Karst: Profile is banned!';
     pub const NOT_TOKEN_OWNER: felt252 = 'Karst: Not a Token Owner';
