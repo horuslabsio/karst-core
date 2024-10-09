@@ -282,10 +282,12 @@ pub mod PublicationComponent {
                     }
                 )
         }
-        //@ tip a user
-        //@param profile_address:
-        //@param pub_id: publication_id of publication to be tipped
-        // @param amount: amount to tip a publication
+
+        // TODO: CALL JOLT to TIP
+        /// @notice tip a user
+        /// @param profile_address:
+        /// @param pub_id: publication_id of publication to be tipped
+        /// @param amount: amount to tip a publication
         fn tip(
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,

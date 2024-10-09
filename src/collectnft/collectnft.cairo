@@ -23,6 +23,10 @@ pub mod CollectNFT {
         access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
+
+    // *************************************************************************
+    //                             COMPONENTS
+    // *************************************************************************
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);

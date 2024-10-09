@@ -1,6 +1,5 @@
 #[starknet::contract]
 pub mod KarstCommunity {
-    use starknet::ContractAddress;
     use karst::community::community::CommunityComponent;
     use karst::interfaces::ICommunity::ICommunity;
 
@@ -24,6 +23,6 @@ pub mod KarstCommunity {
 
     #[constructor]
     fn constructor(ref self: ContractState, community_nft_classhash: felt252) {
-        self.community.initializer(community_nft_classhash);
+        self.community._initializer(community_nft_classhash);
     }
 }

@@ -2,6 +2,7 @@
 //                            ERRORS
 // *************************************************************************
 pub mod Errors {
+    pub const UNAUTHORIZED: felt252 = 'Karst: user unauthorized!';
     pub const NOT_PROFILE_OWNER: felt252 = 'Karst: not profile owner!';
     pub const ALREADY_MINTED: felt252 = 'Karst: user already minted!';
     pub const INITIALIZED: felt252 = 'Karst: already initialized!';
@@ -23,6 +24,7 @@ pub mod Errors {
     pub const COMMUNITY_DOES_NOT_EXIST: felt252 = 'Karst: Community does not exist';
     pub const NOT_COMMUNITY_OWNER: felt252 = 'Karst: Not Community owner';
     pub const NOT_MEMBER: felt252 = 'Karst: Not a Community  Member';
+    pub const BANNED_MEMBER: felt252 = 'Karst: Profile is banned!';
     pub const NOT_TOKEN_OWNER: felt252 = 'Karst: Not a Token Owner';
     pub const TOKEN_DOES_NOT_EXIST: felt252 = 'Karst: Token does not exist';
     pub const SELF_TIPPING: felt252 = 'Karst: self-tip forbidden!';

@@ -1,5 +1,8 @@
 #[starknet::contract]
-pub mod CommunityNft {
+pub mod CommunityNFT {
+    // *************************************************************************
+    //                             IMPORTS
+    // *************************************************************************
     use starknet::{ContractAddress, get_block_timestamp};
     use core::num::traits::zero::Zero;
     use openzeppelin::introspection::src5::SRC5Component;
@@ -16,6 +19,10 @@ pub mod CommunityNft {
         Map, StoragePointerWriteAccess, StoragePointerReadAccess, StorageMapReadAccess,
         StorageMapWriteAccess
     };
+
+    // *************************************************************************
+    //                             COMPONENTS
+    // *************************************************************************
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
 
@@ -23,6 +30,9 @@ pub mod CommunityNft {
     impl ERC721MixinImpl = ERC721Component::ERC721MixinImpl<ContractState>;
     impl ERC721InternalImpl = ERC721Component::InternalImpl<ContractState>;
 
+    // *************************************************************************
+    //                             STORAGE
+    // *************************************************************************
     #[storage]
     struct Storage {
         #[substorage(v0)]
@@ -35,6 +45,9 @@ pub mod CommunityNft {
         community_id: u256
     }
 
+    // *************************************************************************
+    //                             EVENTS
+    // *************************************************************************
     #[event]
     #[derive(Drop, starknet::Event)]
     enum Event {
@@ -44,6 +57,9 @@ pub mod CommunityNft {
         SRC5Event: SRC5Component::Event
     }
 
+    // *************************************************************************
+    //                             CONSTRUCTOR
+    // *************************************************************************
     #[constructor]
     fn constructor(ref self: ContractState, community_id: u256) {
         self.community_id.write(community_id);
@@ -55,7 +71,7 @@ pub mod CommunityNft {
         //                            EXTERNAL
         // *************************************************************************
 
-        /// @notice mints the user community NFT
+        /// @notice mints a community NFT
         /// @param address address of user trying to mint the community NFT token
         fn mint_nft(ref self: ContractState, user_address: ContractAddress) -> u256 {
             let balance = self.erc721.balance_of(user_address);
@@ -71,12 +87,12 @@ pub mod CommunityNft {
             self.last_minted_id.read()
         }
 
-        /// @notice burn the user community NFT
+        /// @notice burns a community NFT
         /// @param address address of user trying to burn the community NFT token
         fn burn_nft(ref self: ContractState, user_address: ContractAddress, token_id: u256) {
             let user_token_id = self.user_token_id.read(user_address);
             assert(user_token_id == token_id, NOT_TOKEN_OWNER);
-            // check the token exist in erc721
+            // check the token exists
             assert(self.erc721.exists(token_id), TOKEN_DOES_NOT_EXIST);
             self.erc721.burn(token_id);
             self.user_token_id.write(user_address, 0);
@@ -97,11 +113,8 @@ pub mod CommunityNft {
         /// @notice returns the community name
         fn name(self: @ContractState) -> ByteArray {
             let mut collection_name = ArrayTrait::<felt252>::new();
-            //  let profile_address_felt252: felt252 = self.profile_address.read().into();
             let community_id_felt252: felt252 = self.community_id.read().try_into().unwrap();
-            collection_name.append('Karst Community | Profile #');
-            //  collection_name.append(profile_address_felt252);
-            collection_name.append('- Community #');
+            collection_name.append('Karst Community | #');
             collection_name.append(community_id_felt252);
             let collection_name_byte = convert_into_byteArray(ref collection_name);
             collection_name_byte

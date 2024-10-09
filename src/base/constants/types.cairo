@@ -1,9 +1,8 @@
-// *************************************************************************
-//                              TYPES
-// *************************************************************************
 use starknet::ContractAddress;
 
-
+// *************************************************************************
+//                            PROFILE
+// *************************************************************************
 // * @notice A struct containing profile data.
 // * profile_address The profile ID of a karst profile
 // * profile_owner The address that created the profile_address
@@ -19,6 +18,10 @@ pub struct Profile {
     pub metadata_URI: ByteArray,
     pub follow_nft: ContractAddress
 }
+
+// *************************************************************************
+//                            PUBLICATION
+// *************************************************************************
 
 // /**
 // * @notice A struct containing publication data.
@@ -141,6 +144,9 @@ pub struct QuoteParams {
     pub reference_pub_type: PublicationType
 }
 
+// *************************************************************************
+//                            COMMUNITY
+// *************************************************************************
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityDetails {
@@ -179,8 +185,6 @@ pub struct CommunityGateKeepDetails {
     pub entry_fee: u256
 }
 
-// permissioned_addresses: Vec<ContractAddress>,
-
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 pub enum GateKeepType {
     None,
@@ -214,6 +218,7 @@ pub struct Downvote {
 // *************************************************************************
 //                            FOLLOW
 // *************************************************************************
+
 // /**
 // * @notice A struct containing token follow-related data.
 // *
@@ -234,6 +239,7 @@ pub struct FollowData {
 // *************************************************************************
 //                            JOLT
 // *************************************************************************
+
 #[derive(Drop, Serde, starknet::Store)]
 pub struct JoltData {
     pub jolt_id: u256,

@@ -88,7 +88,7 @@ pub mod KarstHub {
     ) {
         self
             .profile
-            .initializer(karstnft_contract_address, get_contract_address(), follow_nft_classhash);
+            ._initializer(karstnft_contract_address, get_contract_address(), follow_nft_classhash);
         self.handle_contract_address.write(handle_contract_address);
         self.handle_registry_contract_address.write(handle_registry_contract_address);
     }

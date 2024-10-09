@@ -16,7 +16,7 @@ pub mod ProfileComponent {
     use karst::interfaces::IRegistry::{IRegistryDispatcherTrait, IRegistryLibraryDispatcher};
     use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::interfaces::IProfile::IProfile;
-    use karst::base::{constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER,};
+    use karst::base::{constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER};
 
     // *************************************************************************
     //                              STORAGE
@@ -55,17 +55,6 @@ pub mod ProfileComponent {
     impl ProfileImpl<
         TContractState, +HasComponent<TContractState>
     > of IProfile<ComponentState<TContractState>> {
-        /// @notice initialize profile component
-        fn initializer(
-            ref self: ComponentState<TContractState>,
-            karst_nft_address: ContractAddress,
-            hub_address: ContractAddress,
-            follow_nft_classhash: felt252
-        ) {
-            self.karst_nft_address.write(karst_nft_address);
-            self.hub_address.write(hub_address);
-            self.follow_nft_classhash.write(follow_nft_classhash.try_into().unwrap());
-        }
         /// @notice creates karst profile
         /// @param karstnft_contract_address address of karstnft
         /// @param registry_hash class_hash of registry contract
@@ -181,6 +170,18 @@ pub mod ProfileComponent {
     pub impl Private<
         TContractState, +HasComponent<TContractState>
     > of PrivateTrait<TContractState> {
+        /// @notice initialize profile component
+        fn _initializer(
+            ref self: ComponentState<TContractState>,
+            karst_nft_address: ContractAddress,
+            hub_address: ContractAddress,
+            follow_nft_classhash: felt252
+        ) {
+            self.karst_nft_address.write(karst_nft_address);
+            self.hub_address.write(hub_address);
+            self.follow_nft_classhash.write(follow_nft_classhash.try_into().unwrap());
+        }
+
         /// @notice increments user's publication count
         /// @params profile_address the targeted profile address
         fn increment_publication_count(
