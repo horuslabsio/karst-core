@@ -50,7 +50,10 @@ pub mod KarstHub {
 
     #[abi(embed_v0)]
     impl ProfileImpl = ProfileComponent::KarstProfile<ContractState>;
+    #[abi(embed_v0)]
     impl PublicationImpl = PublicationComponent::KarstPublication<ContractState>;
+
+    impl ProfilePrivateImpl = ProfileComponent::Private<ContractState>;
 
     // *************************************************************************
     //                              STORAGE

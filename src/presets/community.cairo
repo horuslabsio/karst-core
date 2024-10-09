@@ -1,12 +1,12 @@
 #[starknet::contract]
 pub mod KarstCommunity {
     use karst::community::community::CommunityComponent;
-    use karst::interfaces::ICommunity::ICommunity;
 
     component!(path: CommunityComponent, storage: community, event: CommunityEvent);
 
     #[abi(embed_v0)]
     impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
+    impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
 
     #[storage]
     struct Storage {
