@@ -101,6 +101,7 @@ pub mod KarstHub {
         // *************************************************************************
         //                            EXTERNAL FUNCTIONS
         // *************************************************************************
+        // TODO: Fix get_caller_address so not just anybody can follow on someone's behalf
         /// @notice follows a set of given addresses
         /// @param follower_profile_address address of the user trying to perform the follow action
         /// @param address_of_profiles_to_follow addresses of profiles to follow
@@ -135,6 +136,7 @@ pub mod KarstHub {
             };
         }
 
+        // TODO: Fix get_caller_address so not just anybody can follow on someone's behalf
         /// @notice blocks/unblocks a set of given addresses
         /// @param blocker_profile_address address of the user trying to perform the block/unblock
         /// action @param address_of_profiles_to_block addresses of profiles to block/unblock
