@@ -218,37 +218,7 @@ pub mod CommunityComponent {
             assert(is_community_member != true, ALREADY_MEMBER);
             assert(is_banned != true, BANNED_MEMBER);
 
-            // mint a community token to new joiner
-            let minted_token_id = self
-                ._mint_community_nft(profile, community.community_nft_address);
-
-            let community_member = CommunityMember {
-                profile_address: profile,
-                community_id: community_id,
-                total_publications: 0,
-                community_token_id: minted_token_id,
-                ban_status: false
-            };
-
-            // update storage
-            self.community_member.write((community_id, profile), community_member);
-            let community_total_members = community.community_total_members + 1;
-            let updated_community = CommunityDetails {
-                community_total_members: community_total_members, ..community
-            };
-            self.communities.write(community_id, updated_community);
-
-            // emit event
-            self
-                .emit(
-                    JoinedCommunity {
-                        community_id: community_id,
-                        transaction_executor: get_caller_address(),
-                        token_id: minted_token_id,
-                        profile: profile,
-                        block_timestamp: get_block_timestamp(),
-                    }
-                );
+            self._join_community(profile, community.community_nft_address, community_id);
         }
 
         /// @notice removes a member from a community
