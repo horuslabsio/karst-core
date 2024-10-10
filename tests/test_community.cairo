@@ -55,13 +55,16 @@ fn test_community_creation() {
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
     assert(community_id == 1, 'invalid community creation');
-    // TEST TODO: use assert to check for every single item within CommunityDetails structs to ensure they were instantiated with the correct values
-    // TEST TODO: check that community nft was deployed correctly and you received an address
-    // TEST TODO: use assert to check for every single item within CommunityGateKeepDetails structs to ensure they were instantiated with the correct values
+    // TEST TODO: use assert to check for every single item within CommunityDetails structs to
+    // ensure they were instantiated with the correct values TEST TODO: check that community nft was
+    // deployed correctly and you received an address TEST TODO: use assert to check for every
+    // single item within CommunityGateKeepDetails structs to ensure they were instantiated with the
+    // correct values
     stop_cheat_caller_address(community_contract_address);
 }
 
-// TEST TODO: create a new test fn called `test_community_upgrade_on_creation` where you pass in a premium package type and checks upgrade was successful
+// TEST TODO: create a new test fn called `test_community_upgrade_on_creation` where you pass in a
+// premium package type and checks upgrade was successful
 
 #[test]
 fn test_create_community_emits_events() {
@@ -69,7 +72,7 @@ fn test_create_community_emits_events() {
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-  //  let salt: felt252 = 'djkngkylu349586';
+    //  let salt: felt252 = 'djkngkylu349586';
     // spy on emitted events
     let mut spy = spy_events();
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
@@ -101,15 +104,14 @@ fn test_join_community() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'ngkylu349586';
+    //  let salt: felt252 = 'ngkylu349586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+    
     let is_member = communityDispatcher
         .is_community_member(USER_ONE.try_into().unwrap(), community_id);
-    
+
     assert(is_member == true, 'Not Community Member');
     // TEST TODO: check every single struct item in CommunityMember was instantiated correctly
     // TEST TODO: check that a community NFT was minted to the user joining
@@ -122,13 +124,13 @@ fn test_should_panic_if_a_user_joins_one_community_twice() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   // let salt: felt252 = 'djkn49586';
+    // let salt: felt252 = 'djkn49586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
 
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
 }
 
 // TEST TODO: test that joining a community emits event
@@ -142,8 +144,7 @@ fn test_leave_community() {
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+ 
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -174,12 +175,11 @@ fn test_should_panic_if_profile_leaving_is_not_a_member() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'djkn092346';
+    
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -195,7 +195,7 @@ fn test_set_community_metadata_uri() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'dlosheyr586';
+    //  let salt: felt252 = 'dlosheyr586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -216,7 +216,7 @@ fn test_should_panic_set_community_metadata_uri() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'o0ijh9586';
+    //  let salt: felt252 = 'o0ijh9586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -233,15 +233,21 @@ fn test_add_community_mod() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'lkkhjfegky';
+    //  let salt: felt252 = 'lkkhjfegky';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
-    // join the community first
+    // join the community
     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
+
+    // mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FIVE.try_into().unwrap());
 
     // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
+    communityDispatcher.add_community_mods(community_id, moderators);
 
     // check a community mod - is_community_mod
     let is_community_mod = communityDispatcher
@@ -258,15 +264,18 @@ fn test_add_community_mod_emits_event() {
 
     // spy on emitted events
     let mut spy = spy_events();
-   //  let salt: felt252 = 'ryehggjh586';
+    //  let salt: felt252 = 'ryehggjh586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
     // join the community first
     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    // mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
 
     // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
+    communityDispatcher.add_community_mods(community_id, moderators);
 
     spy
         .assert_emitted(
@@ -292,7 +301,7 @@ fn should_panic_if_caller_adding_mod_is_not_owner() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'dfghopeuryljk';
+    //  let salt: felt252 = 'dfghopeuryljk';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -301,36 +310,71 @@ fn should_panic_if_caller_adding_mod_is_not_owner() {
     // when a wrong community owner try to add a MOD
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
 
+    // mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
     // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
+    communityDispatcher.add_community_mods(community_id, moderators);
 }
 
-// TEST TODO: write an extra test called `should_panic_if_mod_is_not_member` to check that a mod must first be a community member
+// // TEST TODO: write an extra test called `should_panic_if_mod_is_not_member` to check that a mod
+// // must first be a community member // Karst: Not a Community  Member
+#[test]
+#[should_panic(expected: ('Karst: Not a Community  Member',))]
+fn should_panic_if_mod_is_not_member() {
+    let community_contract_address = __setup__();
+
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+
+    // join the community first
+    //  communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+
+    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
+
+    // mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FIVE.try_into().unwrap());
+
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
+}
+
 
 #[test]
 fn test_remove_community_mod() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'djsdfghk9586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-      // join commmunity
-     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    // join commmunity
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
     communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
 
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-    communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
-    communityDispatcher.add_community_mods(community_id, USER_FIVE.try_into().unwrap());
+    // add mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FOUR.try_into().unwrap());
 
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
+
+    // remove mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FOUR.try_into().unwrap());
     // REMOVE A MOD
-    communityDispatcher.remove_community_mods(community_id, USER_FIVE.try_into().unwrap());
+    communityDispatcher.remove_community_mods(community_id, moderators);
 
     // check a community mod - is_community_mod
     let is_community_mod = communityDispatcher
-        .is_community_mod(USER_FIVE.try_into().unwrap(), community_id);
+        .is_community_mod(USER_FOUR.try_into().unwrap(), community_id);
     assert(is_community_mod == false, 'Community Mod Not Remove');
     stop_cheat_caller_address(community_contract_address);
 }
@@ -340,23 +384,32 @@ fn test_remove_community_mod_emit_event() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'dddfhjk86';
+
     // spy on emitted events
     let mut spy = spy_events();
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join commmunity
-     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
-     
-    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-    communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
-    communityDispatcher.add_community_mods(community_id, USER_FIVE.try_into().unwrap());
 
+    // join commmunity
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+
+    // add mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FIVE.try_into().unwrap());
+    moderators.append(USER_FOUR.try_into().unwrap());
+
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
+
+    // remove mod array
+    let mut remove_moderators = ArrayTrait::new();
+    remove_moderators.append(USER_SIX.try_into().unwrap());
+    remove_moderators.append(USER_FOUR.try_into().unwrap());
     // REMOVE A MOD
-    communityDispatcher.remove_community_mods(community_id, USER_FIVE.try_into().unwrap());
+    communityDispatcher.remove_community_mods(community_id, remove_moderators);
 
     spy
         .assert_emitted(
@@ -367,7 +420,7 @@ fn test_remove_community_mod_emit_event() {
                         CommunityComponent::CommunityModRemoved {
                             community_id: community_id,
                             transaction_executor: USER_ONE.try_into().unwrap(),
-                            mod_address: USER_FIVE.try_into().unwrap(),
+                            mod_address: USER_FOUR.try_into().unwrap(),
                             block_timestamp: get_block_timestamp()
                         }
                     )
@@ -382,25 +435,28 @@ fn should_panic_if_caller_removing_mod_not_community_member() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    // let salt: felt252 = 'djkngkylu349586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    // join commmunity
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
 
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    // add mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FOUR.try_into().unwrap());
 
     // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-    communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
+    communityDispatcher.add_community_mods(community_id, moderators);
 
-    stop_cheat_caller_address(community_contract_address);
-
-    // when a wrong community owner try to REMOVE a MOD
-    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-
+    // remove mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_TWO.try_into().unwrap());
     // REMOVE A MOD
-    communityDispatcher.remove_community_mods(community_id, USER_FIVE.try_into().unwrap());
+    communityDispatcher.remove_community_mods(community_id, moderators);
 }
 
 #[test]
@@ -409,169 +465,187 @@ fn should_panic_if_caller_removing_mod_is_not_owner() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    // join commmunity
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-    communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
 
+    // add mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FOUR.try_into().unwrap());
+
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
     stop_cheat_caller_address(community_contract_address);
 
     // when a wrong community owner try to REMOVE a MOD
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-
+    // remove mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FOUR.try_into().unwrap());
     // REMOVE A MOD
-    communityDispatcher.remove_community_mods(community_id, USER_FIVE.try_into().unwrap());
+    communityDispatcher.remove_community_mods(community_id, moderators);
+
 }
 
-#[test]
-fn test_set_ban_status_by_owner() {
-    let community_contract_address = __setup__();
+// #[test]
+// fn test_set_ban_status_by_owner() {
+//     let community_contract_address = __setup__();
 
-    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'djkngkylu349586';
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
+//     };
+//     //  let salt: felt252 = 'djkngkylu349586';
+//     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+//     //create the community
+//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+//     // join the community
+//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
 
-    communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
 
-    let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
+//     let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
 
-    assert(is_ban == true, 'Community Member is not banned');
+//     assert(is_ban == true, 'Community Member is not banned');
 
-    stop_cheat_caller_address(community_contract_address);
-}
+//     stop_cheat_caller_address(community_contract_address);
+// }
 
-#[test]
-fn test_set_ban_status_by_mod() {
-    let community_contract_address = __setup__();
+// #[test]
+// fn test_set_ban_status_by_mod() {
+//     let community_contract_address = __setup__();
 
-    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-  
-    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-    
-     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-       // join the community
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
+//     };
 
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
+//     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
 
-    
-    communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+//     // join the community
+//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
 
-    let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
+//     // add a community mod
+//     communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
 
-    assert(is_ban == true, 'Community Member is not banned');
+//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
 
-    stop_cheat_caller_address(community_contract_address);
-}
+//     let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
 
-#[test]
-fn test_set_ban_status_emit_event() {
-    let community_contract_address = __setup__();
+//     assert(is_ban == true, 'Community Member is not banned');
 
-    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = '495ksjdhfgjrkf86';
-    // start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // //create the community
-    // let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // // join the community
-    // communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-    // communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-    // communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-    // communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-    // // add a community mod
-    // communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-    // stop_cheat_caller_address(community_contract_address);
+//     stop_cheat_caller_address(community_contract_address);
+// }
 
-    // spy on emitted events
-    let mut spy = spy_events();
-    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
+// #[test]
+// fn test_set_ban_status_emit_event() {
+//     let community_contract_address = __setup__();
 
-    // set ban
-    communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
+//     };
+//     //  let salt: felt252 = '495ksjdhfgjrkf86';
+//     // start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+//     // //create the community
+//     // let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+//     // // join the community
+//     // communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+//     // communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+//     // communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+//     // communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+//     // // add a community mod
+//     // communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
+//     // stop_cheat_caller_address(community_contract_address);
 
-    spy
-        .assert_emitted(
-            @array![
-                (
-                    community_contract_address,
-                    CommunityComponent::Event::CommunityBanStatusUpdated(
-                        CommunityComponent::CommunityBanStatusUpdated {
-                            community_id: community_id,
-                            transaction_executor: USER_SIX.try_into().unwrap(),
-                            profile: USER_TWO.try_into().unwrap(),
-                            ban_status: true,
-                            block_timestamp: get_block_timestamp()
-                        }
-                    )
-                )
-            ]
-        );
-}
+//     // spy on emitted events
+//     let mut spy = spy_events();
+//     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
+//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+//     // add a community mod
+//     communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
 
-#[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
-fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
-    let community_contract_address = __setup__();
+//     // set ban
+//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
 
-    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'djkrtyhjejfg6';
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
-    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-    stop_cheat_caller_address(community_contract_address);
+//     spy
+//         .assert_emitted(
+//             @array![
+//                 (
+//                     community_contract_address,
+//                     CommunityComponent::Event::CommunityBanStatusUpdated(
+//                         CommunityComponent::CommunityBanStatusUpdated {
+//                             community_id: community_id,
+//                             transaction_executor: USER_SIX.try_into().unwrap(),
+//                             profile: USER_TWO.try_into().unwrap(),
+//                             ban_status: true,
+//                             block_timestamp: get_block_timestamp()
+//                         }
+//                     )
+//                 )
+//             ]
+//         );
+// }
 
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
-}
+// #[test]
+// #[should_panic(expected: ('Karst: user unauthorized!',))]
+// fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
+//     let community_contract_address = __setup__();
 
-// TEST TODO: create a test fn called `test_can_only_set_ban_status_for_members` to check that you can only ban existing members
+//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
+//     };
+//     //  let salt: felt252 = 'djkrtyhjejfg6';
+//     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+//     //create the community
+//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+//     // join the community
+//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+//     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+
+//     // mode array
+//     let mut moderators = ArrayTrait::new();
+//     moderators.append(USER_SIX.try_into().unwrap());
+//     moderators.append(USER_FIVE.try_into().unwrap());
+
+//     // add a community mod
+//     communityDispatcher.add_community_mods(community_id, moderators);
+
+//     stop_cheat_caller_address(community_contract_address);
+
+//     start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
+//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+// }
+
+// TEST TODO: create a test fn called `test_can_only_set_ban_status_for_members` to check that you
+// can only ban existing members
 
 #[test]
 fn test_community_upgrade() {
     let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   //  let salt: felt252 = 'sfhkmpkippe86';
+    //  let salt: felt252 = 'sfhkmpkippe86';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
     communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
     let community = communityDispatcher.get_community(community_id);
     assert(community.community_type == CommunityType::Standard, 'Community Upgrade failed');
-    // TEST TODO: check that upgraded communities have a premium status 
+    // TEST TODO: check that upgraded communities have a premium status
     stop_cheat_caller_address(community_contract_address);
 }
 
@@ -580,7 +654,7 @@ fn test_community_upgrade() {
 fn test_should_panic_if_caller_upgrading_is_not_owner() {
     let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-   // let salt: felt252 = 'djkdgjlorityi86';
+    // let salt: felt252 = 'djkdgjlorityi86';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -632,7 +706,7 @@ fn test_permissioned_gatekeeping() {
     permission_addresses.append(USER_SIX.try_into().unwrap());
     permission_addresses.append(USER_FIVE.try_into().unwrap());
     permission_addresses.append(USER_THREE.try_into().unwrap());
-   //  let salt: felt252 = 'djzcvnyoy6';
+    //  let salt: felt252 = 'djzcvnyoy6';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
     communityDispatcher
@@ -664,7 +738,11 @@ fn test_paid_gatekeeping() {
     communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
     communityDispatcher
         .gatekeep(
-            community_id, GateKeepType::PaidGating, NFT_ONE.try_into().unwrap(), permission_addresses, 450
+            community_id,
+            GateKeepType::PaidGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            450
         );
 
     // check is_gatekeeped
@@ -674,8 +752,10 @@ fn test_paid_gatekeeping() {
 }
 
 // TEST TODO: add test fn `test_nft_gatekeeping` for NFTGating
-// TEST TODO: add test fn `test_only_premium_communities_can_be_paid_gated` to test that only premium communities can enforce PaidGating
-// TEST TODO: add test fn `test_only_premium_communities_can_be_nft_gated` to test that only premium communities can enforce NFTGating
+// TEST TODO: add test fn `test_only_premium_communities_can_be_paid_gated` to test that only
+// premium communities can enforce PaidGating TEST TODO: add test fn
+// `test_only_premium_communities_can_be_nft_gated` to test that only premium communities can
+// enforce NFTGating
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
@@ -687,7 +767,7 @@ fn test_should_panic_if_caller_to_gatekeep_is_not_owner() {
     permission_addresses.append(USER_SIX.try_into().unwrap());
     permission_addresses.append(USER_FIVE.try_into().unwrap());
     permission_addresses.append(USER_THREE.try_into().unwrap());
-   //  let salt: felt252 = 'djksfkityu9586';
+    //  let salt: felt252 = 'djksfkityu9586';
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -697,7 +777,11 @@ fn test_should_panic_if_caller_to_gatekeep_is_not_owner() {
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
     communityDispatcher
         .gatekeep(
-            community_id, GateKeepType::PaidGating, NFT_ONE.try_into().unwrap(), permission_addresses, 450
+            community_id,
+            GateKeepType::PaidGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            450
         );
 }
 

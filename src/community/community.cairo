@@ -198,6 +198,9 @@ pub mod CommunityComponent {
                         block_timestamp: get_block_timestamp()
                     }
                 );
+            // let the owner join the community by default
+
+            self._join_community(community_owner, community_nft_address, community_id);
             community_id
         }
 
@@ -315,28 +318,14 @@ pub mod CommunityComponent {
         /// @param community_id id of community to add moderator
         /// @param moderator address to be added as moderator
         fn add_community_mods(
-            ref self: ComponentState<TContractState>, community_id: u256, moderator: ContractAddress
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            moderators: Array<ContractAddress>
         ) {
             let community_owner = self.community_owner.read(community_id);
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
-            // Mod must first be a member of the community
-            let is_community_member = self.is_community_member(moderator, community_id);
-            assert(is_community_member == true, NOT_MEMBER);
-
-            // update storage
-            self.community_mod.write((community_id, moderator), true);
-
-            // emit event
-            self
-                .emit(
-                    CommunityModAdded {
-                        community_id: community_id,
-                        transaction_executor: community_owner,
-                        mod_address: moderator,
-                        block_timestamp: get_block_timestamp()
-                    }
-                );
+            self._add_community_mods(community_id, community_owner, moderators);
         }
 
         // TODO: MAKE IT RECEIVE AN ARRAY OF MODERATORS
@@ -344,24 +333,19 @@ pub mod CommunityComponent {
         /// @param community_id id of community to remove moderator
         /// @param moderator address to be removed as moderator
         fn remove_community_mods(
-            ref self: ComponentState<TContractState>, community_id: u256, moderator: ContractAddress
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            moderators: Array<ContractAddress>
         ) {
             let community_owner = self.community_owner.read(community_id);
+            // only community owner can remove a mod
+
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
+            // _remove_community_mods
+            self._remove_community_mods(community_id, community_owner, moderators);
             // update storage
-            self.community_mod.write((community_id, moderator), false);
 
-            // emit event
-            self
-                .emit(
-                    CommunityModRemoved {
-                        community_id: community_id,
-                        mod_address: moderator,
-                        transaction_executor: community_owner,
-                        block_timestamp: get_block_timestamp()
-                    }
-                );
         }
 
         // TODO: MAKE IT RECEIVE AN ARRAY OF PROFILES
@@ -581,6 +565,53 @@ pub mod CommunityComponent {
             self.community_nft_classhash.write(community_nft_classhash.try_into().unwrap());
         }
 
+        /// @notice internal function to join a community
+        /// @param  profile of the new community member
+        /// @param community_nft_classhash classhash of community NFT
+        /// @param community_id  of community the new member is trying to join
+        fn _join_community(
+            ref self: ComponentState<TContractState>,
+            profile: ContractAddress,
+            community_nft_address: ContractAddress,
+            community_id: u256
+        ) {
+            // mint a community token to new joiner
+            let minted_token_id = self._mint_community_nft(profile, community_nft_address);
+
+            let community_member = CommunityMember {
+                profile_address: profile,
+                community_id: community_id,
+                total_publications: 0,
+                community_token_id: minted_token_id,
+                ban_status: false
+            };
+
+            // update storage
+            self.community_member.write((community_id, profile), community_member);
+
+            let community = self.communities.read(community_id);
+            let community_total_members = community.community_total_members + 1;
+
+            // update community details
+            let updated_community = CommunityDetails {
+                community_total_members: community_total_members, ..community
+            };
+            self.communities.write(community_id, updated_community);
+
+            // emit event
+            self
+                .emit(
+                    JoinedCommunity {
+                        community_id: community_id,
+                        transaction_executor: get_caller_address(),
+                        token_id: minted_token_id,
+                        profile: profile,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+        }
+
+
         // TODO: JOLT UPGRADE SUBSCRIPTION
         /// @notice internal function to upgrade community
         /// @param community_id id of community to be upgraded
@@ -626,6 +657,75 @@ pub mod CommunityComponent {
                 self
                     .gate_keep_permissioned_addresses
                     .write((community_id, *permissioned_addresses.at(index)), true);
+                index += 1;
+            };
+        }
+
+        /// @notice internal function for add community mod
+        /// @param community_id id of community
+        // @param moderator
+        fn _add_community_mods(
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            community_owner: ContractAddress,
+            moderators: Array<ContractAddress>
+        ) {
+            let length = moderators.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                let moderator = *moderators.at(index);
+                let is_community_member = self.is_community_member(moderator, community_id);
+                assert(is_community_member == true, NOT_MEMBER);
+                self.community_mod.write((community_id, moderator), true);
+
+                // emit event
+                self
+                    .emit(
+                        CommunityModAdded {
+                            community_id: community_id,
+                            transaction_executor: community_owner,
+                            mod_address: moderator,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    );
+                index += 1;
+                // self
+            //     .gate_keep_permissioned_addresses
+            //     .write((community_id, *permissioned_addresses.at(index)), true);
+
+            };
+        }
+
+        /// @notice internal function for remove community mod
+        /// @param community_id id of community
+        // @param moderator to remove
+        fn _remove_community_mods(
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            community_owner: ContractAddress,
+            moderators: Array<ContractAddress>
+        ) {
+            let length = moderators.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                let moderator = *moderators.at(index);
+                let is_community_member = self.is_community_member(moderator, community_id);
+                assert(is_community_member == true, NOT_MEMBER);
+
+                self.community_mod.write((community_id, moderator), false);
+
+                // emit event
+                self
+                    .emit(
+                        CommunityModRemoved {
+                            community_id: community_id,
+                            mod_address: moderator,
+                            transaction_executor: community_owner,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    );
                 index += 1;
             };
         }
