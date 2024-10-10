@@ -108,7 +108,7 @@ fn test_join_community() {
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    
+
     let is_member = communityDispatcher
         .is_community_member(USER_ONE.try_into().unwrap(), community_id);
 
@@ -144,7 +144,6 @@ fn test_leave_community() {
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
- 
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -175,11 +174,10 @@ fn test_should_panic_if_profile_leaving_is_not_a_member() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -490,7 +488,6 @@ fn should_panic_if_caller_removing_mod_is_not_owner() {
     moderators.append(USER_FOUR.try_into().unwrap());
     // REMOVE A MOD
     communityDispatcher.remove_community_mods(community_id, moderators);
-
 }
 
 // #[test]
