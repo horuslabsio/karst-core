@@ -72,7 +72,6 @@ fn test_create_community_emits_events() {
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-    //  let salt: felt252 = 'djkngkylu349586';
     // spy on emitted events
     let mut spy = spy_events();
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
@@ -104,7 +103,7 @@ fn test_join_community() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //  let salt: felt252 = 'ngkylu349586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
@@ -124,7 +123,7 @@ fn test_should_panic_if_a_user_joins_one_community_twice() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    // let salt: felt252 = 'djkn49586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
 
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
@@ -176,7 +175,7 @@ fn test_leave_community() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    // let salt: felt252 = 'djkn4t76349586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
@@ -194,7 +193,7 @@ fn test_leave_community() {
 
     let (is_member, _) = communityDispatcher
         .is_community_member(USER_TWO.try_into().unwrap(), community_id);
-    // println!("is member: {}", is_member);
+
     assert(is_member != true, 'still a community member');
 
     // TEST TODO: check that community total member reduced
@@ -264,7 +263,7 @@ fn test_set_community_metadata_uri() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //  let salt: felt252 = 'dlosheyr586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -285,7 +284,7 @@ fn test_should_panic_set_community_metadata_uri() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //  let salt: felt252 = 'o0ijh9586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -302,7 +301,7 @@ fn test_add_community_mod() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //  let salt: felt252 = 'lkkhjfegky';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -333,7 +332,7 @@ fn test_add_community_mod_emits_event() {
 
     // spy on emitted events
     let mut spy = spy_events();
-    //  let salt: felt252 = 'ryehggjh586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -370,7 +369,7 @@ fn should_panic_if_caller_adding_mod_is_not_owner() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //  let salt: felt252 = 'dfghopeuryljk';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -397,9 +396,6 @@ fn should_panic_if_mod_is_not_member() {
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
-    // join the community first
-    //  communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
 
     communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
 
@@ -868,7 +864,7 @@ fn test_permissioned_gatekeeping() {
     permission_addresses.append(USER_SIX.try_into().unwrap());
     permission_addresses.append(USER_FIVE.try_into().unwrap());
     permission_addresses.append(USER_THREE.try_into().unwrap());
-    //  let salt: felt252 = 'djzcvnyoy6';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
     communityDispatcher
@@ -1051,7 +1047,7 @@ fn test_should_panic_if_caller_to_gatekeep_is_not_owner() {
     permission_addresses.append(USER_SIX.try_into().unwrap());
     permission_addresses.append(USER_FIVE.try_into().unwrap());
     permission_addresses.append(USER_THREE.try_into().unwrap());
-    //  let salt: felt252 = 'djksfkityu9586';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -1078,7 +1074,7 @@ fn test_community_gatekeep_emits_event() {
     permission_addresses.append(USER_SIX.try_into().unwrap());
     permission_addresses.append(USER_FIVE.try_into().unwrap());
     permission_addresses.append(USER_THREE.try_into().unwrap());
-    // let salt: felt252 = 'djadfyh09023';
+
     // spy on emitted events
     let mut spy = spy_events();
 
