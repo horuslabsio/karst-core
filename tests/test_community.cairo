@@ -667,16 +667,70 @@ fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
 }
 
 // TEST TODO: create a test fn called `test_can_only_set_ban_status_for_members` to check that you
-// can only ban existing members
+// can only ban existing members // Karst: Not a Community  Member
+#[test]
+#[should_panic(expected: ('Karst: Not a Community  Member',))]
+fn test_can_only_set_ban_status_for_members() {
+    let community_contract_address = __setup__();
 
-// TEST TODO: TEST To make sure lenght of ban status and profiles are same
-// TEST TODO: panic test
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    //create the community
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    // join the community
+    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+
+    // ban profile list
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_SIX.try_into().unwrap());
+    profiles.append(USER_FOUR.try_into().unwrap());
+
+    // ban status list
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
+}
+
+
+// TEST TODO: TEST To make sure length of ban status and profiles are same
+#[test]
+#[should_panic(expected: ('Karst: Invalid Length',))]
+fn test_should_set_ban_status_for_invalid_array_length() {
+    let community_contract_address = __setup__();
+
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    //create the community
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    // join the community
+    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+
+    // ban profile list
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_SIX.try_into().unwrap());
+
+    // ban status list
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
+}
+
 
 #[test]
 fn test_community_upgrade() {
     let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //  let salt: felt252 = 'sfhkmpkippe86';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
     communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
@@ -691,7 +745,7 @@ fn test_community_upgrade() {
 fn test_should_panic_if_caller_upgrading_is_not_owner() {
     let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    // let salt: felt252 = 'djkdgjlorityi86';
+
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
@@ -707,7 +761,7 @@ fn test_should_panic_if_caller_upgrading_is_not_owner() {
 fn test_community_upgrade_emits_event() {
     let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    // let salt: felt252 = 'djcxbvnk586';
+
     // spy on emitted events
     let mut spy = spy_events();
 
@@ -789,10 +843,132 @@ fn test_paid_gatekeeping() {
 }
 
 // TEST TODO: add test fn `test_nft_gatekeeping` for NFTGating
+#[test]
+fn test_paid_gatekeeping_nft_gating() {
+    let community_contract_address = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::NFTGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            450
+        );
+
+    // check is_gatekeeped
+    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
+    assert(
+        gatekeep_details.gate_keep_type == GateKeepType::NFTGating, 'Community NFT Gatekeep Failed'
+    );
+    stop_cheat_caller_address(community_contract_address);
+}
+
 // TEST TODO: add test fn `test_only_premium_communities_can_be_paid_gated` to test that only
-// premium communities can enforce PaidGating TEST TODO: add test fn
+// premium communities can enforce PaidGating
+#[test]
+fn test_only_premium_communities_can_be_paid_gated() {
+    let community_contract_address = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::PaidGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            450
+        );
+
+    // check is_gatekeeped
+    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
+    assert(
+        gatekeep_details.gate_keep_type == GateKeepType::PaidGating,
+        'Community Paid Gatekeep Failed'
+    );
+    stop_cheat_caller_address(community_contract_address);
+}
+
+
+// TEST TODO: add test fn
 // `test_only_premium_communities_can_be_nft_gated` to test that only premium communities can
 // enforce NFTGating
+
+#[test]
+#[should_panic(expected: ('Karst: only premium communities',))]
+fn test_should_panic_only_premium_communities_can_be_paid_gated() {
+    let community_contract_address = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::PaidGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            450
+        );
+
+    // check is_gatekeeped
+    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
+    assert(
+        gatekeep_details.gate_keep_type == GateKeepType::PaidGating,
+        'Community Paid Gatekeep Failed'
+    );
+    stop_cheat_caller_address(community_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: only premium communities',))]
+fn test_should_panic_only_premium_communities_can_be_nft_gated() {
+    let community_contract_address = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::PaidGating,
+            NFT_ONE.try_into().unwrap(),
+            permission_addresses,
+            450
+        );
+
+    // check is_gatekeeped
+    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
+    assert(
+        gatekeep_details.gate_keep_type == GateKeepType::PaidGating,
+        'Community Paid Gatekeep Failed'
+    );
+    stop_cheat_caller_address(community_contract_address);
+}
+
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
