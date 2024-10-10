@@ -74,20 +74,20 @@ pub mod CommunityComponent {
 
     #[derive(Drop, starknet::Event)]
     pub struct JoinedCommunity {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        token_id: u256,
-        profile: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub token_id: u256,
+        pub profile: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct LeftCommunity {
-        community_id: u256,
-        transaction_executor: ContractAddress,
-        token_id: u256,
-        profile: ContractAddress,
-        block_timestamp: u64,
+        pub community_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub token_id: u256,
+        pub profile: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -213,7 +213,7 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
 
             // check user is not already a member and wasn't previously banned
-            let is_community_member = self.is_community_member(profile, community_id);
+            let (is_community_member, _) = self.is_community_member(profile, community_id);
             let is_banned = self.get_ban_status(profile, community_id);
             assert(is_community_member != true, ALREADY_MEMBER);
             assert(is_banned != true, BANNED_MEMBER);
@@ -260,8 +260,16 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
             let community_member_details = self.community_member.read((community_id, profile));
 
-            let is_community_member = self.is_community_member(profile, community_id);
+            let (is_community_member, _) = self.is_community_member(profile, community_id);
             assert(is_community_member == true, NOT_MEMBER);
+
+            // burn user's community token
+            self
+                ._burn_community_nft(
+                    community.community_nft_address,
+                    profile,
+                    community_member_details.community_token_id
+                );
 
             // remove member details and update storage
             let updated_member_details = CommunityMember {
@@ -277,12 +285,6 @@ pub mod CommunityComponent {
                 community_total_members: community_total_members, ..community
             };
             self.communities.write(community_id, updated_community);
-
-            // burn user's community token
-            self
-                ._burn_community_nft(
-                    community.community_nft_address, community_member_details.community_token_id
-                );
 
             // emit event
             self
@@ -462,12 +464,12 @@ pub mod CommunityComponent {
         /// @return bool true/false stating user's membership status
         fn is_community_member(
             self: @ComponentState<TContractState>, profile: ContractAddress, community_id: u256
-        ) -> bool {
+        ) -> (bool, CommunityMember) {
             let community_memeber = self.community_member.read((community_id, profile));
             if (community_memeber.community_id == community_id) {
-                true
+                (true, community_memeber)
             } else {
-                false
+                (false, community_memeber)
             }
         }
 
@@ -657,7 +659,7 @@ pub mod CommunityComponent {
 
             while index < length {
                 let moderator = *moderators.at(index);
-                let is_community_member = self.is_community_member(moderator, community_id);
+                let (is_community_member, _) = self.is_community_member(moderator, community_id);
                 assert(is_community_member == true, NOT_MEMBER);
                 self.community_mod.write((community_id, moderator), true);
 
@@ -693,7 +695,7 @@ pub mod CommunityComponent {
 
             while index < length {
                 let moderator = *moderators.at(index);
-                let is_community_member = self.is_community_member(moderator, community_id);
+                let (is_community_member, _) = self.is_community_member(moderator, community_id);
                 assert(is_community_member == true, NOT_MEMBER);
 
                 self.community_mod.write((community_id, moderator), false);
@@ -731,7 +733,7 @@ pub mod CommunityComponent {
                 let profile = *profiles[index];
                 let ban_status = *ban_statuses[index];
                 // check profile is a community member
-                let is_community_member = self.is_community_member(profile, community_id);
+                let (is_community_member, _) = self.is_community_member(profile, community_id);
                 assert(is_community_member == true, NOT_MEMBER);
 
                 // update storage
@@ -802,10 +804,11 @@ pub mod CommunityComponent {
         fn _burn_community_nft(
             ref self: ComponentState<TContractState>,
             community_nft_address: ContractAddress,
+            profile: ContractAddress,
             token_id: u256
         ) {
             ICommunityNftDispatcher { contract_address: community_nft_address }
-                .burn_nft(get_caller_address(), token_id);
+                .burn_nft(profile, token_id);
         }
     }
 }

@@ -109,7 +109,7 @@ fn test_join_community() {
     //create the community
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
 
-    let is_member = communityDispatcher
+    let (is_member, _) = communityDispatcher
         .is_community_member(USER_ONE.try_into().unwrap(), community_id);
 
     assert(is_member == true, 'Not Community Member');
@@ -134,6 +134,42 @@ fn test_should_panic_if_a_user_joins_one_community_twice() {
 }
 
 // TEST TODO: test that joining a community emits event
+#[test]
+fn test_joining_community_emits_event() {
+    let community_contract_address = __setup__();
+
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    // spy on emitted events
+    let mut spy = spy_events();
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+
+    let (_, member_details) = communityDispatcher
+        .is_community_member(USER_THREE.try_into().unwrap(), community_id);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    community_contract_address,
+                    CommunityComponent::Event::JoinedCommunity(
+                        CommunityComponent::JoinedCommunity {
+                            community_id: community_id,
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            token_id: member_details.community_token_id,
+                            profile: USER_THREE.try_into().unwrap(),
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
+
 
 #[test]
 fn test_leave_community() {
@@ -156,7 +192,7 @@ fn test_leave_community() {
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
     communityDispatcher.leave_community(USER_TWO.try_into().unwrap(), community_id);
 
-    let is_member = communityDispatcher
+    let (is_member, _) = communityDispatcher
         .is_community_member(USER_TWO.try_into().unwrap(), community_id);
     // println!("is member: {}", is_member);
     assert(is_member != true, 'still a community member');
@@ -187,6 +223,41 @@ fn test_should_panic_if_profile_leaving_is_not_a_member() {
 }
 
 // TEST TODO: test that leaving a community emits event
+#[test]
+fn test_leave_community_emits_event() {
+    let community_contract_address = __setup__();
+
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    // spy on emitted events
+    let mut spy = spy_events();
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    let (_, member_details) = communityDispatcher
+        .is_community_member(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.leave_community(USER_THREE.try_into().unwrap(), community_id);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    community_contract_address,
+                    CommunityComponent::Event::LeftCommunity(
+                        CommunityComponent::LeftCommunity {
+                            community_id: community_id,
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            token_id: member_details.community_token_id,
+                            profile: USER_THREE.try_into().unwrap(),
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
+
 
 #[test]
 fn test_set_community_metadata_uri() {
