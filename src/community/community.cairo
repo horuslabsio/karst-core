@@ -19,7 +19,7 @@ pub mod CommunityComponent {
     };
     use karst::base::constants::errors::Errors::{
         ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED,
-        ONLY_PREMIUM_COMMUNITIES
+        ONLY_PREMIUM_COMMUNITIES, INVALID_LENGTH
     };
 
 
@@ -355,8 +355,8 @@ pub mod CommunityComponent {
         fn set_ban_status(
             ref self: ComponentState<TContractState>,
             community_id: u256,
-            profile: ContractAddress,
-            ban_status: bool
+            profiles: Array<ContractAddress>,
+            ban_statuses: Array<bool>
         ) {
             let caller = get_caller_address();
             let is_community_mod = self.community_mod.read((community_id, caller));
@@ -365,26 +365,8 @@ pub mod CommunityComponent {
             // check caller is mod or owner
             assert(is_community_mod == true || community_owner == caller, UNAUTHORIZED);
 
-            // check profile is a community member
-            let is_community_member = self.is_community_member(profile, community_id);
-            assert(is_community_member == true, NOT_MEMBER);
-
-            // update storage
-            let community_member = self.community_member.read((community_id, profile));
-            let updated_member = CommunityMember { ban_status: ban_status, ..community_member };
-            self.community_member.write((community_id, profile), updated_member);
-
-            // emit event
-            self
-                .emit(
-                    CommunityBanStatusUpdated {
-                        community_id: community_id,
-                        transaction_executor: caller,
-                        profile: profile,
-                        ban_status: ban_status,
-                        block_timestamp: get_block_timestamp()
-                    }
-                );
+            // _set_ban_statu
+            self._set_ban_status(community_id, profiles, ban_statuses);
         }
 
         /// @notice upgrades a community
@@ -699,7 +681,7 @@ pub mod CommunityComponent {
 
         /// @notice internal function for remove community mod
         /// @param community_id id of community
-        // @param moderator to remove
+        // @param moderators to remove
         fn _remove_community_mods(
             ref self: ComponentState<TContractState>,
             community_id: u256,
@@ -723,6 +705,48 @@ pub mod CommunityComponent {
                             community_id: community_id,
                             mod_address: moderator,
                             transaction_executor: community_owner,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    );
+                index += 1;
+            };
+        }
+
+        /// @notice internal function for set ban status for members
+        /// @param community_id id of community to be banned or unbanned
+        /// @param profiles addresses
+        /// @param ban_statuses bool values
+        fn _set_ban_status(
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            profiles: Array<ContractAddress>,
+            ban_statuses: Array<bool>
+        ) {
+            assert(profiles.len() == ban_statuses.len(), INVALID_LENGTH);
+            // for permissioned gating update array of addresses
+            let length = profiles.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                let profile = *profiles[index];
+                let ban_status = *ban_statuses[index];
+                // check profile is a community member
+                let is_community_member = self.is_community_member(profile, community_id);
+                assert(is_community_member == true, NOT_MEMBER);
+
+                // update storage
+                let community_member = self.community_member.read((community_id, profile));
+                let updated_member = CommunityMember { ban_status: ban_status, ..community_member };
+                self.community_member.write((community_id, profile), updated_member);
+
+                // emit event
+                self
+                    .emit(
+                        CommunityBanStatusUpdated {
+                            community_id: community_id,
+                            transaction_executor: get_caller_address(),
+                            profile: profile,
+                            ban_status: ban_status,
                             block_timestamp: get_block_timestamp()
                         }
                     );

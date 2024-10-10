@@ -21,7 +21,10 @@ pub trait ICommunity<TState> {
         ref self: TState, community_id: u256, moderators: Array<ContractAddress>
     );
     fn set_ban_status(
-        ref self: TState, community_id: u256, profile: ContractAddress, ban_status: bool
+        ref self: TState,
+        community_id: u256,
+        profiles: Array<ContractAddress>,
+        ban_statuses: Array<bool>
     );
     fn upgrade_community(ref self: TState, community_id: u256, upgrade_type: CommunityType);
     fn gatekeep(

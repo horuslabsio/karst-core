@@ -490,147 +490,187 @@ fn should_panic_if_caller_removing_mod_is_not_owner() {
     communityDispatcher.remove_community_mods(community_id, moderators);
 }
 
-// #[test]
-// fn test_set_ban_status_by_owner() {
-//     let community_contract_address = __setup__();
+#[test]
+fn test_set_ban_status_by_owner() {
+    let community_contract_address = __setup__();
 
-//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
-//     };
-//     //  let salt: felt252 = 'djkngkylu349586';
-//     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-//     //create the community
-//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-//     // join the community
-//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    //create the community
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    // join the community
+    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
 
-//     let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
+    // ban profile list
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_SIX.try_into().unwrap());
+    profiles.append(USER_FOUR.try_into().unwrap());
 
-//     assert(is_ban == true, 'Community Member is not banned');
+    // ban status list
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
 
-//     stop_cheat_caller_address(community_contract_address);
-// }
+    communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 
-// #[test]
-// fn test_set_ban_status_by_mod() {
-//     let community_contract_address = __setup__();
+    let is_ban = communityDispatcher.get_ban_status(USER_FOUR.try_into().unwrap(), community_id);
 
-//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
-//     };
+    assert(is_ban == true, 'Community Member is not banned');
 
-//     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
+    stop_cheat_caller_address(community_contract_address);
+}
 
-//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-//     // join the community
-//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+#[test]
+fn test_set_ban_status_by_mod() {
+    let community_contract_address = __setup__();
 
-//     // add a community mod
-//     communityDispatcher.add_community_mods(community_id, USER_FOUR.try_into().unwrap());
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
 
-//     let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    // join the community
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
 
-//     assert(is_ban == true, 'Community Member is not banned');
+    // add a community mod
+    // add mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_FOUR.try_into().unwrap());
 
-//     stop_cheat_caller_address(community_contract_address);
-// }
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
 
-// #[test]
-// fn test_set_ban_status_emit_event() {
-//     let community_contract_address = __setup__();
+    stop_cheat_caller_address(community_contract_address);
 
-//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
-//     };
-//     //  let salt: felt252 = '495ksjdhfgjrkf86';
-//     // start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-//     // //create the community
-//     // let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-//     // // join the community
-//     // communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-//     // communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-//     // communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-//     // communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-//     // // add a community mod
-//     // communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
-//     // stop_cheat_caller_address(community_contract_address);
+    start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
 
-//     // spy on emitted events
-//     let mut spy = spy_events();
-//     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
-//     // add a community mod
-//     communityDispatcher.add_community_mods(community_id, USER_SIX.try_into().unwrap());
+    // ban profile list
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_THREE.try_into().unwrap());
+    profiles.append(USER_TWO.try_into().unwrap());
 
-//     // set ban
-//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
+    // ban status list
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
 
-//     spy
-//         .assert_emitted(
-//             @array![
-//                 (
-//                     community_contract_address,
-//                     CommunityComponent::Event::CommunityBanStatusUpdated(
-//                         CommunityComponent::CommunityBanStatusUpdated {
-//                             community_id: community_id,
-//                             transaction_executor: USER_SIX.try_into().unwrap(),
-//                             profile: USER_TWO.try_into().unwrap(),
-//                             ban_status: true,
-//                             block_timestamp: get_block_timestamp()
-//                         }
-//                     )
-//                 )
-//             ]
-//         );
-// }
+    communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 
-// #[test]
-// #[should_panic(expected: ('Karst: user unauthorized!',))]
-// fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
-//     let community_contract_address = __setup__();
+    let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
 
-//     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address
-//     };
-//     //  let salt: felt252 = 'djkrtyhjejfg6';
-//     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-//     //create the community
-//     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-//     // join the community
-//     communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
-//     communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+    assert(is_ban == true, 'Community Member is not banned');
 
-//     // mode array
-//     let mut moderators = ArrayTrait::new();
-//     moderators.append(USER_SIX.try_into().unwrap());
-//     moderators.append(USER_FIVE.try_into().unwrap());
+    stop_cheat_caller_address(community_contract_address);
+}
 
-//     // add a community mod
-//     communityDispatcher.add_community_mods(community_id, moderators);
+#[test]
+fn test_set_ban_status_emit_event() {
+    let community_contract_address = __setup__();
 
-//     stop_cheat_caller_address(community_contract_address);
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    //
 
-//     start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-//     communityDispatcher.set_ban_status(community_id, USER_TWO.try_into().unwrap(), true);
-// }
+    // spy on emitted events
+    let mut spy = spy_events();
+    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    communityDispatcher.join_community(USER_ONE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+    // add a community mod
+    // add mod array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_FOUR.try_into().unwrap());
+
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
+
+    // ban profile list
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_THREE.try_into().unwrap());
+    profiles.append(USER_TWO.try_into().unwrap());
+
+    // ban status list
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    // set ban
+    communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    community_contract_address,
+                    CommunityComponent::Event::CommunityBanStatusUpdated(
+                        CommunityComponent::CommunityBanStatusUpdated {
+                            community_id: community_id,
+                            transaction_executor: USER_SIX.try_into().unwrap(),
+                            profile: USER_TWO.try_into().unwrap(),
+                            ban_status: true,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+#[test]
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
+    let community_contract_address = __setup__();
+
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    //create the community
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    // join the community
+    communityDispatcher.join_community(USER_TWO.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_THREE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FOUR.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_FIVE.try_into().unwrap(), community_id);
+    communityDispatcher.join_community(USER_SIX.try_into().unwrap(), community_id);
+
+    // mode array
+    let mut moderators = ArrayTrait::new();
+    moderators.append(USER_SIX.try_into().unwrap());
+    moderators.append(USER_FIVE.try_into().unwrap());
+
+    // add a community mod
+    communityDispatcher.add_community_mods(community_id, moderators);
+
+    stop_cheat_caller_address(community_contract_address);
+
+    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
+    // ban status list
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    // ban profile list
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_FOUR.try_into().unwrap());
+    profiles.append(USER_TWO.try_into().unwrap());
+    // set ban
+    communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
+}
 
 // TEST TODO: create a test fn called `test_can_only_set_ban_status_for_members` to check that you
 // can only ban existing members
+
+// TEST TODO: TEST To make sure lenght of ban status and profiles are same
+// TEST TODO: panic test
 
 #[test]
 fn test_community_upgrade() {
