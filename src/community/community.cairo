@@ -207,65 +207,38 @@ pub mod CommunityComponent {
         /// @notice adds a new user to a community
         /// @param profile user who wants to join community
         /// @param community_id id of community to be joined
-        fn join_community(
-            ref self: ComponentState<TContractState>, profile: ContractAddress, community_id: u256
-        ) {
+        fn join_community(ref self: ComponentState<TContractState>, community_id: u256) {
+            let profile_caller = get_caller_address();
             let community = self.communities.read(community_id);
 
             // check user is not already a member and wasn't previously banned
-            let (is_community_member, _) = self.is_community_member(profile, community_id);
-            let is_banned = self.get_ban_status(profile, community_id);
+            let (is_community_member, _) = self.is_community_member(profile_caller, community_id);
+            let is_banned = self.get_ban_status(profile_caller, community_id);
             assert(is_community_member != true, ALREADY_MEMBER);
             assert(is_banned != true, BANNED_MEMBER);
 
-            self._join_community(profile, community.community_nft_address, community_id);
+            self._join_community(profile_caller, community.community_nft_address, community_id);
         }
 
         /// @notice removes a member from a community
         /// @param profile user who wants to leave the community
         /// @param community_id id of community to be left
-        fn leave_community(
-            ref self: ComponentState<TContractState>, profile: ContractAddress, community_id: u256
-        ) {
+        fn leave_community(ref self: ComponentState<TContractState>, community_id: u256) {
+            let profile_caller = get_caller_address();
             let community = self.communities.read(community_id);
-            let community_member_details = self.community_member.read((community_id, profile));
+            let community_member_details = self
+                .community_member
+                .read((community_id, profile_caller));
 
-            let (is_community_member, _) = self.is_community_member(profile, community_id);
+            let (is_community_member, _) = self.is_community_member(profile_caller, community_id);
             assert(is_community_member == true, NOT_MEMBER);
 
-            // burn user's community token
             self
-                ._burn_community_nft(
+                ._leave_community(
+                    profile_caller,
                     community.community_nft_address,
-                    profile,
+                    community_id,
                     community_member_details.community_token_id
-                );
-
-            // remove member details and update storage
-            let updated_member_details = CommunityMember {
-                profile_address: contract_address_const::<0>(),
-                community_id: 0,
-                total_publications: 0,
-                community_token_id: 0,
-                ban_status: true
-            };
-            self.community_member.write((community_id, profile), updated_member_details);
-            let community_total_members = community.community_total_members - 1;
-            let updated_community = CommunityDetails {
-                community_total_members: community_total_members, ..community
-            };
-            self.communities.write(community_id, updated_community);
-
-            // emit event
-            self
-                .emit(
-                    LeftCommunity {
-                        community_id: community_id,
-                        transaction_executor: get_caller_address(),
-                        token_id: community_member_details.community_token_id,
-                        profile: profile,
-                        block_timestamp: get_block_timestamp(),
-                    }
                 );
         }
 
@@ -285,7 +258,7 @@ pub mod CommunityComponent {
             self.communities.write(community_id, updated_community);
         }
 
-        // TODO: MAKE IT RECEIVE AN ARRAY OF MODERATORS
+
         /// @notice adds a new community mod
         /// @param community_id id of community to add moderator
         /// @param moderator address to be added as moderator
@@ -300,7 +273,7 @@ pub mod CommunityComponent {
             self._add_community_mods(community_id, community_owner, moderators);
         }
 
-        // TODO: MAKE IT RECEIVE AN ARRAY OF MODERATORS
+
         /// @notice removes a new community mod
         /// @param community_id id of community to remove moderator
         /// @param moderator address to be removed as moderator
@@ -557,9 +530,52 @@ pub mod CommunityComponent {
                 .emit(
                     JoinedCommunity {
                         community_id: community_id,
-                        transaction_executor: get_caller_address(),
+                        transaction_executor: profile,
                         token_id: minted_token_id,
                         profile: profile,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+        }
+
+        /// @notice internal function to leave a community
+        /// @param  profile of the new community member
+        /// @param community_nft_classhash classhash of community NFT
+        /// @param community_id  of community the new member is trying to join
+        fn _leave_community(
+            ref self: ComponentState<TContractState>,
+            profile_caller: ContractAddress,
+            community_nft_address: ContractAddress,
+            community_id: u256,
+            community_token_id: u256
+        ) {
+            let community = self.communities.read(community_id);
+            // burn user's community token
+            self._burn_community_nft(community_nft_address, profile_caller, community_token_id);
+
+            // remove member details and update storage
+            let updated_member_details = CommunityMember {
+                profile_address: contract_address_const::<0>(),
+                community_id: 0,
+                total_publications: 0,
+                community_token_id: 0,
+                ban_status: true
+            };
+            self.community_member.write((community_id, profile_caller), updated_member_details);
+            let community_total_members = community.community_total_members - 1;
+            let updated_community = CommunityDetails {
+                community_total_members: community_total_members, ..community
+            };
+            self.communities.write(community_id, updated_community);
+
+            // emit event
+            self
+                .emit(
+                    LeftCommunity {
+                        community_id: community_id,
+                        transaction_executor: profile_caller,
+                        token_id: community_token_id,
+                        profile: profile_caller,
                         block_timestamp: get_block_timestamp(),
                     }
                 );
