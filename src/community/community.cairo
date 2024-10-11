@@ -30,7 +30,6 @@ pub mod CommunityComponent {
     pub struct Storage {
         community_owner: Map<u256, ContractAddress>, // map<owner_address, community_id>
         communities: Map<u256, CommunityDetails>, // map <community_id, community_details>
-        member_community_id: Map<ContractAddress, u256>, // map <member address, community id>
         community_member: Map<
             (u256, ContractAddress), CommunityMember
         >, // map<(community_id, member address), Member_details>
@@ -151,9 +150,8 @@ pub mod CommunityComponent {
             ref self: ComponentState<TContractState>, community_type: CommunityType
         ) -> u256 {
             let community_owner = get_caller_address();
-            let community_counter = self.community_counter.read();
             let community_nft_classhash = self.community_nft_classhash.read();
-            let community_id = community_counter + 1;
+            let community_id = self.community_counter.read() + 1;
 
             let community_nft_address = self
                 ._deploy_community_nft(
@@ -181,7 +179,7 @@ pub mod CommunityComponent {
             self.communities.write(community_id, community_details);
             self.community_owner.write(community_id, community_owner);
             self.community_gate_keep.write(community_id, gate_keep_details);
-            self.community_counter.write(community_counter + 1);
+            self.community_counter.write(community_id);
 
             // upgrade if community type is not free
             if (community_type != CommunityType::Free) {
@@ -266,7 +264,7 @@ pub mod CommunityComponent {
                 community_id: 0,
                 total_publications: 0,
                 community_token_id: 0,
-                ban_status: true
+                ban_status: false
             };
             self.community_member.write((community_id, profile), updated_member_details);
             let community_total_members = community.community_total_members - 1;

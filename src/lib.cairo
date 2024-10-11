@@ -11,3 +11,4 @@ pub mod hub;
 pub mod jolt;
 pub mod collectnft;
 pub mod community;
+pub mod channel;

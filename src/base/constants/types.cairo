@@ -20,6 +20,27 @@ pub struct Profile {
 }
 
 // *************************************************************************
+//                            FOLLOW
+// *************************************************************************
+
+// /**
+// * @notice A struct containing token follow-related data.
+// *
+// * @param followed_profile_address The ID of the profile being followed.
+// * @param follower_profile_address The ID of the profile following.
+// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
+// follow.
+// * @param block_status true if follower is blocked, false otherwise
+// */
+#[derive(Drop, Serde, starknet::Store)]
+pub struct FollowData {
+    pub followed_profile_address: ContractAddress,
+    pub follower_profile_address: ContractAddress,
+    pub follow_timestamp: u64,
+    pub block_status: bool,
+}
+
+// *************************************************************************
 //                            PUBLICATION
 // *************************************************************************
 
@@ -144,6 +165,20 @@ pub struct QuoteParams {
     pub reference_pub_type: PublicationType
 }
 
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct Upvote {
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
+}
+
+#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
+pub struct Downvote {
+    pub publication_id: u256,
+    pub transaction_executor: ContractAddress,
+    pub block_timestamp: u64,
+}
+
 // *************************************************************************
 //                            COMMUNITY
 // *************************************************************************
@@ -201,39 +236,29 @@ pub enum CommunityType {
     Business
 }
 
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct Upvote {
-    pub publication_id: u256,
-    pub transaction_executor: ContractAddress,
-    pub block_timestamp: u64,
-}
-
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct Downvote {
-    pub publication_id: u256,
-    pub transaction_executor: ContractAddress,
-    pub block_timestamp: u64,
-}
-
 // *************************************************************************
-//                            FOLLOW
+//                            CHANNEL
 // *************************************************************************
 
-// /**
-// * @notice A struct containing token follow-related data.
-// *
-// * @param followed_profile_address The ID of the profile being followed.
-// * @param follower_profile_address The ID of the profile following.
-// * @param followTimestamp The timestamp of the current follow, if a profile is using the token to
-// follow.
-// * @param block_status true if follower is blocked, false otherwise
-// */
-#[derive(Drop, Serde, starknet::Store)]
-pub struct FollowData {
-    pub followed_profile_address: ContractAddress,
-    pub follower_profile_address: ContractAddress,
-    pub follow_timestamp: u64,
-    pub block_status: bool,
+#[derive(Drop, Serde, Clone, starknet::Store)]
+pub struct channelDetails {
+    pub channel_id: u256,
+    pub community_id: u256,
+    pub channel_owner: ContractAddress,
+    pub channel_metadata_uri: ByteArray,
+    pub channel_nft_address: ContractAddress,
+    pub channel_total_members: u256,
+    pub channel_censorship: bool,
+}
+
+
+#[derive(Drop, Serde, Clone, starknet::Store)]
+pub struct channelMember {
+    pub profile: ContractAddress,
+    pub channel_id: u256,
+    pub total_publications: u256,
+    pub channel_token_id: u256,
+    pub ban_status: bool,
 }
 
 // *************************************************************************
