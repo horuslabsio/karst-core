@@ -241,7 +241,7 @@ pub enum CommunityType {
 // *************************************************************************
 
 #[derive(Drop, Serde, Clone, starknet::Store)]
-pub struct channelDetails {
+pub struct ChannelDetails {
     pub channel_id: u256,
     pub community_id: u256,
     pub channel_owner: ContractAddress,
@@ -253,7 +253,7 @@ pub struct channelDetails {
 
 
 #[derive(Drop, Serde, Clone, starknet::Store)]
-pub struct channelMember {
+pub struct ChannelMember {
     pub profile: ContractAddress,
     pub channel_id: u256,
     pub total_publications: u256,

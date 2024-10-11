@@ -8,8 +8,8 @@ pub mod ChannelComponent {
         ContractAddress, contract_address_const, get_caller_address, get_block_timestamp, ClassHash, syscalls::deploy_syscall, SyscallResultTrait
     };
     use starknet::storage::{
-        StoragePointerReadAccess, StoragePointerWriteAccess, StoragePathEntry, Map,
-        StorageMapReadAccess, StorageMapWriteAccess, Vec, VecTrait, MutableVecTrait
+        StoragePointerReadAccess, StoragePointerWriteAccess, Map,
+        StorageMapReadAccess, StorageMapWriteAccess
     };
     use karst::interfaces::IChannel::IChannel;
     use karst::interfaces::ICommunity::ICommunity;
@@ -18,9 +18,9 @@ pub mod ChannelComponent {
     use karst::base::{
         constants::errors::Errors::{
             NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_MEMBER, BANNED_FROM_CHANNEL,
-            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED_ACESS
+            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH
         },
-        constants::types::{channelDetails, channelMember}
+        constants::types::{ChannelDetails, ChannelMember}
     };
 
     // *************************************************************************
@@ -28,10 +28,10 @@ pub mod ChannelComponent {
     // *************************************************************************
     #[storage]
     pub struct Storage {
-        channels: Map<u256, channelDetails>,
+        channels: Map<u256, ChannelDetails>,
         channel_counter: u256,
-        channel_members: Map<(u256, ContractAddress), channelMember>,
-        channel_moderators: Map<u256, Vec<ContractAddress>>,
+        channel_members: Map<(u256, ContractAddress), ChannelMember>,
+        channel_moderators: Map<(u256, ContractAddress), bool>,
         channel_nft_classhash: ClassHash,
     }
 
@@ -62,6 +62,7 @@ pub mod ChannelComponent {
     pub struct JoinedChannel {
         channel_id: u256,
         transaction_executor: ContractAddress,
+        profile: ContractAddress,
         token_id: u256,
         block_timestamp: u64,
     }
@@ -70,6 +71,7 @@ pub mod ChannelComponent {
     pub struct LeftChannel {
         channel_id: u256,
         transaction_executor: ContractAddress,
+        profile: ContractAddress,
         token_id: u256,
         block_timestamp: u64,
     }
@@ -78,7 +80,7 @@ pub mod ChannelComponent {
     pub struct ChannelModAdded {
         channel_id: u256,
         transaction_executor: ContractAddress,
-        mod_address: Array<ContractAddress>,
+        mod_address: ContractAddress,
         block_timestamp: u64,
     }
 
@@ -86,7 +88,7 @@ pub mod ChannelComponent {
     pub struct ChannelModRemoved {
         channel_id: u256,
         transaction_executor: ContractAddress,
-        mod_address: Array<ContractAddress>,
+        mod_address: ContractAddress,
         block_timestamp: u64,
     }
 
@@ -95,6 +97,7 @@ pub mod ChannelComponent {
         channel_id: u256,
         transaction_executor: ContractAddress,
         profile: ContractAddress,
+        ban_status: bool,
         block_timestamp: u64,
     }
 
@@ -122,7 +125,7 @@ pub mod ChannelComponent {
             let channel_id = self.channel_counter.read() + 1;
             let channel_owner = get_caller_address();
 
-            let new_channel = channelDetails {
+            let new_channel = ChannelDetails {
                 channel_id: channel_id,
                 community_id: community_id,
                 channel_owner: channel_owner,
@@ -160,7 +163,7 @@ pub mod ChannelComponent {
 
             // check user is not already a channel member and wasn't previously banned
             let is_channel_member = self.is_channel_member(profile, channel_id);
-            let is_banned = self.get_ban_status(profile, channel_id);
+            let is_banned = self.get_channel_ban_status(profile, channel_id);
             assert(!is_channel_member, ALREADY_MEMBER);
             assert(!is_banned, BANNED_FROM_CHANNEL);
 
@@ -172,29 +175,29 @@ pub mod ChannelComponent {
         /// @notice removes a member from a channel
         /// @param channel_id id of channel to be left
         fn leave_channel(ref self: ComponentState<TContractState>, channel_id: u256) {
+            let mut channel = self.channels.read(channel_id);
+            let profile = get_caller_address();
+            let channel_member = self.channel_members.read((channel_id, profile));
+
             // check that profile is a channel member
-            assert(
-                self
-                    .channel_members
-                    .read((channel_id, get_caller_address()))
-                    .channel_id == channel_id
-                    && self
-                        .channel_members
-                        .read((channel_id, get_caller_address()))
-                        .profile == get_caller_address(),
-                NOT_CHANNEL_MEMBER
-            );
+            assert(self.is_channel_member(profile, channel_id), NOT_CHANNEL_MEMBER);
 
             // check that channel has members
-            let total_members: u256 = self.channels.read(channel_id).channel_total_members;
+            let total_members: u256 = channel.channel_total_members;
             assert(total_members > 1, CHANNEL_HAS_NO_MEMBER);
+
+            // burn user's community token
+            self
+                ._burn_channel_nft(
+                    channel.channel_nft_address, channel_member.channel_token_id
+                );
 
             // update storage
             self
                 .channel_members
                 .write(
-                    (channel_id, get_caller_address()),
-                    channelMember {
+                    (channel_id, profile),
+                    ChannelMember {
                         profile: contract_address_const::<0>(),
                         channel_id: 0,
                         total_publications: 0,
@@ -203,18 +206,17 @@ pub mod ChannelComponent {
                     }
                 );
 
-            let mut channel: channelDetails = self.channels.read(channel_id);
             channel.channel_total_members -= 1;
             self.channels.write(channel_id, channel);
 
-            //TODO Delete the mapping at the caller address
-            //TODO : burn the NFT
+            // emit event
             self
                 .emit(
                     LeftChannel {
                         channel_id: channel_id,
                         transaction_executor: get_caller_address(),
-                        token_id: 0, //TODO impl token gating  self.get_user_token_id(get_caller_address()),
+                        profile: profile,
+                        token_id: channel_member.channel_token_id,
                         block_timestamp: get_block_timestamp(),
                     }
                 )
@@ -222,19 +224,19 @@ pub mod ChannelComponent {
 
 
         /// @notice Set the metadata URI of the channel
-        /// @param channel_id: The id of the channel
-        /// @param metadata_uri: The new metadata URI
-        /// @dev Only the owner of the channel can set the metadata URI
+        /// @param channel_id The id of the channel
+        /// @param metadata_uri The new metadata URI
+        /// @dev Only the owner of the channel or a mod can set the metadata URI
         fn set_channel_metadata_uri(
             ref self: ComponentState<TContractState>, channel_id: u256, metadata_uri: ByteArray
         ) {
-            let channel_member: channelDetails = self.channels.read(channel_id);
+            let channel_member: ChannelDetails = self.channels.read(channel_id);
             assert(
                 channel_member.channel_owner == get_caller_address()
                     || self.is_channel_mod(get_caller_address(), channel_id),
-                UNAUTHORIZED_ACESS
+                UNAUTHORIZED
             );
-            let mut channel: channelDetails = self.channels.read(channel_id);
+            let mut channel: ChannelDetails = self.channels.read(channel_id);
             channel.channel_metadata_uri = metadata_uri;
             self.channels.write(channel_id, channel);
         }
@@ -242,38 +244,19 @@ pub mod ChannelComponent {
 
         /// @notice Add a moderator to the channel
         /// @param channel_id: The id of the channel
-        /// @param Array<moderator>: The address of the moderator
+        /// @param Array<moderator> The address of the moderator
         /// dev only primary moderator/owner can add the moderators
         fn add_channel_mods(
             ref self: ComponentState<TContractState>,
             channel_id: u256,
-            moderator: Array<ContractAddress>
+            moderators: Array<ContractAddress>
         ) {
             assert(
                 self.channels.read(channel_id).channel_owner == get_caller_address(),
                 NOT_CHANNEL_OWNER
             );
 
-            for i in 0
-                ..moderator
-                    .len() {
-                        if (!self.is_channel_mod(*moderator.at(i), channel_id)) {
-                            self
-                                .channel_moderators
-                                .entry(channel_id)
-                                .append()
-                                .write(*moderator.at(i));
-                        }
-                    };
-            self
-                .emit(
-                    ChannelModAdded {
-                        channel_id: channel_id,
-                        transaction_executor: get_caller_address(),
-                        mod_address: moderator,
-                        block_timestamp: get_block_timestamp(),
-                    }
-                )
+            self._add_channel_mods(channel_id, moderators);
         }
 
 
@@ -284,126 +267,82 @@ pub mod ChannelComponent {
         fn remove_channel_mods(
             ref self: ComponentState<TContractState>,
             channel_id: u256,
-            moderator: Array<ContractAddress>
+            moderators: Array<ContractAddress>
         ) {
             assert(
                 self.channels.read(channel_id).channel_owner == get_caller_address(),
                 NOT_CHANNEL_OWNER
             );
-            for i in 0
-                ..moderator
-                    .len() {
-                        if (self.is_channel_mod(*moderator.at(i), channel_id)) {
-                            let mut channe_moderators = self.channel_moderators.entry(channel_id);
-                            for j in 0
-                                ..channe_moderators
-                                    .len() {
-                                        if (channe_moderators.at(j).read() == *moderator.at(i)) {
-                                            // todo zero address set
-                                            channe_moderators
-                                                .at(j)
-                                                .write(contract_address_const::<0>());
-                                        }
-                                    };
-                        }
-                    };
 
-            // remove at the index thus making the best thing which i can made is the person who i
-            // can make the best place to make the system which is todo
-            // first know the element and then remove the function and delete the person
-
-            self
-                .emit(
-                    ChannelModRemoved {
-                        channel_id: channel_id,
-                        transaction_executor: get_caller_address(),
-                        mod_address: moderator,
-                        block_timestamp: get_block_timestamp(),
-                    }
-                )
+            self._remove_channel_mods(channel_id, moderators);
         }
 
         /// @notice Set the censorship status of the channel
-        /// @param channel_id: The id of the channel
+        /// @param channel_id The id of the channel
         fn set_channel_censorship_status(
             ref self: ComponentState<TContractState>, channel_id: u256, censorship_status: bool
         ) {
-            // let channel_member: channelDetails = self.channels.read(channel_id);
+            let mut channel = self.channels.read(channel_id);
+
+            // check caller is owner
             assert(
-                self.channels.read(channel_id).channel_owner == get_caller_address(),
+                channel.channel_owner == get_caller_address(),
                 NOT_CHANNEL_OWNER
             );
-            let mut channel: channelDetails = self.channels.read(channel_id);
+
+            // update storage
             channel.channel_censorship = censorship_status;
             self.channels.write(channel_id, channel);
         }
 
 
-        ///@notice Set the ban status of a profile in the channel
-        /// @param channel_id: The id of the channel
-        /// @param profile: The address of the profile
-        /// @param ban_status: The ban status of the profile
-        fn set_ban_status(
+        /// @notice set the ban status of a profile in the channel
+        /// @param channel_id The id of the channel
+        /// @param profile The address of the profile
+        /// @param ban_status The ban status of the profile
+        fn set_channel_ban_status(
             ref self: ComponentState<TContractState>,
             channel_id: u256,
-            profile: ContractAddress,
-            ban_status: bool
+            profiles: Array<ContractAddress>,
+            ban_statuses: Array<bool>
         ) {
-            // let channel_member: channelDetails = self.channels.read(channel_id);
+            let mut channel = self.channels.read(channel_id);
+
+            // check caller is owner or mod
             assert(
-                self.channels.read(channel_id).channel_owner == get_caller_address()
+                channel.channel_owner == get_caller_address()
                     || self.is_channel_mod(get_caller_address(), channel_id),
-                UNAUTHORIZED_ACESS
-            );
-            // check that channel exits and the profile is a member of the channel
-            assert(
-                self.channel_members.read((channel_id, profile)).profile == profile
-                    && self.channel_members.read((channel_id, profile)).channel_id == channel_id,
-                NOT_CHANNEL_MEMBER
+                UNAUTHORIZED
             );
 
-            let mut channel_member: channelMember = self
-                .channel_members
-                .read((channel_id, profile));
-            channel_member.ban_status = ban_status;
-            self.channel_members.write((channel_id, profile), channel_member);
-
-            self
-                .emit(
-                    ChannelBanStatusUpdated {
-                        channel_id: channel_id,
-                        transaction_executor: get_caller_address(),
-                        profile: profile,
-                        block_timestamp: get_block_timestamp(),
-                    }
-                )
+            self._set_ban_status(channel_id, profiles, ban_statuses);
         }
 
 
-        ///@notice Get the channel parameters
-        /// @param channel_id: The id of the channel
-        /// @return The channel parameters
-        fn get_channel(self: @ComponentState<TContractState>, channel_id: u256) -> channelDetails {
+        /// @notice gets the channel parameters
+        /// @param channel_id The id of the channel
+        /// @return ChannelDetails The channel parameters
+        fn get_channel(self: @ComponentState<TContractState>, channel_id: u256) -> ChannelDetails {
             self.channels.read(channel_id)
         }
 
-        ///@notice Get the metadata URI of the channel
-        /// @param channel_id: The id of the channel
-        /// @return The metadata URI
+        /// @notice gets the metadata URI of the channel
+        /// @param channel_id The id of the channel
+        /// @return ByteArray The metadata URI
         fn get_channel_metadata_uri(
             self: @ComponentState<TContractState>, channel_id: u256
         ) -> ByteArray {
-            let channel: channelDetails = self.channels.read(channel_id);
-            channel.channel_metadata_uri
+            self.channels.read(channel_id).channel_metadata_uri
         }
 
-        ///@notice Check if the profile is a member of the channel
-        ///@param profile: The address of the profile
-        ///@return A tuple of the membership status and the channel id
+        /// @notice checks if the profile is a member of the channel
+        /// @param profile the address of the profile
+        /// @param channel_id the id of the channel
+        /// @return bool the profile membership status
         fn is_channel_member(
             self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) -> bool {
-            let channel_member: channelMember = self.channel_members.read((channel_id, profile));
+            let channel_member: ChannelMember = self.channel_members.read((channel_id, profile));
             if (channel_member.channel_id == channel_id) {
                 true
             } else {
@@ -411,41 +350,40 @@ pub mod ChannelComponent {
             }
         }
 
-
-        ///TODO :get the total number of mener of the channel
+        /// @notice gets the total number of members in a channel
+        /// @param channel_id the id of the channel
+        /// @return u256 the number of members in a channel
         fn get_total_members(self: @ComponentState<TContractState>, channel_id: u256) -> u256 {
-            let channel: channelDetails = self.channels.read(channel_id);
-            channel.channel_total_members
+            self.channels.read(channel_id).channel_total_members
         }
 
-        ///@notice check for moderator
-        /// @param channel id
-        /// @param profile addresss
+        /// @notice checks if a profile is a moderator
+        /// @param profile addresss to be checked
+        /// @param channel_id the id of the channel
+        /// @return bool the moderator status
         fn is_channel_mod(
             self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) -> bool {
-            let mut dd = self.channel_moderators.entry(channel_id);
-            let mut flag: bool = false;
-            for i in 0..dd.len() {
-                if (dd.at(i).read() == profile) {
-                    flag = true;
-                    break;
-                }
-            };
-            flag
+            self.channel_moderators.read((channel_id, profile))
         }
 
+        /// @notice checks if a channel is censored
+        /// @param channel_id the id of the channel
+        /// @return bool the censorship status
         fn get_channel_censorship_status(
             self: @ComponentState<TContractState>, channel_id: u256
         ) -> bool {
-            let channel: channelDetails = self.channels.read(channel_id);
-            channel.channel_censorship
+            self.channels.read(channel_id).channel_censorship
         }
 
-        fn get_ban_status(
+        /// @notice checks if a profile is banned
+        /// @param profile addresss to be checked
+        /// @param channel_id the id of the channel
+        /// @return bool the ban status
+        fn get_channel_ban_status(
             self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) -> bool {
-            let channel_member: channelMember = self.channel_members.read((channel_id, profile));
+            let channel_member: ChannelMember = self.channel_members.read((channel_id, profile));
             channel_member.ban_status
         }
     }
@@ -469,19 +407,22 @@ pub mod ChannelComponent {
             self.channel_nft_classhash.write(channel_nft_classhash.try_into().unwrap());
         }
 
+        /// @notice internal function to join a channel
+        /// @param profile address to add to the channel
+        /// @param channel_id id of the channel to be joined
         fn _join_channel(
             ref self: ComponentState<TContractState>,
             profile: ContractAddress,
             channel_id: u256
         ) {
-            let mut channel: channelDetails = self.channels.read(channel_id);
+            let mut channel: ChannelDetails = self.channels.read(channel_id);
 
             // check that user is a member of the community this channel belongs to
             let community_instance = get_dep_component!(@self, Community);
             let membership_status = community_instance.is_community_member(profile, channel.community_id);
             assert(membership_status, NOT_MEMBER);
 
-            let channel_member = channelMember {
+            let channel_member = ChannelMember {
                 profile: get_caller_address(),
                 channel_id: channel_id,
                 total_publications: 0,
@@ -504,10 +445,116 @@ pub mod ChannelComponent {
                     JoinedChannel {
                         channel_id: channel_id,
                         transaction_executor: get_caller_address(),
+                        profile: profile,
                         token_id: minted_token_id,
                         block_timestamp: get_block_timestamp(),
                     }
                 )
+        }
+
+        /// @notice internal function for adding channel mod
+        /// @param channel_id id of channel
+        /// @param moderators array of moderators
+        fn _add_channel_mods(
+            ref self: ComponentState<TContractState>,
+            channel_id: u256,
+            moderators: Array<ContractAddress>
+        ) {
+            let length = moderators.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                let moderator = *moderators.at(index);
+                let is_channel_member = self.is_channel_member(moderator, channel_id);
+                assert(is_channel_member == true, NOT_MEMBER);
+                self.channel_moderators.write((channel_id, moderator), true);
+
+                // emit event
+                self
+                .emit(
+                    ChannelModAdded {
+                        channel_id: channel_id,
+                        transaction_executor: get_caller_address(),
+                        mod_address: moderator,
+                        block_timestamp: get_block_timestamp(),
+                    }
+                );
+                index += 1;
+            };
+        }
+
+        /// @notice internal function for removing channel mod
+        /// @param channel_id id of channel
+        // @param moderators to remove
+        fn _remove_channel_mods(
+            ref self: ComponentState<TContractState>,
+            channel_id: u256,
+            moderators: Array<ContractAddress>
+        ) {
+            let length = moderators.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                let moderator = *moderators.at(index);
+                let is_channel_member = self.is_channel_member(moderator, channel_id);
+                assert(is_channel_member == true, NOT_MEMBER);
+
+                self.channel_moderators.write((channel_id, moderator), false);
+
+                // emit event
+                self
+                    .emit(
+                        ChannelModRemoved {
+                            channel_id: channel_id,
+                            mod_address: moderator,
+                            transaction_executor: get_caller_address(),
+                            block_timestamp: get_block_timestamp()
+                        }
+                    );
+                index += 1;
+            };
+        }
+
+        /// @notice internal function for set ban status for members
+        /// @param channel_id id of channel to be banned or unbanned
+        /// @param profiles addresses
+        /// @param ban_statuses bool values
+        fn _set_ban_status(
+            ref self: ComponentState<TContractState>,
+            channel_id: u256,
+            profiles: Array<ContractAddress>,
+            ban_statuses: Array<bool>
+        ) {
+            assert(profiles.len() == ban_statuses.len(), INVALID_LENGTH);
+            let length = profiles.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                let profile = *profiles[index];
+                let ban_status = *ban_statuses[index];
+
+                // check profile is a channel member
+                let is_channel_member = self.is_channel_member(profile, channel_id);
+                assert(is_channel_member == true, NOT_MEMBER);
+
+                // update storage
+                let channel_member = self.channel_members.read((channel_id, profile));
+                let updated_member = ChannelMember { ban_status: ban_status, ..channel_member };
+                self.channel_members.write((channel_id, profile), updated_member);
+
+                // emit event
+                self
+                    .emit(
+                        ChannelBanStatusUpdated {
+                            channel_id: channel_id,
+                            transaction_executor: get_caller_address(),
+                            profile: profile,
+                            ban_status: ban_status,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    );
+                index += 1;
+            };
         }
 
         /// @notice internal function to deploy a channel nft
@@ -545,9 +592,9 @@ pub mod ChannelComponent {
         fn _mint_channel_nft(
             ref self: ComponentState<TContractState>,
             profile: ContractAddress,
-            community_nft_address: ContractAddress
+            channel_nft_address: ContractAddress
         ) -> u256 {
-            let token_id = ICommunityNftDispatcher { contract_address: community_nft_address }
+            let token_id = ICommunityNftDispatcher { contract_address: channel_nft_address }
                 .mint_nft(profile);
             token_id
         }
@@ -555,12 +602,12 @@ pub mod ChannelComponent {
         /// @notice internal function to burn a channel nft
         /// @param channel_nft_address address of channel nft
         /// @param token_id to burn
-        fn _burn_community_nft(
+        fn _burn_channel_nft(
             ref self: ComponentState<TContractState>,
-            community_nft_address: ContractAddress,
+            channel_nft_address: ContractAddress,
             token_id: u256
         ) {
-            ICommunityNftDispatcher { contract_address: community_nft_address }
+            ICommunityNftDispatcher { contract_address: channel_nft_address }
                 .burn_nft(get_caller_address(), token_id);
         }
     }
