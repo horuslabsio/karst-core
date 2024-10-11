@@ -174,7 +174,7 @@ pub mod CommunityComponent {
             let gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,
                 gate_keep_type: GateKeepType::None,
-                community_nft_address: contract_address_const::<0>(),
+                community_nft_address: community_nft_address, // contract_address_const::<0>(),
                 entry_fee: 0
             };
 
@@ -408,11 +408,11 @@ pub mod CommunityComponent {
         fn is_community_member(
             self: @ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) -> (bool, CommunityMember) {
-            let community_memeber = self.community_member.read((community_id, profile));
-            if (community_memeber.community_id == community_id) {
-                (true, community_memeber)
+            let community_member = self.community_member.read((community_id, profile));
+            if (community_member.community_id == community_id) {
+                (true, community_member)
             } else {
-                (false, community_memeber)
+                (false, community_member)
             }
         }
 
@@ -660,10 +660,6 @@ pub mod CommunityComponent {
                         }
                     );
                 index += 1;
-                // self
-            //     .gate_keep_permissioned_addresses
-            //     .write((community_id, *permissioned_addresses.at(index)), true);
-
             };
         }
 

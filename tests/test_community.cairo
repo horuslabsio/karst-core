@@ -5,7 +5,7 @@ use core::option::OptionTrait;
 use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
-use starknet::{ContractAddress, get_block_timestamp};
+use starknet::{ContractAddress, get_block_timestamp, contract_address_const};
 
 use snforge_std::{
     declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
@@ -55,17 +55,50 @@ fn test_community_creation() {
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
     assert(community_id == 1, 'invalid community creation');
+    let community_data = communityDispatcher.get_community(community_id);
     // TEST TODO: use assert to check for every single item within CommunityDetails structs to
-    // ensure they were instantiated with the correct values TEST TODO: check that community nft was
-    // deployed correctly and you received an address TEST TODO: use assert to check for every
-    // single item within CommunityGateKeepDetails structs to ensure they were instantiated with the
-    // correct values
+    assert(community_data.community_id == community_id, 'invalid community ID');
+    assert(community_data.community_type == CommunityType::Free, 'invalid community type');
+    assert(community_data.community_owner == USER_ONE.try_into().unwrap(), 'invalid owner');
+    assert(community_data.community_total_members == 1, 'invalid  total  members');
+    assert(community_data.community_premium_status == false, 'invalid premium status');
+    // ensure they were instantiated with the correct values
+
+    // TEST TODO: check that community nft was
+    // deployed correctly and you received an address  // contract_address_const::<0>()
+    assert(
+        community_data.community_nft_address != contract_address_const::<0>(),
+        'community nft was not deployed'
+    );
+
+    // TEST TODO: use assert to check for every
+    let (_, gate_keep_details) = communityDispatcher.is_gatekeeped(community_id);
+    assert(gate_keep_details.gate_keep_type == GateKeepType::None, 'invalid community type');
+    assert(
+        gate_keep_details.community_nft_address == community_data.community_nft_address,
+        'invalid community NFT address'
+    );
+    assert(community_data.community_id == community_id, 'invalid community ID');
+    assert(gate_keep_details.entry_fee == 0, 'invalid community gatekeep fee');
+
     stop_cheat_caller_address(community_contract_address);
 }
 
 // TEST TODO: create a new test fn called `test_community_upgrade_on_creation` where you pass in a
 // premium package type and checks upgrade was successful
 
+#[test]
+fn test_community_upgrade_on_creation() {
+    let community_contract_address = __setup__();
+
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_comminuty(CommunityType::Standard);
+    assert(community_id == 1, 'invalid community creation');
+    let community_data = communityDispatcher.get_community(community_id);
+    assert(community_data.community_type == CommunityType::Standard, 'invalid community type');
+    assert(community_data.community_premium_status == true, 'invalid community type');
+}
 #[test]
 fn test_create_community_emits_events() {
     let community_contract_address = __setup__();
@@ -112,8 +145,18 @@ fn test_join_community() {
         .is_community_member(USER_ONE.try_into().unwrap(), community_id);
 
     assert(is_member == true, 'Not Community Member');
-    // TEST TODO: check every single struct item in CommunityMember was instantiated correctly
-    // TEST TODO: check that a community NFT was minted to the user joining
+
+    let (_, community_member) = communityDispatcher
+        .is_community_member(USER_ONE.try_into().unwrap(), community_id);
+    assert(community_member.community_id == community_id, 'Invalid Community id');
+    assert(
+        community_member.profile_address == USER_ONE.try_into().unwrap(),
+        'invalid community memeber'
+    );
+    assert(community_member.total_publications == 0, 'invalid  total  publication');
+    assert(community_member.ban_status == false, 'invalid ban status'); // community_token_id
+    assert(community_member.community_token_id != 0, 'invalid nft mint token');
+
     stop_cheat_caller_address(community_contract_address);
 }
 
@@ -205,14 +248,18 @@ fn test_leave_community() {
 
     communityDispatcher.leave_community(community_id);
 
-    let (is_member, _) = communityDispatcher
+    let (is_member, member) = communityDispatcher
         .is_community_member(USER_TWO.try_into().unwrap(), community_id);
 
     assert(is_member != true, 'still a community member');
+    stop_cheat_caller_address(community_contract_address);
 
-    // TEST TODO: check that community total member reduced
-    // TEST TODO: check that user NFT is burned on leaving
+    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
 
+    let get_total_members = communityDispatcher.get_total_members(community_id);
+    assert(get_total_members == 1, 'No reduction in total member');
+
+    assert(member.community_token_id == 0, 'NFT is not burn');
     stop_cheat_caller_address(community_contract_address);
 }
 
@@ -567,7 +614,7 @@ fn test_remove_community_mod_emit_event() {
 
 #[test]
 #[should_panic(expected: ('Karst: Not a Community  Member',))]
-fn should_panic_if_caller_removing_mod_not_community_member() {
+fn test_should_panic_if_mod_is_not_community_member() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -613,7 +660,7 @@ fn should_panic_if_caller_removing_mod_not_community_member() {
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
-fn should_panic_if_caller_removing_mod_is_not_owner() {
+fn test_should_panic_if_caller_removing_mod_is_not_owner() {
     let community_contract_address = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -1150,38 +1197,6 @@ fn test_paid_gatekeeping_nft_gating() {
     stop_cheat_caller_address(community_contract_address);
 }
 
-// TEST TODO: add test fn `test_only_premium_communities_can_be_paid_gated` to test that only
-// premium communities can enforce PaidGating
-#[test]
-fn test_only_premium_communities_can_be_paid_gated() {
-    let community_contract_address = __setup__();
-    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-
-    let mut permission_addresses = ArrayTrait::new();
-    permission_addresses.append(USER_SIX.try_into().unwrap());
-    permission_addresses.append(USER_FIVE.try_into().unwrap());
-    permission_addresses.append(USER_THREE.try_into().unwrap());
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
-    communityDispatcher
-        .gatekeep(
-            community_id,
-            GateKeepType::PaidGating,
-            NFT_ONE.try_into().unwrap(),
-            permission_addresses,
-            450
-        );
-
-    // check is_gatekeeped
-    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
-    assert(
-        gatekeep_details.gate_keep_type == GateKeepType::PaidGating,
-        'Community Paid Gatekeep Failed'
-    );
-    stop_cheat_caller_address(community_contract_address);
-}
-
 
 // TEST TODO: add test fn
 // `test_only_premium_communities_can_be_nft_gated` to test that only premium communities can
@@ -1219,7 +1234,7 @@ fn test_should_panic_only_premium_communities_can_be_paid_gated() {
 
 #[test]
 #[should_panic(expected: ('Karst: only premium communities',))]
-fn test_should_panic_only_premium_communities_can_be_nft_gated() {
+fn test_only_premium_communities_can_be_nft_gated() {
     let community_contract_address = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
