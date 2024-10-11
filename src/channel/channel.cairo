@@ -5,11 +5,12 @@ pub mod ChannelComponent {
     // *************************************************************************
     use core::clone::Clone;
     use core::starknet::{
-        ContractAddress, contract_address_const, get_caller_address, get_block_timestamp, ClassHash, syscalls::deploy_syscall, SyscallResultTrait
+        ContractAddress, contract_address_const, get_caller_address, get_block_timestamp, ClassHash,
+        syscalls::deploy_syscall, SyscallResultTrait
     };
     use starknet::storage::{
-        StoragePointerReadAccess, StoragePointerWriteAccess, Map,
-        StorageMapReadAccess, StorageMapWriteAccess
+        StoragePointerReadAccess, StoragePointerWriteAccess, Map, StorageMapReadAccess,
+        StorageMapWriteAccess
     };
     use karst::interfaces::IChannel::IChannel;
     use karst::interfaces::ICommunity::ICommunity;
@@ -113,15 +114,13 @@ pub mod ChannelComponent {
     // *************************************************************************
     #[embeddable_as(KarstChannel)]
     impl ChannelImpl<
-        TContractState, 
-        +HasComponent<TContractState>, 
+        TContractState,
+        +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Community: CommunityComponent::HasComponent<TContractState>
     > of IChannel<ComponentState<TContractState>> {
         /// @notice creates a new channel
-        fn create_channel(
-            ref self: ComponentState<TContractState>, community_id: u256
-        ) -> u256 {
+        fn create_channel(ref self: ComponentState<TContractState>, community_id: u256) -> u256 {
             let channel_id = self.channel_counter.read() + 1;
             let channel_owner = get_caller_address();
 
@@ -171,7 +170,6 @@ pub mod ChannelComponent {
             self._join_channel(profile, channel_id);
         }
 
-
         /// @notice removes a member from a channel
         /// @param channel_id id of channel to be left
         fn leave_channel(ref self: ComponentState<TContractState>, channel_id: u256) {
@@ -187,10 +185,7 @@ pub mod ChannelComponent {
             assert(total_members > 1, CHANNEL_HAS_NO_MEMBER);
 
             // burn user's community token
-            self
-                ._burn_channel_nft(
-                    channel.channel_nft_address, channel_member.channel_token_id
-                );
+            self._burn_channel_nft(channel.channel_nft_address, channel_member.channel_token_id);
 
             // update storage
             self
@@ -222,7 +217,6 @@ pub mod ChannelComponent {
                 )
         }
 
-
         /// @notice Set the metadata URI of the channel
         /// @param channel_id The id of the channel
         /// @param metadata_uri The new metadata URI
@@ -241,7 +235,6 @@ pub mod ChannelComponent {
             self.channels.write(channel_id, channel);
         }
 
-
         /// @notice Add a moderator to the channel
         /// @param channel_id: The id of the channel
         /// @param Array<moderator> The address of the moderator
@@ -258,7 +251,6 @@ pub mod ChannelComponent {
 
             self._add_channel_mods(channel_id, moderators);
         }
-
 
         /// @notice Remove a moderator from the channel
         /// @param channel_id: The id of the channel
@@ -285,10 +277,7 @@ pub mod ChannelComponent {
             let mut channel = self.channels.read(channel_id);
 
             // check caller is owner
-            assert(
-                channel.channel_owner == get_caller_address(),
-                NOT_CHANNEL_OWNER
-            );
+            assert(channel.channel_owner == get_caller_address(), NOT_CHANNEL_OWNER);
 
             // update storage
             channel.channel_censorship = censorship_status;
@@ -393,16 +382,14 @@ pub mod ChannelComponent {
     // *************************************************************************
     #[generate_trait]
     pub impl InternalImpl<
-        TContractState, 
+        TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Community: CommunityComponent::HasComponent<TContractState>
     > of InternalTrait<TContractState> {
         /// @notice initalizes channel component
         /// @param channel_nft_classhash classhash of channel NFT
-        fn _initializer(
-            ref self: ComponentState<TContractState>, channel_nft_classhash: felt252
-        ) {
+        fn _initializer(ref self: ComponentState<TContractState>, channel_nft_classhash: felt252) {
             self.channel_counter.write(0);
             self.channel_nft_classhash.write(channel_nft_classhash.try_into().unwrap());
         }
@@ -411,15 +398,14 @@ pub mod ChannelComponent {
         /// @param profile address to add to the channel
         /// @param channel_id id of the channel to be joined
         fn _join_channel(
-            ref self: ComponentState<TContractState>,
-            profile: ContractAddress,
-            channel_id: u256
+            ref self: ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) {
             let mut channel: ChannelDetails = self.channels.read(channel_id);
 
             // check that user is a member of the community this channel belongs to
             let community_instance = get_dep_component!(@self, Community);
-            let membership_status = community_instance.is_community_member(profile, channel.community_id);
+            let membership_status = community_instance
+                .is_community_member(profile, channel.community_id);
             assert(membership_status, NOT_MEMBER);
 
             let channel_member = ChannelMember {
@@ -431,14 +417,13 @@ pub mod ChannelComponent {
             };
 
             // mint a channel token to new joiner
-            let minted_token_id = self
-                ._mint_channel_nft(profile, channel.channel_nft_address);
-            
+            let minted_token_id = self._mint_channel_nft(profile, channel.channel_nft_address);
+
             // update storage
             channel.channel_total_members += 1;
             self.channels.write(channel_id, channel);
             self.channel_members.write((channel_id, profile), channel_member);
-            
+
             // emit events
             self
                 .emit(
@@ -471,14 +456,14 @@ pub mod ChannelComponent {
 
                 // emit event
                 self
-                .emit(
-                    ChannelModAdded {
-                        channel_id: channel_id,
-                        transaction_executor: get_caller_address(),
-                        mod_address: moderator,
-                        block_timestamp: get_block_timestamp(),
-                    }
-                );
+                    .emit(
+                        ChannelModAdded {
+                            channel_id: channel_id,
+                            transaction_executor: get_caller_address(),
+                            mod_address: moderator,
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    );
                 index += 1;
             };
         }

@@ -14,7 +14,9 @@ pub trait IChannel<TState> {
     fn remove_channel_mods(ref self: TState, channel_id: u256, moderators: Array<ContractAddress>);
     fn set_channel_censorship_status(ref self: TState, channel_id: u256, censorship_status: bool);
     fn set_channel_ban_status(
-        ref self: TState, channel_id: u256, profiles: Array<ContractAddress>,
+        ref self: TState,
+        channel_id: u256,
+        profiles: Array<ContractAddress>,
         ban_statuses: Array<bool>
     );
     // *************************************************************************

@@ -12,7 +12,6 @@
 //     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait, EventSpy
 // };
 
-
 // use karst::channel::channel::ChannelComponent::{
 //     Event as ChannelEvent, ChannelCreated, JoinedChannel, LeftChannel, ChannelModAdded,
 //     ChannelModRemoved, ChannelBanStatusUpdated
@@ -86,7 +85,6 @@
 //     return (channel_contract_address, channel_id, USER_ONE.try_into().unwrap(), metadat_uri);
 // }
 
-
 // // writing the test for the set_channel_metadata_uri :
 // #[test]
 // fn test_set_channel_metadata_uri_check_owner() {
@@ -124,7 +122,6 @@
 //     stop_cheat_caller_address(channel_contract_address);
 // }
 
-
 // // writing the test for the add_channel_mods()
 // #[test]
 // fn test_add_channel_mods_owner() {
@@ -146,7 +143,6 @@
 //         'user_three isnt mod'
 //     );
 // }
-
 
 // #[test]
 // #[should_panic(expected: ('Channel: not channel owner',))]
@@ -303,7 +299,6 @@
 //     );
 // }
 
-
 // // set censorship to test
 // #[test]
 // fn test_set_channel_censorship_status_owner() {
@@ -344,7 +339,6 @@
 //     assert(ban_status == true, 'invalid ban status');
 // }
 
-
 // #[test]
 // #[should_panic(expected: ('Karst : Unauthorized access',))]
 // fn test_set_ban_status_owner_or_moderator() {
@@ -383,7 +377,6 @@
 //     );
 // }
 
-
 // #[test]
 // #[should_panic(expected: ('Channel: not channel member',))]
 // fn test_leave_channel_not_member() {
@@ -395,20 +388,20 @@
 //     stop_cheat_caller_address(channel_contract_address);
 // }
 
-
 // // joining the channel testing
 // #[test]
 // fn test_joining_channel() {
 //     let (channel_contract_address, channel_id, owner, _) = __setup__();
 //     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
 
-//     let is_channel_member = dispatcher.is_channel_member(MEMBER1.try_into().unwrap(), channel_id);
+//     let is_channel_member = dispatcher.is_channel_member(MEMBER1.try_into().unwrap(),
+//     channel_id);
 //     assert(is_channel_member == true, 'invalid channel member 1');
 
-//     let is_channel_member = dispatcher.is_channel_member(MEMBER2.try_into().unwrap(), channel_id);
+//     let is_channel_member = dispatcher.is_channel_member(MEMBER2.try_into().unwrap(),
+//     channel_id);
 //     assert(is_channel_member == true, 'invalid channel member 2');
 // }
-
 
 // // // counting of the member of the channel .
 // #[test]

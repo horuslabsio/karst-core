@@ -2,7 +2,7 @@
 pub mod KarstChannel {
     use karst::channel::channel::ChannelComponent;
     use karst::community::community::CommunityComponent;
-    
+
     component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
     component!(path: CommunityComponent, storage: community, event: CommunityEvent);
 
