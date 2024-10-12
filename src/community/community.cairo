@@ -580,7 +580,7 @@ pub mod CommunityComponent {
                 community_id: 0,
                 total_publications: 0,
                 community_token_id: 0,
-                ban_status: true
+                ban_status: false
             };
             self.community_member.write((community_id, profile_caller), updated_member_details);
             let community_total_members = community.community_total_members - 1;
