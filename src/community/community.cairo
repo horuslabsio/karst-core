@@ -160,47 +160,15 @@ pub mod CommunityComponent {
                     community_id, community_nft_classhash, community_id.try_into().unwrap()
                 ); // use community_id as salt since its unique
 
-            // write to storage
-            let community_details = CommunityDetails {
-                community_id: community_id,
-                community_owner: community_owner,
-                community_metadata_uri: "",
-                community_nft_address: community_nft_address,
-                community_premium_status: false,
-                community_total_members: 0,
-                community_type: CommunityType::Free,
-            };
-
-            let gate_keep_details = CommunityGateKeepDetails {
-                community_id: community_id,
-                gate_keep_type: GateKeepType::None,
-                community_nft_address: community_nft_address, // contract_address_const::<0>(),
-                entry_fee: 0
-            };
-
-            self.communities.write(community_id, community_details);
-            self.community_owner.write(community_id, community_owner);
-            self.community_gate_keep.write(community_id, gate_keep_details);
-            self.community_counter.write(community_counter + 1);
-
-            // upgrade if community type is not free
-            if (community_type != CommunityType::Free) {
-                self._upgrade_community(community_id, community_type);
-            }
-
-            // emit event
             self
-                .emit(
-                    CommunityCreated {
-                        community_id: community_id,
-                        community_owner: community_owner,
-                        community_nft_address: community_nft_address,
-                        block_timestamp: get_block_timestamp()
-                    }
+                ._create_community(
+                    community_owner,
+                    community_nft_address,
+                    community_id,
+                    community_type,
+                    community_counter
                 );
-            // let the owner join the community by default
 
-            self._join_community(community_owner, community_nft_address, community_id);
             community_id
         }
 
@@ -490,6 +458,59 @@ pub mod CommunityComponent {
         ) {
             self.community_counter.write(0);
             self.community_nft_classhash.write(community_nft_classhash.try_into().unwrap());
+        }
+
+        /// @notice internal function to create a community
+        /// @param  community type of the new community
+        fn _create_community(
+            ref self: ComponentState<TContractState>,
+            community_owner: ContractAddress,
+            community_nft_address: ContractAddress,
+            community_id: u256,
+            community_type: CommunityType,
+            community_counter: u256,
+        ) {
+            // write to storage
+            let community_details = CommunityDetails {
+                community_id: community_id,
+                community_owner: community_owner,
+                community_metadata_uri: "",
+                community_nft_address: community_nft_address,
+                community_premium_status: false,
+                community_total_members: 0,
+                community_type: CommunityType::Free,
+            };
+
+            let gate_keep_details = CommunityGateKeepDetails {
+                community_id: community_id,
+                gate_keep_type: GateKeepType::None,
+                community_nft_address: community_nft_address,
+                entry_fee: 0
+            };
+
+            self.communities.write(community_id, community_details);
+            self.community_owner.write(community_id, community_owner);
+            self.community_gate_keep.write(community_id, gate_keep_details);
+            self.community_counter.write(community_counter + 1);
+
+            // upgrade if community type is not free
+            if (community_type != CommunityType::Free) {
+                self._upgrade_community(community_id, community_type);
+            }
+
+            // emit event
+            self
+                .emit(
+                    CommunityCreated {
+                        community_id: community_id,
+                        community_owner: community_owner,
+                        community_nft_address: community_nft_address,
+                        block_timestamp: get_block_timestamp()
+                    }
+                );
+
+            // let the owner join the community by default
+            self._join_community(community_owner, community_nft_address, community_id);
         }
 
         /// @notice internal function to join a community
