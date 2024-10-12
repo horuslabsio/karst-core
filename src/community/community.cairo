@@ -151,10 +151,9 @@ pub mod CommunityComponent {
             ref self: ComponentState<TContractState>, community_type: CommunityType
         ) -> u256 {
             let community_owner = get_caller_address();
-            let community_counter = self.community_counter.read();
-            let community_nft_classhash = self.community_nft_classhash.read();
-            let community_id = community_counter + 1;
 
+            let community_nft_classhash = self.community_nft_classhash.read();
+            let community_id = self.community_counter.read() + 1;
             let community_nft_address = self
                 ._deploy_community_nft(
                     community_id, community_nft_classhash, community_id.try_into().unwrap()
@@ -162,11 +161,7 @@ pub mod CommunityComponent {
 
             self
                 ._create_community(
-                    community_owner,
-                    community_nft_address,
-                    community_id,
-                    community_type,
-                    community_counter
+                    community_owner, community_nft_address, community_id, community_type,
                 );
 
             community_id
@@ -468,7 +463,6 @@ pub mod CommunityComponent {
             community_nft_address: ContractAddress,
             community_id: u256,
             community_type: CommunityType,
-            community_counter: u256,
         ) {
             // write to storage
             let community_details = CommunityDetails {
@@ -491,7 +485,7 @@ pub mod CommunityComponent {
             self.communities.write(community_id, community_details);
             self.community_owner.write(community_id, community_owner);
             self.community_gate_keep.write(community_id, gate_keep_details);
-            self.community_counter.write(community_counter + 1);
+            self.community_counter.write(community_id);
 
             // upgrade if community type is not free
             if (community_type != CommunityType::Free) {
