@@ -19,7 +19,8 @@ pub mod ChannelComponent {
     use karst::base::{
         constants::errors::Errors::{
             NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_MEMBER, BANNED_FROM_CHANNEL,
-            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH, COMMUNITY_DOES_NOT_EXIST, NOT_CHANNEL_MODERATOR
+            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH, COMMUNITY_DOES_NOT_EXIST,
+            NOT_CHANNEL_MODERATOR
         },
         constants::types::{ChannelDetails, ChannelMember}
     };
@@ -127,8 +128,7 @@ pub mod ChannelComponent {
 
             // check that community exists
             let community_instance = get_dep_component!(@self, Community);
-            let _community_id = community_instance
-                .get_community(community_id).community_id;
+            let _community_id = community_instance.get_community(community_id).community_id;
             assert(community_id == _community_id, COMMUNITY_DOES_NOT_EXIST);
 
             // deploy channel nft
