@@ -36,5 +36,10 @@ pub mod Errors {
     pub const AUTO_RENEW_DURATION_ENDED: felt252 = 'Karst: auto renew ended!';
     pub const INVALID_JOLT: felt252 = 'Karst: invalid jolt!';
     pub const INVALID_JOLT_RECIPIENT: felt252 = 'Karst: not request recipient!';
-    pub const INVALID_LENGTH: felt252 = 'Karst: Invalid Length';
+    pub const NOT_CHANNEL_OWNER: felt252 = 'Karst: not channel owner';
+    pub const NOT_CHANNEL_MODERATOR: felt252 = 'Karst: not channel moderator';
+    pub const NOT_CHANNEL_MEMBER: felt252 = 'Karst: not channel member';
+    pub const BANNED_FROM_CHANNEL: felt252 = 'Karst: banned from channel';
+    pub const CHANNEL_HAS_NO_MEMBER: felt252 = 'Karst: channel has no members';
+    pub const INVALID_LENGTH: felt252 = 'Karst: array mismatch';
 }

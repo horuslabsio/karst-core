@@ -998,7 +998,7 @@ fn test_can_only_set_ban_status_for_members() {
 
 // TEST TODO: TEST To make sure length of ban status and profiles are same
 #[test]
-#[should_panic(expected: ('Karst: Invalid Length',))]
+#[should_panic(expected: ('Karst: array mismatch',))]
 fn test_should_set_ban_status_for_invalid_array_length() {
     let community_contract_address = __setup__();
 

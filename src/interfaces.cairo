@@ -13,4 +13,4 @@ pub mod ICollectNFT;
 pub mod ICommunityNft;
 pub mod IJolt;
 pub mod IUpgradeable;
-
+pub mod IChannel;

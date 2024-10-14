@@ -154,11 +154,14 @@ pub mod CommunityComponent {
 
             let community_nft_classhash = self.community_nft_classhash.read();
             let community_id = self.community_counter.read() + 1;
+
+            // deploy community nft
             let community_nft_address = self
                 ._deploy_community_nft(
                     community_id, community_nft_classhash, community_id.try_into().unwrap()
                 ); // use community_id as salt since its unique
 
+            // create community nft
             self
                 ._create_community(
                     community_owner, community_nft_address, community_id, community_type,
