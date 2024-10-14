@@ -4,6 +4,7 @@ pub mod CommunityComponent {
     //                            IMPORT
     // *************************************************************************
     use core::traits::TryInto;
+    use core::num::traits::zero::Zero;
     use starknet::{
         ContractAddress, get_caller_address, get_block_timestamp, contract_address_const, ClassHash,
         syscalls::deploy_syscall, SyscallResultTrait,
@@ -14,8 +15,9 @@ pub mod CommunityComponent {
     };
     use karst::interfaces::ICommunity::ICommunity;
     use karst::interfaces::ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait};
+    use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
     use karst::base::constants::types::{
-        CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails
+        CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails, JoltParams, JoltType
     };
     use karst::base::constants::errors::Errors::{
         ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED,
@@ -30,7 +32,6 @@ pub mod CommunityComponent {
     pub struct Storage {
         community_owner: Map<u256, ContractAddress>, // map<owner_address, community_id>
         communities: Map<u256, CommunityDetails>, // map <community_id, community_details>
-        member_community_id: Map<ContractAddress, u256>, // map <member address, community id>
         community_member: Map<
             (u256, ContractAddress), CommunityMember
         >, // map<(community_id, member address), Member_details>
@@ -42,7 +43,8 @@ pub mod CommunityComponent {
         >, // map <community, CommunityGateKeepDetails>
         gate_keep_permissioned_addresses: Map<
             (u256, ContractAddress), bool
-        >, // map <(u256, ContractAddress), bool>,
+        >, // map <(community_id, permissioned_address), bool>,
+        fee_address: Map<u256, ContractAddress>, // map <community_id, fee address>
         community_nft_classhash: ClassHash,
         community_counter: u256,
     }
@@ -145,7 +147,6 @@ pub mod CommunityComponent {
     impl CommunityImpl<
         TContractState, +HasComponent<TContractState>
     > of ICommunity<ComponentState<TContractState>> {
-        // TODO: Enforce gatekeeping
         /// @notice creates a new community
         fn create_comminuty(
             ref self: ComponentState<TContractState>, community_type: CommunityType
@@ -155,11 +156,11 @@ pub mod CommunityComponent {
             let community_nft_classhash = self.community_nft_classhash.read();
             let community_id = self.community_counter.read() + 1;
 
-            // deploy community nft
+            // deploy community nft - use community_id as salt since its unique
             let community_nft_address = self
                 ._deploy_community_nft(
                     community_id, community_nft_classhash, community_id.try_into().unwrap()
-                ); // use community_id as salt since its unique
+                );
 
             // create community nft
             self
@@ -174,16 +175,20 @@ pub mod CommunityComponent {
         /// @param profile user who wants to join community
         /// @param community_id id of community to be joined
         fn join_community(ref self: ComponentState<TContractState>, community_id: u256) {
-            let profile_caller = get_caller_address();
+            let profile = get_caller_address();
             let community = self.communities.read(community_id);
 
             // check user is not already a member and wasn't previously banned
-            let (is_community_member, _) = self.is_community_member(profile_caller, community_id);
-            let is_banned = self.get_ban_status(profile_caller, community_id);
+            let (is_community_member, _) = self.is_community_member(profile, community_id);
+            let is_banned = self.get_ban_status(profile, community_id);
             assert(is_community_member != true, ALREADY_MEMBER);
             assert(is_banned != true, BANNED_MEMBER);
 
-            self._join_community(profile_caller, community.community_nft_address, community_id);
+            // enforce gatekeeping rules
+            self._enforce_gatekeeping(profile, community_id);
+
+            // join community
+            self._join_community(profile, community.community_nft_address, community_id);
         }
 
         /// @notice removes a member from a community
@@ -259,7 +264,6 @@ pub mod CommunityComponent {
 
         }
 
-        // TODO: MAKE IT RECEIVE AN ARRAY OF PROFILES
         /// @notice bans/unbans a user from a community
         /// @param community_id id of community
         /// @param ban_status determines wether to ban/unban
@@ -278,6 +282,14 @@ pub mod CommunityComponent {
 
             // _set_ban_statu
             self._set_ban_status(community_id, profiles, ban_statuses);
+        }
+
+        /// @notice sets the fee address which receives community-related payments
+        /// @param _fee_address address to be set
+        fn set_fee_address(ref self: ComponentState<TContractState>, community_id: u256, _fee_address: ContractAddress) {
+            let community_owner = self.community_owner.read(community_id);
+            assert(get_caller_address() == community_owner, UNAUTHORIZED);
+            self.fee_address.write(community_id, _fee_address);
         }
 
         /// @notice upgrades a community
@@ -325,7 +337,7 @@ pub mod CommunityComponent {
             let mut community_gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,
                 gate_keep_type: gate_keep_type.clone(),
-                community_nft_address: nft_contract_address,
+                gatekeep_nft_address: nft_contract_address,
                 entry_fee: entry_fee
             };
 
@@ -416,6 +428,13 @@ pub mod CommunityComponent {
             community_member.ban_status
         }
 
+        /// @notice gets the fee address
+        /// @param community_id id of community to get fee address for
+        /// @returns the fee address for a community
+        fn get_fee_address(self: @ComponentState<TContractState>, community_id: u256) -> ContractAddress {
+            self.fee_address.read(community_id)
+        }
+
         /// @notice checks if a community is upgraded or a free one
         /// @param community_id id of community to check
         /// @return (bool, communityType) premium status, and upgrade type
@@ -481,7 +500,7 @@ pub mod CommunityComponent {
             let gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,
                 gate_keep_type: GateKeepType::None,
-                community_nft_address: community_nft_address,
+                gatekeep_nft_address: community_nft_address,
                 entry_fee: 0
             };
 
@@ -599,7 +618,6 @@ pub mod CommunityComponent {
                 );
         }
 
-
         // TODO: JOLT UPGRADE SUBSCRIPTION
         /// @notice internal function to upgrade community
         /// @param community_id id of community to be upgraded
@@ -647,6 +665,46 @@ pub mod CommunityComponent {
                     .write((community_id, *permissioned_addresses.at(index)), true);
                 index += 1;
             };
+        }
+
+        fn _enforce_gatekeeping(
+            ref self: ComponentState<TContractState>,
+            profile: ContractAddress,
+            community_id: u256
+        ) {
+            // get gatekeeping details
+            let (_, gatekeep_details) = self.is_gatekeeped(community_id);
+
+            match gatekeep_details.gate_keep_type {
+                GateKeepType::None => {
+                    return;
+                },
+                // enforce nft gatekeeping
+                GateKeepType::NFTGating => {
+                    let balance = IERC721Dispatcher { contract_address: gatekeep_details.gatekeep_nft_address }.balance_of(profile);
+                    assert(balance.is_non_zero(), UNAUTHORIZED);
+                },
+                // enforce permissioned gatekeeping
+                GateKeepType::PermissionedGating => {
+                    let is_permissioned = self.gate_keep_permissioned_addresses.read((community_id, profile));
+                    assert(is_permissioned, UNAUTHORIZED);
+                },
+                // enforce paid gatekeeping
+                GateKeepType::PaidGating => {
+                    let fee_address = self.fee_address.read(community_id);
+                    let jolt_params = JoltParams {
+                        jolt_type: JoltType::Transfer,
+                        recipient: fee_address,
+                        memo: " ",
+                        amount: gatekeep_details.entry_fee,
+                        expiration_stamp: 0,
+                        auto_renewal: (false, 0),
+                        erc20_contract_address: 1.try_into().unwrap() // TODO: update
+                    };
+
+                    // jolt entry fee to fee_address
+                }
+            } 
         }
 
         /// @notice internal function for add community mod

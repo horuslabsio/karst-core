@@ -227,6 +227,7 @@ pub mod Jolt {
         /// @notice contains logic for auto renewal of subscriptions
         /// @dev can be automated using cron jobs in a backend service
         /// @param jolt_id id of jolt subscription to auto-renew
+        /// TODO: restrict only to a whitelisted renewer
         fn auto_renew(ref self: ContractState, profile: ContractAddress, jolt_id: u256) -> bool {
             self._auto_renew(profile, jolt_id)
         }

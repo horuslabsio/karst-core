@@ -26,6 +26,7 @@ pub trait ICommunity<TState> {
         profiles: Array<ContractAddress>,
         ban_statuses: Array<bool>
     );
+    fn set_fee_address(ref self: TState, community_id: u256, _fee_address: ContractAddress);
     fn upgrade_community(ref self: TState, community_id: u256, upgrade_type: CommunityType);
     fn gatekeep(
         ref self: TState,
@@ -47,6 +48,7 @@ pub trait ICommunity<TState> {
     fn get_total_members(self: @TState, community_id: u256) -> u256;
     fn is_community_mod(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
     fn get_ban_status(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
+    fn get_fee_address(self: @TState, community_id: u256) -> ContractAddress;
     fn is_premium_community(self: @TState, community_id: u256) -> (bool, CommunityType);
     fn is_gatekeeped(self: @TState, community_id: u256) -> (bool, CommunityGateKeepDetails);
 }

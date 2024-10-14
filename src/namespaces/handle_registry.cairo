@@ -68,6 +68,7 @@ pub mod HandleRegistry {
         /// @notice links a profile address to a handle
         /// @param handle_id ID of handle to be linked
         /// @param profile_address address of profile to be linked
+        /// TODO: gate link function? only caller?
         fn link(ref self: ContractState, handle_id: u256, profile_address: ContractAddress) {
             self._link(handle_id, profile_address);
         }
