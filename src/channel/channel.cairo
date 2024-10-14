@@ -19,7 +19,7 @@ pub mod ChannelComponent {
     use karst::base::{
         constants::errors::Errors::{
             NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_MEMBER, BANNED_FROM_CHANNEL,
-            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH
+            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH, COMMUNITY_DOES_NOT_EXIST, NOT_CHANNEL_MODERATOR
         },
         constants::types::{ChannelDetails, ChannelMember}
     };
@@ -123,13 +123,26 @@ pub mod ChannelComponent {
         fn create_channel(ref self: ComponentState<TContractState>, community_id: u256) -> u256 {
             let channel_id = self.channel_counter.read() + 1;
             let channel_owner = get_caller_address();
+            let channel_nft_classhash = self.channel_nft_classhash.read();
+
+            // check that community exists
+            let community_instance = get_dep_component!(@self, Community);
+            let _community_id = community_instance
+                .get_community(community_id).community_id;
+            assert(community_id == _community_id, COMMUNITY_DOES_NOT_EXIST);
+
+            // deploy channel nft
+            let channel_nft_address = self
+                ._deploy_channel_nft(
+                    channel_id, channel_nft_classhash, channel_id.try_into().unwrap()
+                ); // use channel_id as salt since its unique
 
             let new_channel = ChannelDetails {
                 channel_id: channel_id,
                 community_id: community_id,
                 channel_owner: channel_owner,
                 channel_metadata_uri: "",
-                channel_nft_address: 1.try_into().unwrap(),
+                channel_nft_address: channel_nft_address,
                 channel_total_members: 0,
                 channel_censorship: false,
             };
@@ -161,7 +174,7 @@ pub mod ChannelComponent {
             let profile = get_caller_address();
 
             // check user is not already a channel member and wasn't previously banned
-            let is_channel_member = self.is_channel_member(profile, channel_id);
+            let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
             let is_banned = self.get_channel_ban_status(profile, channel_id);
             assert(!is_channel_member, ALREADY_MEMBER);
             assert(!is_banned, BANNED_FROM_CHANNEL);
@@ -178,7 +191,8 @@ pub mod ChannelComponent {
             let channel_member = self.channel_members.read((channel_id, profile));
 
             // check that profile is a channel member
-            assert(self.is_channel_member(profile, channel_id), NOT_CHANNEL_MEMBER);
+            let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
+            assert(is_channel_member, NOT_CHANNEL_MEMBER);
 
             // check that channel has members
             let total_members: u256 = channel.channel_total_members;
@@ -330,12 +344,12 @@ pub mod ChannelComponent {
         /// @return bool the profile membership status
         fn is_channel_member(
             self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
-        ) -> bool {
+        ) -> (bool, ChannelMember) {
             let channel_member: ChannelMember = self.channel_members.read((channel_id, profile));
             if (channel_member.channel_id == channel_id) {
-                true
+                (true, channel_member)
             } else {
-                false
+                (false, channel_member)
             }
         }
 
@@ -408,16 +422,16 @@ pub mod ChannelComponent {
                 .is_community_member(profile, channel.community_id);
             assert(membership_status, NOT_MEMBER);
 
-            let channel_member = ChannelMember {
-                profile: get_caller_address(),
-                channel_id: channel_id,
-                total_publications: 0,
-                channel_token_id: 0,
-                ban_status: false,
-            };
-
             // mint a channel token to new joiner
             let minted_token_id = self._mint_channel_nft(profile, channel.channel_nft_address);
+
+            let channel_member = ChannelMember {
+                profile: profile,
+                channel_id: channel_id,
+                total_publications: 0,
+                channel_token_id: minted_token_id,
+                ban_status: false,
+            };
 
             // update storage
             channel.channel_total_members += 1;
@@ -450,8 +464,11 @@ pub mod ChannelComponent {
 
             while index < length {
                 let moderator = *moderators.at(index);
-                let is_channel_member = self.is_channel_member(moderator, channel_id);
+
+                // check moderator is a channel member
+                let (is_channel_member, _) = self.is_channel_member(moderator, channel_id);
                 assert(is_channel_member == true, NOT_MEMBER);
+
                 self.channel_moderators.write((channel_id, moderator), true);
 
                 // emit event
@@ -481,8 +498,10 @@ pub mod ChannelComponent {
 
             while index < length {
                 let moderator = *moderators.at(index);
-                let is_channel_member = self.is_channel_member(moderator, channel_id);
-                assert(is_channel_member == true, NOT_MEMBER);
+
+                // check that profile is a moderator
+                let is_moderator = self.is_channel_mod(moderator, channel_id);
+                assert(is_moderator, NOT_CHANNEL_MODERATOR);
 
                 self.channel_moderators.write((channel_id, moderator), false);
 
@@ -519,7 +538,7 @@ pub mod ChannelComponent {
                 let ban_status = *ban_statuses[index];
 
                 // check profile is a channel member
-                let is_channel_member = self.is_channel_member(profile, channel_id);
+                let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
                 assert(is_channel_member == true, NOT_MEMBER);
 
                 // update storage
