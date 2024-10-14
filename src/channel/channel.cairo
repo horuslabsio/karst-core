@@ -418,7 +418,7 @@ pub mod ChannelComponent {
 
             // check that user is a member of the community this channel belongs to
             let community_instance = get_dep_component!(@self, Community);
-            let membership_status = community_instance
+            let (membership_status, _) = community_instance
                 .is_community_member(profile, channel.community_id);
             assert(membership_status, NOT_MEMBER);
 

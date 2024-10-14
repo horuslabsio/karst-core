@@ -30,6 +30,7 @@ pub mod CommunityComponent {
     pub struct Storage {
         community_owner: Map<u256, ContractAddress>, // map<owner_address, community_id>
         communities: Map<u256, CommunityDetails>, // map <community_id, community_details>
+        member_community_id: Map<ContractAddress, u256>, // map <member address, community id>
         community_member: Map<
             (u256, ContractAddress), CommunityMember
         >, // map<(community_id, member address), Member_details>
@@ -150,52 +151,22 @@ pub mod CommunityComponent {
             ref self: ComponentState<TContractState>, community_type: CommunityType
         ) -> u256 {
             let community_owner = get_caller_address();
+
             let community_nft_classhash = self.community_nft_classhash.read();
             let community_id = self.community_counter.read() + 1;
 
+            // deploy community nft
             let community_nft_address = self
                 ._deploy_community_nft(
                     community_id, community_nft_classhash, community_id.try_into().unwrap()
                 ); // use community_id as salt since its unique
 
-            // write to storage
-            let community_details = CommunityDetails {
-                community_id: community_id,
-                community_owner: community_owner,
-                community_metadata_uri: "",
-                community_nft_address: community_nft_address,
-                community_premium_status: false,
-                community_total_members: 0,
-                community_type: CommunityType::Free,
-            };
-
-            let gate_keep_details = CommunityGateKeepDetails {
-                community_id: community_id,
-                gate_keep_type: GateKeepType::None,
-                community_nft_address: contract_address_const::<0>(),
-                entry_fee: 0
-            };
-
-            self.communities.write(community_id, community_details);
-            self.community_owner.write(community_id, community_owner);
-            self.community_gate_keep.write(community_id, gate_keep_details);
-            self.community_counter.write(community_counter + 1);
-
-            // upgrade if community type is not free
-            if (community_type != CommunityType::Free) {
-                self._upgrade_community(community_id, community_type);
-            }
-
-            // emit event
+            // create community nft
             self
-                .emit(
-                    CommunityCreated {
-                        community_id: community_id,
-                        community_owner: community_owner,
-                        community_nft_address: community_nft_address,
-                        block_timestamp: get_block_timestamp()
-                    }
+                ._create_community(
+                    community_owner, community_nft_address, community_id, community_type,
                 );
+
             community_id
         }
 
@@ -228,37 +199,12 @@ pub mod CommunityComponent {
             let (is_community_member, _) = self.is_community_member(profile_caller, community_id);
             assert(is_community_member == true, NOT_MEMBER);
 
-            // remove member details and update storage
-            let updated_member_details = CommunityMember {
-                profile_address: contract_address_const::<0>(),
-                community_id: 0,
-                total_publications: 0,
-                community_token_id: 0,
-                ban_status: true
-            };
-            self.community_member.write((community_id, profile), updated_member_details);
-            let community_total_members = community.community_total_members - 1;
-            let updated_community = CommunityDetails {
-                community_total_members: community_total_members, ..community
-            };
-            self.communities.write(community_id, updated_community);
-
-            // burn user's community token
             self
-                ._burn_community_nft(
-                    community.community_nft_address, community_member_details.community_token_id
-                );
-
-            // emit event
-            self
-                .emit(
-                    LeftCommunity {
-                        community_id: community_id,
-                        transaction_executor: get_caller_address(),
-                        token_id: community_member_details.community_token_id,
-                        profile: profile,
-                        block_timestamp: get_block_timestamp(),
-                    }
+                ._leave_community(
+                    profile_caller,
+                    community.community_nft_address,
+                    community_id,
+                    community_member_details.community_token_id
                 );
         }
 
