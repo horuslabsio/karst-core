@@ -13,9 +13,15 @@ pub mod CommunityComponent {
             StorageMapWriteAccess
         }
     };
-    use karst::interfaces::ICommunity::ICommunity;
-    use karst::interfaces::ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait};
-    use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+    use openzeppelin::access::ownable::OwnableComponent;
+
+    use karst::jolt::jolt::JoltComponent;
+    use karst::interfaces::{ 
+        ICommunity::ICommunity, 
+        IJolt::IJolt,
+        IERC721::{IERC721Dispatcher, IERC721DispatcherTrait},
+        ICommunityNft::{ ICommunityNftDispatcher, ICommunityNftDispatcherTrait }
+    };
     use karst::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails, JoltParams, JoltType
     };
@@ -23,7 +29,6 @@ pub mod CommunityComponent {
         ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED,
         ONLY_PREMIUM_COMMUNITIES, INVALID_LENGTH
     };
-
 
     // *************************************************************************
     //                              STORAGE
@@ -145,7 +150,11 @@ pub mod CommunityComponent {
     // *************************************************************************
     #[embeddable_as(KarstCommunity)]
     impl CommunityImpl<
-        TContractState, +HasComponent<TContractState>
+        TContractState, 
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Jolt: JoltComponent::HasComponent<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
     > of ICommunity<ComponentState<TContractState>> {
         /// @notice creates a new community
         fn create_comminuty(
@@ -260,8 +269,6 @@ pub mod CommunityComponent {
 
             // _remove_community_mods
             self._remove_community_mods(community_id, community_owner, moderators);
-            // update storage
-
         }
 
         /// @notice bans/unbans a user from a community
@@ -319,7 +326,7 @@ pub mod CommunityComponent {
             gate_keep_type: GateKeepType,
             nft_contract_address: ContractAddress,
             permissioned_addresses: Array<ContractAddress>,
-            entry_fee: u256,
+            paid_gating_details: (ContractAddress, u256),
         ) {
             // assert caller is community owner
             let community_owner = self.community_owner.read(community_id);
@@ -338,7 +345,7 @@ pub mod CommunityComponent {
                 community_id: community_id,
                 gate_keep_type: gate_keep_type.clone(),
                 gatekeep_nft_address: nft_contract_address,
-                entry_fee: entry_fee
+                paid_gating_details: paid_gating_details
             };
 
             // permissioned gatekeeping
@@ -466,7 +473,11 @@ pub mod CommunityComponent {
     // *************************************************************************
     #[generate_trait]
     pub impl Private<
-        TContractState, +HasComponent<TContractState>
+        TContractState,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Jolt: JoltComponent::HasComponent<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
     > of PrivateTrait<TContractState> {
         /// @notice initalizes community component
         /// @param community_nft_classhash classhash of community NFT
@@ -501,7 +512,7 @@ pub mod CommunityComponent {
                 community_id: community_id,
                 gate_keep_type: GateKeepType::None,
                 gatekeep_nft_address: community_nft_address,
-                entry_fee: 0
+                paid_gating_details: (contract_address_const::<0>(), 0)
             };
 
             self.communities.write(community_id, community_details);
@@ -692,17 +703,21 @@ pub mod CommunityComponent {
                 // enforce paid gatekeeping
                 GateKeepType::PaidGating => {
                     let fee_address = self.fee_address.read(community_id);
+                    let (erc20_contract_address, entry_fee) = gatekeep_details.paid_gating_details;
+
                     let jolt_params = JoltParams {
                         jolt_type: JoltType::Transfer,
                         recipient: fee_address,
-                        memo: " ",
-                        amount: gatekeep_details.entry_fee,
+                        memo: "Joined Community",
+                        amount: entry_fee,
                         expiration_stamp: 0,
                         auto_renewal: (false, 0),
-                        erc20_contract_address: 1.try_into().unwrap() // TODO: update
+                        erc20_contract_address: erc20_contract_address
                     };
 
                     // jolt entry fee to fee_address
+                    let mut jolt_comp = get_dep_component_mut!(ref self, Jolt);
+                    jolt_comp.jolt(jolt_params);
                 }
             } 
         }

@@ -1,5 +1,5 @@
-#[starknet::contract]
-pub mod Jolt {
+#[starknet::component]
+pub mod JoltComponent {
     // *************************************************************************
     //                            IMPORTS
     // *************************************************************************
@@ -7,7 +7,7 @@ pub mod Jolt {
     use core::hash::HashStateTrait;
     use core::pedersen::PedersenTrait;
     use starknet::{
-        ContractAddress, ClassHash, get_caller_address, get_contract_address, get_block_timestamp,
+        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
         get_tx_info,
         storage::{
             StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
@@ -21,32 +21,13 @@ pub mod Jolt {
     use karst::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
 
     use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::upgrades::UpgradeableComponent;
-    use openzeppelin::upgrades::interface::IUpgradeable;
-
-    // *************************************************************************
-    //                            COMPONENTS
-    // *************************************************************************
-    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
-    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
-
-    // Ownable
-    #[abi(embed_v0)]
-    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
-    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
-    // Upgradeable
-    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+    use openzeppelin::access::ownable::OwnableComponent::{OwnableMixinImpl, InternalImpl};
 
     // *************************************************************************
     //                            STORAGE
     // *************************************************************************
     #[storage]
     struct Storage {
-        #[substorage(v0)]
-        ownable: OwnableComponent::Storage,
-        #[substorage(v0)]
-        upgradeable: UpgradeableComponent::Storage,
         fee_address: ContractAddress,
         jolt: Map::<u256, JoltData>,
         renewals: Map::<(ContractAddress, u256), RenewalData>,
@@ -58,10 +39,6 @@ pub mod Jolt {
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
-        #[flat]
-        OwnableEvent: OwnableComponent::Event,
-        #[flat]
-        UpgradeableEvent: UpgradeableComponent::Event,
         Jolted: Jolted,
         JoltRequested: JoltRequested,
         JoltRequestFullfilled: JoltRequestFullfilled,
@@ -98,23 +75,21 @@ pub mod Jolt {
 
     const MAX_TIP: u256 = 1000;
 
-    // *************************************************************************
-    //                            CONSTRUCTOR
-    // *************************************************************************
-    #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress) {
-        self.ownable.initializer(owner);
-    }
-
-    #[abi(embed_v0)]
-    impl JoltImpl of IJolt<ContractState> {
+    #[embeddable_as(Jolt)]
+    impl JoltImpl<
+        TContractState, 
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
+    > of IJolt<ComponentState<TContractState>> {
         // *************************************************************************
         //                              EXTERNALS
         // *************************************************************************
 
         /// @notice multi-faceted transfer logic
         /// @param jolt_params required jolting parameters
-        fn jolt(ref self: ContractState, jolt_params: JoltParams) -> u256 {
+        /// TODO: subscribe should take in recipient - maybe people should be able to create subs?
+        fn jolt(ref self: ComponentState<TContractState>, jolt_params: JoltParams) -> u256 {
             let sender = get_caller_address();
             let tx_info = get_tx_info().unbox();
             let tx_timestamp = get_block_timestamp();
@@ -203,7 +178,7 @@ pub mod Jolt {
 
         /// @notice fulfills a pending jolt request
         /// @param jolt_id id of jolt request to be fulfilled
-        fn fulfill_request(ref self: ContractState, jolt_id: u256) -> bool {
+        fn fulfill_request(ref self: ComponentState<TContractState>, jolt_id: u256) -> bool {
             // get jolt details
             let mut jolt_details = self.jolt.read(jolt_id);
             let sender = get_caller_address();
@@ -228,15 +203,15 @@ pub mod Jolt {
         /// @dev can be automated using cron jobs in a backend service
         /// @param jolt_id id of jolt subscription to auto-renew
         /// TODO: restrict only to a whitelisted renewer
-        fn auto_renew(ref self: ContractState, profile: ContractAddress, jolt_id: u256) -> bool {
+        fn auto_renew(ref self: ComponentState<TContractState>, profile: ContractAddress, jolt_id: u256) -> bool {
             self._auto_renew(profile, jolt_id)
         }
 
         /// @notice sets the fee address which receives subscription payments and maybe actual fees
         /// in the future?
         /// @param _fee_address address to be set
-        fn set_fee_address(ref self: ContractState, _fee_address: ContractAddress) {
-            self.ownable.assert_only_owner();
+        fn set_fee_address(ref self: ComponentState<TContractState>, _fee_address: ContractAddress) {
+            get_dep_component!(@self, Ownable).assert_only_owner();
             self.fee_address.write(_fee_address);
         }
 
@@ -247,7 +222,7 @@ pub mod Jolt {
         /// @notice gets the associated data for a jolt id
         /// @param jolt_id id of jolt who's data is to be gotten
         /// @returns JoltData struct containing jolt details
-        fn get_jolt(self: @ContractState, jolt_id: u256) -> JoltData {
+        fn get_jolt(self: @ComponentState<TContractState>, jolt_id: u256) -> JoltData {
             self.jolt.read(jolt_id)
         }
 
@@ -255,28 +230,15 @@ pub mod Jolt {
         /// @param jolt_id id of jolt who's renewal data is to be gotten
         /// @returns RenewalData struct containing jolt renewal details
         fn get_renewal_data(
-            self: @ContractState, profile: ContractAddress, jolt_id: u256
+            self: @ComponentState<TContractState>, profile: ContractAddress, jolt_id: u256
         ) -> RenewalData {
             self.renewals.read((profile, jolt_id))
         }
 
         /// @notice gets the fee address
         /// @returns the fee address for contract
-        fn get_fee_address(self: @ContractState) -> ContractAddress {
+        fn get_fee_address(self: @ComponentState<TContractState>) -> ContractAddress {
             self.fee_address.read()
-        }
-    }
-
-    // *************************************************************************
-    //                            UPGRADEABLE IMPL
-    // *************************************************************************
-    #[abi(embed_v0)]
-    impl UpgradeableImpl of IUpgradeable<ContractState> {
-        /// @notice upgrades the contract
-        /// @param new_class_hash the class hash to upgrade to
-        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
-            self.ownable.assert_only_owner();
-            self.upgradeable.upgrade(new_class_hash);
         }
     }
 
@@ -284,7 +246,17 @@ pub mod Jolt {
     //                              PRIVATE FUNCTIONS
     // *************************************************************************
     #[generate_trait]
-    impl Private of PrivateTrait {
+    impl Private<
+        TContractState, 
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
+    > of PrivateTrait<TContractState> {
+        fn _initializer(ref self: ComponentState<TContractState>, owner: ContractAddress) {
+            let mut ownable_comp = get_dep_component_mut!(ref self, Ownable);
+            ownable_comp.initializer(owner);
+        }
+        
         /// @notice contains the tipping logic
         /// @param jolt_id id of txn
         /// @param sender the profile performing the tipping
@@ -293,7 +265,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used in tipping
         /// @returns JoltStatus status of the txn
         fn _tip(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -331,7 +303,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _transfer(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -369,7 +341,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _subscribe(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             amount: u256,
@@ -423,7 +395,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _request(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -459,7 +431,7 @@ pub mod Jolt {
         /// @param jolt_details details of the jolt to be fulfilled
         /// @returns bool status of the txn
         fn _fulfill_request(
-            ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
+            ref self: ComponentState<TContractState>, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
         ) -> bool {
             // transfer request amount
             self
@@ -494,7 +466,7 @@ pub mod Jolt {
         /// @param sender the profile renewing a subscription
         /// @param renewal_id id jolt to be renewed
         /// @returns bool status of the txn
-        fn _auto_renew(ref self: ContractState, sender: ContractAddress, renewal_id: u256) -> bool {
+        fn _auto_renew(ref self: ComponentState<TContractState>, sender: ContractAddress, renewal_id: u256) -> bool {
             let tx_info = get_tx_info().unbox();
             let amount = self.renewals.read((sender, renewal_id)).renewal_amount;
             let iteration = self.renewals.read((sender, renewal_id)).renewal_iterations;
@@ -566,7 +538,7 @@ pub mod Jolt {
         /// @param recipient profile receiving the token
         /// @param amount amount to be transferred
         fn _transfer_helper(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             erc20_contract_address: ContractAddress,
             sender: ContractAddress,
             recipient: ContractAddress,

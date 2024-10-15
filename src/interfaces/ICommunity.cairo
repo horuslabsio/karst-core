@@ -34,7 +34,7 @@ pub trait ICommunity<TState> {
         gate_keep_type: GateKeepType,
         nft_contract_address: ContractAddress,
         permissioned_addresses: Array<ContractAddress>,
-        entry_fee: u256
+        paid_gating_details: (ContractAddress, u256),
     );
 
     // *************************************************************************

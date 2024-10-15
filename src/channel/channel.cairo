@@ -12,10 +12,15 @@ pub mod ChannelComponent {
         StoragePointerReadAccess, StoragePointerWriteAccess, Map, StorageMapReadAccess,
         StorageMapWriteAccess
     };
-    use karst::interfaces::IChannel::IChannel;
-    use karst::interfaces::ICommunity::ICommunity;
-    use karst::interfaces::ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait};
+    use openzeppelin::access::ownable::OwnableComponent;
+
+    use karst::jolt::jolt::JoltComponent;
     use karst::community::community::CommunityComponent;
+    use karst::interfaces::{
+        IChannel::IChannel,
+        ICommunity::ICommunity,
+        ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
+    };
     use karst::base::{
         constants::errors::Errors::{
             NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_MEMBER, BANNED_FROM_CHANNEL,
@@ -118,7 +123,9 @@ pub mod ChannelComponent {
         TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
-        impl Community: CommunityComponent::HasComponent<TContractState>
+        impl Community: CommunityComponent::HasComponent<TContractState>,
+        impl Jolt: JoltComponent::HasComponent<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
     > of IChannel<ComponentState<TContractState>> {
         /// @notice creates a new channel
         fn create_channel(ref self: ComponentState<TContractState>, community_id: u256) -> u256 {
@@ -399,7 +406,9 @@ pub mod ChannelComponent {
         TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
-        impl Community: CommunityComponent::HasComponent<TContractState>
+        impl Community: CommunityComponent::HasComponent<TContractState>,
+        impl Jolt: JoltComponent::HasComponent<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
     > of InternalTrait<TContractState> {
         /// @notice initalizes channel component
         /// @param channel_nft_classhash classhash of channel NFT

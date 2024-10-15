@@ -217,7 +217,7 @@ pub struct CommunityGateKeepDetails {
     pub community_id: u256,
     pub gate_keep_type: GateKeepType,
     pub gatekeep_nft_address: ContractAddress,
-    pub entry_fee: u256
+    pub paid_gating_details: (ContractAddress, u256)
 }
 
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
