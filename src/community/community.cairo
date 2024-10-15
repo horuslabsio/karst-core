@@ -26,7 +26,7 @@ pub mod CommunityComponent {
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails, JoltParams, JoltType
     };
     use karst::base::constants::errors::Errors::{
-        ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_MEMBER, BANNED_MEMBER, UNAUTHORIZED,
+        ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_COMMUNITY_MEMBER, NOT_COMMUNITY_MOD, BANNED_MEMBER, UNAUTHORIZED,
         ONLY_PREMIUM_COMMUNITIES, INVALID_LENGTH
     };
 
@@ -158,10 +158,9 @@ pub mod CommunityComponent {
     > of ICommunity<ComponentState<TContractState>> {
         /// @notice creates a new community
         fn create_comminuty(
-            ref self: ComponentState<TContractState>, community_type: CommunityType
+            ref self: ComponentState<TContractState>
         ) -> u256 {
             let community_owner = get_caller_address();
-
             let community_nft_classhash = self.community_nft_classhash.read();
             let community_id = self.community_counter.read() + 1;
 
@@ -174,7 +173,7 @@ pub mod CommunityComponent {
             // create community nft
             self
                 ._create_community(
-                    community_owner, community_nft_address, community_id, community_type,
+                    community_owner, community_nft_address, community_id
                 );
 
             community_id
@@ -211,7 +210,7 @@ pub mod CommunityComponent {
                 .read((community_id, profile_caller));
 
             let (is_community_member, _) = self.is_community_member(profile_caller, community_id);
-            assert(is_community_member == true, NOT_MEMBER);
+            assert(is_community_member == true, NOT_COMMUNITY_MEMBER);
 
             self
                 ._leave_community(
@@ -238,7 +237,6 @@ pub mod CommunityComponent {
             self.communities.write(community_id, updated_community);
         }
 
-
         /// @notice adds a new community mod
         /// @param community_id id of community to add moderator
         /// @param moderator address to be added as moderator
@@ -253,7 +251,6 @@ pub mod CommunityComponent {
             self._add_community_mods(community_id, community_owner, moderators);
         }
 
-
         /// @notice removes a new community mod
         /// @param community_id id of community to remove moderator
         /// @param moderator address to be removed as moderator
@@ -263,11 +260,8 @@ pub mod CommunityComponent {
             moderators: Array<ContractAddress>
         ) {
             let community_owner = self.community_owner.read(community_id);
-            // only community owner can remove a mod
-
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
-            // _remove_community_mods
             self._remove_community_mods(community_id, community_owner, moderators);
         }
 
@@ -287,7 +281,7 @@ pub mod CommunityComponent {
             // check caller is mod or owner
             assert(is_community_mod == true || community_owner == caller, UNAUTHORIZED);
 
-            // _set_ban_statu
+            // set ban_status
             self._set_ban_status(community_id, profiles, ban_statuses);
         }
 
@@ -305,13 +299,22 @@ pub mod CommunityComponent {
         fn upgrade_community(
             ref self: ComponentState<TContractState>,
             community_id: u256,
-            upgrade_type: CommunityType
+            upgrade_type: CommunityType,
+            subscription_id: u256,
+            renewal_status: bool,
+            renewal_iterations: u256
         ) {
             // check community owner is caller
             let community_owner = self.communities.read(community_id).community_owner;
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
-            self._upgrade_community(community_id, upgrade_type);
+            self._upgrade_community(
+                community_id, 
+                upgrade_type,
+                subscription_id,
+                renewal_status,
+                renewal_iterations
+            );
         }
 
         /// @notice set the gatekeep rules for a community
@@ -494,8 +497,7 @@ pub mod CommunityComponent {
             ref self: ComponentState<TContractState>,
             community_owner: ContractAddress,
             community_nft_address: ContractAddress,
-            community_id: u256,
-            community_type: CommunityType,
+            community_id: u256
         ) {
             // write to storage
             let community_details = CommunityDetails {
@@ -511,7 +513,7 @@ pub mod CommunityComponent {
             let gate_keep_details = CommunityGateKeepDetails {
                 community_id: community_id,
                 gate_keep_type: GateKeepType::None,
-                gatekeep_nft_address: community_nft_address,
+                gatekeep_nft_address: contract_address_const::<0>(),
                 paid_gating_details: (contract_address_const::<0>(), 0)
             };
 
@@ -519,11 +521,6 @@ pub mod CommunityComponent {
             self.community_owner.write(community_id, community_owner);
             self.community_gate_keep.write(community_id, gate_keep_details);
             self.community_counter.write(community_id);
-
-            // upgrade if community type is not free
-            if (community_type != CommunityType::Free) {
-                self._upgrade_community(community_id, community_type);
-            }
 
             // emit event
             self
@@ -629,16 +626,35 @@ pub mod CommunityComponent {
                 );
         }
 
-        // TODO: JOLT UPGRADE SUBSCRIPTION
         /// @notice internal function to upgrade community
         /// @param community_id id of community to be upgraded
         /// @param upgrade_type
         fn _upgrade_community(
             ref self: ComponentState<TContractState>,
             community_id: u256,
-            upgrade_type: CommunityType
+            upgrade_type: CommunityType,
+            subscription_id: u256,
+            renewal_status: bool,
+            renewal_iterations: u256
         ) {
             let community = self.communities.read(community_id);
+
+            // jolt subscription
+            let subscription_data = get_dep_component!(@self, Jolt).get_subscription_data(subscription_id);
+
+            let jolt_params = JoltParams {
+                jolt_type: JoltType::Subscription,
+                recipient: contract_address_const::<0>(),
+                memo: "Upgraded Community",
+                amount: subscription_data.amount,
+                expiration_stamp: 0,
+                subscription_details: (subscription_id, renewal_status, renewal_iterations),
+                erc20_contract_address: subscription_data.erc20_contract_address
+            };
+
+            // subscribe
+            let mut jolt_comp = get_dep_component_mut!(ref self, Jolt);
+            jolt_comp.jolt(jolt_params);
 
             // update storage
             let updated_community = CommunityDetails {
@@ -711,7 +727,7 @@ pub mod CommunityComponent {
                         memo: "Joined Community",
                         amount: entry_fee,
                         expiration_stamp: 0,
-                        auto_renewal: (false, 0),
+                        subscription_details: (0, false, 0),
                         erc20_contract_address: erc20_contract_address
                     };
 
@@ -737,7 +753,7 @@ pub mod CommunityComponent {
             while index < length {
                 let moderator = *moderators.at(index);
                 let (is_community_member, _) = self.is_community_member(moderator, community_id);
-                assert(is_community_member == true, NOT_MEMBER);
+                assert(is_community_member == true, NOT_COMMUNITY_MEMBER);
                 self.community_mod.write((community_id, moderator), true);
 
                 // emit event
@@ -768,8 +784,8 @@ pub mod CommunityComponent {
 
             while index < length {
                 let moderator = *moderators.at(index);
-                let (is_community_member, _) = self.is_community_member(moderator, community_id);
-                assert(is_community_member == true, NOT_MEMBER);
+                let is_mod = self.is_community_mod(moderator, community_id);
+                assert(is_mod == true, NOT_COMMUNITY_MOD);
 
                 self.community_mod.write((community_id, moderator), false);
 
@@ -807,7 +823,7 @@ pub mod CommunityComponent {
                 let ban_status = *ban_statuses[index];
                 // check profile is a community member
                 let (is_community_member, _) = self.is_community_member(profile, community_id);
-                assert(is_community_member == true, NOT_MEMBER);
+                assert(is_community_member == true, NOT_COMMUNITY_MEMBER);
 
                 // update storage
                 let community_member = self.community_member.read((community_id, profile));

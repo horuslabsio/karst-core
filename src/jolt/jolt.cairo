@@ -16,7 +16,7 @@ pub mod JoltComponent {
     };
     use karst::base::{
         constants::errors::Errors,
-        constants::types::{JoltData, JoltParams, JoltType, JoltStatus, RenewalData}
+        constants::types::{JoltData, JoltParams, JoltType, JoltStatus, SubscriptionData}
     };
     use karst::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
 
@@ -30,7 +30,8 @@ pub mod JoltComponent {
     struct Storage {
         fee_address: ContractAddress,
         jolt: Map::<u256, JoltData>,
-        renewals: Map::<(ContractAddress, u256), RenewalData>,
+        subscriptions: Map::<u256, SubscriptionData>,
+        renewal_iterations: Map::<(ContractAddress, u256), u256>,
     }
 
     // *************************************************************************
@@ -88,7 +89,6 @@ pub mod JoltComponent {
 
         /// @notice multi-faceted transfer logic
         /// @param jolt_params required jolting parameters
-        /// TODO: subscribe should take in recipient - maybe people should be able to create subs?
         fn jolt(ref self: ComponentState<TContractState>, jolt_params: JoltParams) -> u256 {
             let sender = get_caller_address();
             let tx_info = get_tx_info().unbox();
@@ -134,12 +134,15 @@ pub mod JoltComponent {
                     jolt_status = _jolt_status;
                 },
                 JoltType::Subscription => {
+                    let (sub_id, renewal_status, renewal_iterations) = jolt_params.subscription_details;
                     let _jolt_status = self
                         ._subscribe(
                             jolt_id,
+                            sub_id,
                             sender,
                             jolt_params.amount,
-                            jolt_params.auto_renewal,
+                            renewal_status,
+                            renewal_iterations,
                             erc20_contract_address
                         );
                     jolt_status = _jolt_status;
@@ -207,6 +210,33 @@ pub mod JoltComponent {
             self._auto_renew(profile, jolt_id)
         }
 
+        fn create_subscription(
+            ref self: ComponentState<TContractState>,
+            fee_address: ContractAddress, 
+            amount: u256, 
+            erc20_contract_address: ContractAddress
+        ) {
+            let caller = get_caller_address();
+            let tx_info = get_tx_info().unbox();
+
+            let subscription_data = SubscriptionData {
+                creator: caller,
+                fee_address: fee_address,
+                amount: amount,
+                erc20_contract_address: erc20_contract_address
+            };
+
+            let sub_id = PedersenTrait::new(0)
+                .update(fee_address.into())
+                .update(amount.low.into())
+                .update(amount.high.into())
+                .update(tx_info.nonce)
+                .update(4)
+                .finalize();
+
+            self.subscriptions.write(sub_id.try_into().unwrap(), subscription_data);
+        }
+
         /// @notice sets the fee address which receives subscription payments and maybe actual fees
         /// in the future?
         /// @param _fee_address address to be set
@@ -226,13 +256,12 @@ pub mod JoltComponent {
             self.jolt.read(jolt_id)
         }
 
-        /// @notice gets the renewal data for a particular jolt id
-        /// @param jolt_id id of jolt who's renewal data is to be gotten
-        /// @returns RenewalData struct containing jolt renewal details
-        fn get_renewal_data(
-            self: @ComponentState<TContractState>, profile: ContractAddress, jolt_id: u256
-        ) -> RenewalData {
-            self.renewals.read((profile, jolt_id))
+        /// @notice gets the subscription data for a particular subscription
+        /// @param subscription_id id of subscription to be retrieved
+        /// @returns SubscriptionData struct containing subscription details
+        fn get_subscription_data(
+            self: @ComponentState<TContractState>, subscription_id: u256) -> SubscriptionData {
+            self.subscriptions.read(subscription_id)
         }
 
         /// @notice gets the fee address
@@ -335,20 +364,23 @@ pub mod JoltComponent {
 
         /// @notice contains the subscription logic
         /// @param jolt_id id of txn
+        /// @param sub_id subscription id
         /// @param sender the profile performing the subscription
         /// @param amount the amount to pay
-        /// @param auto_renewal a tuple containing renewal status and renewal_iterations
+        /// @param renewal_status status of renewal
+        /// @param renewal_iterations no. of times to auto renew
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _subscribe(
             ref self: ComponentState<TContractState>,
             jolt_id: u256,
+            sub_id: u256,
             sender: ContractAddress,
             amount: u256,
-            auto_renewal: (bool, u256),
+            renewal_status: bool,
+            renewal_iterations: u256,
             erc20_contract_address: ContractAddress
         ) -> JoltStatus {
-            let (renewal_status, renewal_iterations) = auto_renewal;
             let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
             let this_contract = get_contract_address();
 
@@ -357,18 +389,12 @@ pub mod JoltComponent {
                 let allowance = dispatcher.allowance(sender, this_contract);
                 assert(allowance >= renewal_iterations * amount, Errors::INSUFFICIENT_ALLOWANCE);
 
-                // write renewal details to storage
-                let renewal_data = RenewalData {
-                    renewal_iterations: renewal_iterations,
-                    renewal_amount: amount,
-                    erc20_contract_address
-                };
-                self.renewals.write((sender, jolt_id), renewal_data);
+                self.renewal_iterations.write((sender, sub_id), renewal_iterations);
             }
 
             // send subscription amount to fee address
-            let fee_address = self.fee_address.read();
-            self._transfer_helper(erc20_contract_address, sender, fee_address, amount);
+            let subscription_data = self.subscriptions.read(sub_id);
+            self._transfer_helper(erc20_contract_address, sender, subscription_data.fee_address, amount);
 
             // emit event
             self
@@ -377,7 +403,7 @@ pub mod JoltComponent {
                         jolt_id,
                         jolt_type: 'SUBSCRIPTION',
                         sender,
-                        recipient: fee_address,
+                        recipient: subscription_data.fee_address,
                         block_timestamp: get_block_timestamp(),
                     }
                 );
@@ -466,20 +492,18 @@ pub mod JoltComponent {
         /// @param sender the profile renewing a subscription
         /// @param renewal_id id jolt to be renewed
         /// @returns bool status of the txn
-        fn _auto_renew(ref self: ComponentState<TContractState>, sender: ContractAddress, renewal_id: u256) -> bool {
+        fn _auto_renew(ref self: ComponentState<TContractState>, sender: ContractAddress, sub_id: u256) -> bool {
             let tx_info = get_tx_info().unbox();
-            let amount = self.renewals.read((sender, renewal_id)).renewal_amount;
-            let iteration = self.renewals.read((sender, renewal_id)).renewal_iterations;
-            let erc20_contract_address = self
-                .renewals
-                .read((sender, renewal_id))
-                .erc20_contract_address;
+            let subscription_data = self.subscriptions.read(sub_id);
+            let iterations = self.renewal_iterations.read((sender, sub_id));
 
             // check iteration is greater than 0 else shouldn't auto renew
-            assert(iteration > 0, Errors::AUTO_RENEW_DURATION_ENDED);
+            assert(iterations > 0, Errors::AUTO_RENEW_DURATION_ENDED);
 
             // send subscription amount to fee address
-            let fee_address = self.fee_address.read();
+            let amount = subscription_data.amount;
+            let fee_address = subscription_data.fee_address;
+            let erc20_contract_address = subscription_data.erc20_contract_address;
             self._transfer_helper(erc20_contract_address, sender, fee_address, amount);
 
             // generate jolt_id
@@ -494,10 +518,7 @@ pub mod JoltComponent {
             let jolt_id: u256 = jolt_hash.try_into().unwrap();
 
             // reduce iteration by one month
-            let renewal_data = RenewalData {
-                renewal_iterations: iteration - 1, renewal_amount: amount, erc20_contract_address
-            };
-            self.renewals.write((sender, renewal_id), renewal_data);
+            self.renewal_iterations.write((sender, sub_id), iterations - 1);
 
             // prefill tx data
             let jolt_data = JoltData {

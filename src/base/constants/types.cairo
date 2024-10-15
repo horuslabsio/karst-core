@@ -286,14 +286,15 @@ pub struct JoltParams {
     pub memo: ByteArray,
     pub amount: u256,
     pub expiration_stamp: u64,
-    pub auto_renewal: (bool, u256),
+    pub subscription_details: (u256, bool, u256), //subscription_id, renewal_status, renewal_iterations
     pub erc20_contract_address: ContractAddress,
 }
 
 #[derive(Drop, Serde, starknet::Store)]
-pub struct RenewalData {
-    pub renewal_iterations: u256,
-    pub renewal_amount: u256,
+pub struct SubscriptionData {
+    pub creator: ContractAddress,
+    pub fee_address: ContractAddress,
+    pub amount: u256,
     pub erc20_contract_address: ContractAddress
 }
 

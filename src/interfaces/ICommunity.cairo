@@ -12,7 +12,7 @@ pub trait ICommunity<TState> {
     // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************
-    fn create_comminuty(ref self: TState, community_type: CommunityType) -> u256;
+    fn create_comminuty(ref self: TState) -> u256;
     fn join_community(ref self: TState, community_id: u256);
     fn leave_community(ref self: TState, community_id: u256);
     fn set_community_metadata_uri(ref self: TState, community_id: u256, metadata_uri: ByteArray);
@@ -27,7 +27,14 @@ pub trait ICommunity<TState> {
         ban_statuses: Array<bool>
     );
     fn set_fee_address(ref self: TState, community_id: u256, _fee_address: ContractAddress);
-    fn upgrade_community(ref self: TState, community_id: u256, upgrade_type: CommunityType);
+    fn upgrade_community(
+        ref self: TState, 
+        community_id: u256, 
+        upgrade_type: CommunityType,
+        subscription_id: u256,
+        renewal_status: bool,
+        renewal_iterations: u256
+    );
     fn gatekeep(
         ref self: TState,
         community_id: u256,

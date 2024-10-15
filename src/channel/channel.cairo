@@ -23,7 +23,7 @@ pub mod ChannelComponent {
     };
     use karst::base::{
         constants::errors::Errors::{
-            NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_MEMBER, BANNED_FROM_CHANNEL,
+            NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_COMMUNITY_MEMBER, BANNED_FROM_CHANNEL,
             CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH, COMMUNITY_DOES_NOT_EXIST,
             NOT_CHANNEL_MODERATOR
         },
@@ -429,7 +429,7 @@ pub mod ChannelComponent {
             let community_instance = get_dep_component!(@self, Community);
             let (membership_status, _) = community_instance
                 .is_community_member(profile, channel.community_id);
-            assert(membership_status, NOT_MEMBER);
+            assert(membership_status, NOT_COMMUNITY_MEMBER);
 
             // mint a channel token to new joiner
             let minted_token_id = self._mint_channel_nft(profile, channel.channel_nft_address);
@@ -476,7 +476,7 @@ pub mod ChannelComponent {
 
                 // check moderator is a channel member
                 let (is_channel_member, _) = self.is_channel_member(moderator, channel_id);
-                assert(is_channel_member == true, NOT_MEMBER);
+                assert(is_channel_member == true, NOT_COMMUNITY_MEMBER);
 
                 self.channel_moderators.write((channel_id, moderator), true);
 
@@ -548,7 +548,7 @@ pub mod ChannelComponent {
 
                 // check profile is a channel member
                 let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
-                assert(is_channel_member == true, NOT_MEMBER);
+                assert(is_channel_member == true, NOT_COMMUNITY_MEMBER);
 
                 // update storage
                 let channel_member = self.channel_members.read((channel_id, profile));
