@@ -106,7 +106,7 @@ pub struct PostParams {
     pub channel_id: felt252
 }
 
-// /**
+///**
 // * @notice A struct containing the parameters supplied to the comment method
 // *
 // * @param profile_address profile address that owns the comment
@@ -123,7 +123,14 @@ pub struct CommentParams {
     pub reference_pub_type: PublicationType,
 }
 
-
+///**
+// * @notice A struct containing the parameters for a reference publication
+// *
+// * @param profile_address profile address that owns the publication
+// * @param contentURI URI pointing to the publication content
+// * @param pointed_profile_address profile address of the referenced publication
+// * @param pointed_pub_id ID of the pointed publication
+// */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct ReferencePubParams {
     pub profile_address: ContractAddress,
@@ -163,20 +170,6 @@ pub struct QuoteParams {
     pub pointed_profile_address: ContractAddress,
     pub pointed_pub_id: u256,
     pub reference_pub_type: PublicationType
-}
-
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct Upvote {
-    pub publication_id: u256,
-    pub transaction_executor: ContractAddress,
-    pub block_timestamp: u64,
-}
-
-#[derive(Debug, Drop, Serde, starknet::Store, Clone)]
-pub struct Downvote {
-    pub publication_id: u256,
-    pub transaction_executor: ContractAddress,
-    pub block_timestamp: u64,
 }
 
 // *************************************************************************

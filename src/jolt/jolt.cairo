@@ -142,7 +142,6 @@ pub mod JoltComponent {
                             jolt_id,
                             sub_id,
                             sender,
-                            jolt_params.amount,
                             renewal_status,
                             renewal_iterations,
                             erc20_contract_address
@@ -245,8 +244,6 @@ pub mod JoltComponent {
             // update storage
             self.subscriptions.write(sub_id, subscription_data);
 
-            // TODO: emit event
-
             sub_id
         }
 
@@ -289,6 +286,14 @@ pub mod JoltComponent {
         fn get_subscription_data(
             self: @ComponentState<TContractState>, subscription_id: u256) -> SubscriptionData {
             self.subscriptions.read(subscription_id)
+        }
+
+        /// @notice gets the subscription data for a particular subscription
+        /// @param subscription_id id of subscription to be retrieved
+        /// @returns SubscriptionData struct containing subscription details
+        fn get_renewal_iterations(
+            self: @ComponentState<TContractState>, profile: ContractAddress, subscription_id: u256) -> u256 {
+            self.renewal_iterations.read((profile, subscription_id))
         }
 
         /// @notice gets the fee address
@@ -411,7 +416,6 @@ pub mod JoltComponent {
             jolt_id: u256,
             sub_id: u256,
             sender: ContractAddress,
-            amount: u256,
             renewal_status: bool,
             renewal_iterations: u256,
             erc20_contract_address: ContractAddress
@@ -422,6 +426,7 @@ pub mod JoltComponent {
             if (renewal_status == true) {
                 // check allowances match auto-renew iterations
                 let allowance = dispatcher.allowance(sender, this_contract);
+                let amount = self.subscriptions.read(sub_id).amount;
                 assert(allowance >= renewal_iterations * amount, Errors::INSUFFICIENT_ALLOWANCE);
 
                 self.renewal_iterations.write((sender, sub_id), renewal_iterations);
@@ -429,7 +434,7 @@ pub mod JoltComponent {
 
             // send subscription amount to fee address
             let subscription_data = self.subscriptions.read(sub_id);
-            self._transfer_helper(erc20_contract_address, sender, subscription_data.fee_address, amount);
+            self._transfer_helper(erc20_contract_address, sender, subscription_data.fee_address, subscription_data.amount);
 
             // emit event
             self

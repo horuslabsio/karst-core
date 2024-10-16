@@ -23,6 +23,7 @@ pub trait IJolt<TState> {
     // *************************************************************************
     fn get_jolt(self: @TState, jolt_id: u256) -> JoltData;
     fn get_subscription_data(self: @TState, subscription_id: u256) -> SubscriptionData;
+    fn get_renewal_iterations(self: @TState, profile: ContractAddress, subscription_id: u256) -> u256;
     fn get_fee_address(self: @TState) -> ContractAddress;
     fn is_whitelisted_renewer(self: @TState, renewer: ContractAddress) -> bool;
 }
