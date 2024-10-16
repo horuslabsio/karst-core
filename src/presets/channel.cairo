@@ -8,6 +8,11 @@ pub mod KarstChannel {
 
     #[abi(embed_v0)]
     impl channelImpl = ChannelComponent::KarstChannel<ContractState>;
+    impl channelPrivateImpl = ChannelComponent::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
+    impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
 
     #[storage]
     struct Storage {
@@ -24,5 +29,13 @@ pub mod KarstChannel {
         ChannelEvent: ChannelComponent::Event,
         #[flat]
         CommunityEvent: CommunityComponent::Event
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState, channel_nft_classhash: felt252, community_nft_classhash: felt252
+    ) {
+        self.channel._initializer(channel_nft_classhash);
+        self.community._initializer(community_nft_classhash);
     }
 }
