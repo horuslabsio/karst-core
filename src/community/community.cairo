@@ -158,7 +158,7 @@ pub mod CommunityComponent {
         impl Ownable: OwnableComponent::HasComponent<TContractState>
     > of ICommunity<ComponentState<TContractState>> {
         /// @notice creates a new community
-        fn create_comminuty(
+        fn create_community(
             ref self: ComponentState<TContractState>
         ) -> u256 {
             let community_owner = get_caller_address();
@@ -288,7 +288,7 @@ pub mod CommunityComponent {
 
         /// @notice sets the fee address which receives community-related payments
         /// @param _fee_address address to be set
-        fn set_fee_address(ref self: ComponentState<TContractState>, community_id: u256, _fee_address: ContractAddress) {
+        fn set_community_fee_address(ref self: ComponentState<TContractState>, community_id: u256, _fee_address: ContractAddress) {
             let community_owner = self.community_owner.read(community_id);
             assert(get_caller_address() == community_owner, UNAUTHORIZED);
             self.fee_address.write(community_id, _fee_address);
@@ -441,7 +441,7 @@ pub mod CommunityComponent {
         /// @notice gets the fee address
         /// @param community_id id of community to get fee address for
         /// @returns the fee address for a community
-        fn get_fee_address(self: @ComponentState<TContractState>, community_id: u256) -> ContractAddress {
+        fn get_community_fee_address(self: @ComponentState<TContractState>, community_id: u256) -> ContractAddress {
             self.fee_address.read(community_id)
         }
 

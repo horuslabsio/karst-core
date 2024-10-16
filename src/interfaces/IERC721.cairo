@@ -15,6 +15,7 @@ pub trait IERC721<TState> {
         token_id: u256,
         data: Span<felt252>
     );
+    fn mint(ref self: TState, to: ContractAddress, token_id: u256);
     fn transfer_from(ref self: TState, from: ContractAddress, to: ContractAddress, token_id: u256);
     fn approve(ref self: TState, to: ContractAddress, token_id: u256);
     fn set_approval_for_all(ref self: TState, operator: ContractAddress, approved: bool);

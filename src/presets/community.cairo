@@ -12,6 +12,8 @@ pub mod KarstCommunity {
     #[abi(embed_v0)]
     impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
     impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
+    #[abi(embed_v0)]
+    impl joltImpl = JoltComponent::Jolt<ContractState>;
     impl joltPrivateImpl = JoltComponent::Private<ContractState>;
 
     #[storage]

@@ -14,7 +14,7 @@ pub trait IJolt<TState> {
         fee_address: ContractAddress, 
         amount: u256, 
         erc20_contract_address: ContractAddress
-    );
+    ) -> u256;
     fn set_fee_address(ref self: TState, _fee_address: ContractAddress);
     fn set_whitelisted_renewers(ref self: TState, renewers: Array<ContractAddress>);
     fn remove_whitelisted_renewers(ref self: TState, renewers: Array<ContractAddress>);

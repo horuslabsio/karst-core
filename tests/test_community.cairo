@@ -2,21 +2,24 @@
 //                              COMMUNITY TEST
 // *************************************************************************
 use core::option::OptionTrait;
-use core::starknet::SyscallResultTrait;
 use core::result::ResultTrait;
 use core::traits::{TryInto, Into};
 use starknet::{ContractAddress, get_block_timestamp, contract_address_const};
 
 use snforge_std::{
     declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
-    EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait, EventSpy
+    EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
 
 use karst::community::community::CommunityComponent;
 use karst::base::constants::types::{GateKeepType, CommunityType};
 use karst::interfaces::ICommunity::{ICommunityDispatcher, ICommunityDispatcherTrait};
+use karst::interfaces::IJolt::{IJoltDispatcher, IJoltDispatcherTrait};
+use karst::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
+use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';
+const ADMIN: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'ALICE';
 const USER_THREE: felt252 = 'ROB';
@@ -28,7 +31,7 @@ const NFT_ONE: felt252 = 'JOE_NFT';
 // *************************************************************************
 //                              SETUP
 // *************************************************************************
-fn __setup__() -> ContractAddress {
+fn __setup__() -> (ContractAddress, ContractAddress) {
     // deploy community nft
     let community_nft_class_hash = declare("CommunityNFT").unwrap().contract_class();
 
@@ -36,12 +39,19 @@ fn __setup__() -> ContractAddress {
     let community_contract = declare("KarstCommunity").unwrap().contract_class();
     let mut community_constructor_calldata: Array<felt252> = array![
         (*community_nft_class_hash.class_hash).into(),
+        ADMIN
     ];
     let (community_contract_address, _) = community_contract
         .deploy(@community_constructor_calldata)
         .unwrap();
 
-    return (community_contract_address);
+    // deploy mock USDT
+    let usdt_contract = declare("USDT").unwrap().contract_class();
+    let (usdt_contract_address, _) = usdt_contract
+        .deploy(@array![1000000000000000000000, 0, USER_ONE])
+        .unwrap();
+
+    return (community_contract_address, usdt_contract_address);
 }
 
 // *************************************************************************
@@ -49,20 +59,19 @@ fn __setup__() -> ContractAddress {
 // *************************************************************************
 #[test]
 fn test_community_creation() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     assert(community_id == 1, 'invalid community creation');
-    let community_data = communityDispatcher.get_community(community_id);
 
+    let community_data = communityDispatcher.get_community(community_id);
     assert(community_data.community_id == community_id, 'invalid community ID');
     assert(community_data.community_type == CommunityType::Free, 'invalid community type');
     assert(community_data.community_owner == USER_ONE.try_into().unwrap(), 'invalid owner');
     assert(community_data.community_total_members == 1, 'invalid  total  members');
     assert(community_data.community_premium_status == false, 'invalid premium status');
-
     assert(
         community_data.community_nft_address != contract_address_const::<0>(),
         'community nft was not deployed'
@@ -70,40 +79,38 @@ fn test_community_creation() {
 
     let (_, gate_keep_details) = communityDispatcher.is_gatekeeped(community_id);
     assert(gate_keep_details.gate_keep_type == GateKeepType::None, 'invalid community type');
-    assert(
-        gate_keep_details.community_nft_address == community_data.community_nft_address,
-        'invalid community NFT address'
-    );
     assert(community_data.community_id == community_id, 'invalid community ID');
-    assert(gate_keep_details.entry_fee == 0, 'invalid community gatekeep fee');
 
     stop_cheat_caller_address(community_contract_address);
 }
 
-
 #[test]
-fn test_community_upgrade_on_creation() {
-    let community_contract_address = __setup__();
+fn test_owner_joins_on_community_creation() {
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Standard);
-    assert(community_id == 1, 'invalid community creation');
+    let community_id = communityDispatcher.create_community();
+
+    let (is_member, _) = communityDispatcher
+        .is_community_member(USER_ONE.try_into().unwrap(), community_id);
+    assert(is_member == true, 'owner is not a member');
+
     let community_data = communityDispatcher.get_community(community_id);
-    assert(community_data.community_type == CommunityType::Standard, 'invalid community type');
-    assert(community_data.community_premium_status == true, 'invalid community type');
+    assert(community_data.community_total_members == 1, 'invalid total members');
 }
+
 #[test]
 fn test_create_community_emits_events() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     // spy on emitted events
     let mut spy = spy_events();
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    assert(community_id == 1, 'invalid community creation');
+    let community_id = communityDispatcher.create_community();
+
     // get community details
     let community = communityDispatcher.get_community(community_id);
     // check events are emitted
@@ -127,29 +134,24 @@ fn test_create_community_emits_events() {
 
 #[test]
 fn test_join_community() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
 
-    let (is_member, _) = communityDispatcher
+    let (is_member, community_member) = communityDispatcher
         .is_community_member(USER_ONE.try_into().unwrap(), community_id);
-
-    assert(is_member == true, 'Not Community Member');
-
-    let (_, community_member) = communityDispatcher
-        .is_community_member(USER_ONE.try_into().unwrap(), community_id);
-    assert(community_member.community_id == community_id, 'Invalid Community id');
+    assert(is_member == true, 'joining community failed');
+    assert(community_member.community_id == community_id, 'invalid community id');
     assert(
         community_member.profile_address == USER_ONE.try_into().unwrap(),
         'invalid community memeber'
     );
     assert(community_member.total_publications == 0, 'invalid  total  publication');
-    assert(community_member.ban_status == false, 'invalid ban status'); // community_token_id
-    assert(community_member.community_token_id != 0, 'invalid nft mint token');
+    assert(community_member.community_token_id != 0, 'nft token was not minted');
 
     stop_cheat_caller_address(community_contract_address);
 }
@@ -157,13 +159,13 @@ fn test_join_community() {
 #[test]
 #[should_panic(expected: ('Karst: already a Member',))]
 fn test_should_panic_if_a_user_joins_one_community_twice() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
 
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -181,7 +183,7 @@ fn test_should_panic_if_a_user_joins_one_community_twice() {
 
 #[test]
 fn test_joining_community_emits_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
@@ -189,7 +191,7 @@ fn test_joining_community_emits_event() {
     let mut spy = spy_events();
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -218,28 +220,24 @@ fn test_joining_community_emits_event() {
         );
 }
 
-
 #[test]
 fn test_leave_community() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
-    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-
+    // join community
+   start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     // leave community
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-
     communityDispatcher.leave_community(community_id);
 
     let (is_member, member) = communityDispatcher
@@ -253,22 +251,19 @@ fn test_leave_community() {
     let get_total_members = communityDispatcher.get_total_members(community_id);
     assert(get_total_members == 1, 'No reduction in total member');
 
-    assert(member.community_token_id == 0, 'NFT is not burn');
+    assert(member.community_token_id == 0, 'NFT was not burned');
     stop_cheat_caller_address(community_contract_address);
 }
-
 
 #[test]
 #[should_panic(expected: ('Karst: Not a Community  Member',))]
 fn test_should_panic_if_profile_leaving_is_not_a_member() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     // leave community
@@ -276,10 +271,9 @@ fn test_should_panic_if_profile_leaving_is_not_a_member() {
     communityDispatcher.leave_community(community_id);
 }
 
-
 #[test]
 fn test_leave_community_emits_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
@@ -287,8 +281,7 @@ fn test_leave_community_emits_event() {
     let mut spy = spy_events();
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
@@ -322,12 +315,12 @@ fn test_leave_community_emits_event() {
 
 #[test]
 fn test_set_community_metadata_uri() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
 
     communityDispatcher
         .set_community_metadata_uri(
@@ -345,12 +338,12 @@ fn test_set_community_metadata_uri() {
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_set_community_metadata_uri() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
 
     stop_cheat_caller_address(community_contract_address);
 
@@ -361,16 +354,15 @@ fn test_should_panic_set_community_metadata_uri() {
 
 #[test]
 fn test_add_community_mod() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-    // join the community
     communityDispatcher.join_community(community_id);
 
     stop_cheat_caller_address(community_contract_address);
@@ -391,13 +383,13 @@ fn test_add_community_mod() {
     // check a community mod - is_community_mod
     let is_community_mod = communityDispatcher
         .is_community_mod(USER_SIX.try_into().unwrap(), community_id);
-    assert(is_community_mod == true, 'Not a Community Mod');
+    assert(is_community_mod == true, 'not a community mod');
     stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
 fn test_add_community_mod_emits_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
@@ -405,7 +397,7 @@ fn test_add_community_mod_emits_event() {
     let mut spy = spy_events();
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
@@ -441,45 +433,38 @@ fn test_add_community_mod_emits_event() {
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
-fn should_panic_if_caller_adding_mod_is_not_owner() {
-    let community_contract_address = __setup__();
+fn test_should_panic_if_caller_adding_mod_is_not_owner() {
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
-    // when a wrong community owner try to add a MOD
+    // when a wrong community owner try to add a mod
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-
-    // mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
-    // add a community mod
     communityDispatcher.add_community_mods(community_id, moderators);
 }
 
 #[test]
 #[should_panic(expected: ('Karst: Not a Community  Member',))]
-fn should_panic_if_mod_is_not_member() {
-    let community_contract_address = __setup__();
+fn test_should_panic_if_mod_is_not_member() {
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_FIVE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_FIVE.try_into().unwrap());
@@ -488,33 +473,30 @@ fn should_panic_if_mod_is_not_member() {
     communityDispatcher.add_community_mods(community_id, moderators);
 }
 
-
 #[test]
 fn test_remove_community_mod() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
+    stop_cheat_caller_address(community_contract_address);
+
     // join commmunity
     start_cheat_caller_address(community_contract_address, USER_FIVE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // add mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_FOUR.try_into().unwrap());
@@ -523,46 +505,42 @@ fn test_remove_community_mod() {
     communityDispatcher.add_community_mods(community_id, moderators);
     stop_cheat_caller_address(community_contract_address);
 
+    // remove a mod
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // remove mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_FOUR.try_into().unwrap());
-    // REMOVE A MOD
     communityDispatcher.remove_community_mods(community_id, moderators);
 
     // check a community mod - is_community_mod
     let is_community_mod = communityDispatcher
         .is_community_mod(USER_FOUR.try_into().unwrap(), community_id);
-    assert(is_community_mod == false, 'Community Mod Not Remove');
+    assert(is_community_mod == false, 'mod was not removed!');
     stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
 fn test_remove_community_mod_emit_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     // spy on emitted events
     let mut spy = spy_events();
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
 
     // join commmunity
     start_cheat_caller_address(community_contract_address, USER_FIVE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
@@ -577,11 +555,11 @@ fn test_remove_community_mod_emit_event() {
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // remove mod array
     let mut remove_moderators = ArrayTrait::new();
     remove_moderators.append(USER_SIX.try_into().unwrap());
     remove_moderators.append(USER_FOUR.try_into().unwrap());
-    // REMOVE A MOD
+
+    // remove a mod
     communityDispatcher.remove_community_mods(community_id, remove_moderators);
 
     spy
@@ -603,81 +581,69 @@ fn test_remove_community_mod_emit_event() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
-fn test_should_panic_if_mod_is_not_community_member() {
-    let community_contract_address = __setup__();
+#[should_panic(expected: ('Karst: Not a community mod',))]
+fn test_should_panic_if_mod_to_be_removed_is_not_a_mod() {
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
+
     // join commmunity
     start_cheat_caller_address(community_contract_address, USER_FIVE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // add mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_FOUR.try_into().unwrap());
 
     // add a community mod
     communityDispatcher.add_community_mods(community_id, moderators);
-
     stop_cheat_caller_address(community_contract_address);
 
+    // remove a mod
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-
-    // remove mod array
     let mut moderators = ArrayTrait::new();
-    moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_TWO.try_into().unwrap());
-    // REMOVE A MOD
     communityDispatcher.remove_community_mods(community_id, moderators);
 }
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_if_caller_removing_mod_is_not_owner() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join commmunity
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
+    // join commmunity
     start_cheat_caller_address(community_contract_address, USER_FIVE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-
-    // add mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_FOUR.try_into().unwrap());
@@ -686,53 +652,39 @@ fn test_should_panic_if_caller_removing_mod_is_not_owner() {
     communityDispatcher.add_community_mods(community_id, moderators);
     stop_cheat_caller_address(community_contract_address);
 
-    // when a wrong community owner try to REMOVE a MOD
+    // when a wrong community owner try to remove a mod
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-    // remove mod array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
     moderators.append(USER_FOUR.try_into().unwrap());
-    // REMOVE A MOD
     communityDispatcher.remove_community_mods(community_id, moderators);
 }
 
 #[test]
 fn test_set_ban_status_by_owner() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
-    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+    
     // join the community
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
-    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
+    // set ban status
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // ban profile list
     let mut profiles = ArrayTrait::new();
     profiles.append(USER_SIX.try_into().unwrap());
     profiles.append(USER_FOUR.try_into().unwrap());
 
-    // ban status list
     let mut ban_statuses = ArrayTrait::new();
     ban_statuses.append(true);
     ban_statuses.append(true);
@@ -740,7 +692,6 @@ fn test_set_ban_status_by_owner() {
     communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 
     let is_ban = communityDispatcher.get_ban_status(USER_FOUR.try_into().unwrap(), community_id);
-
     assert(is_ban == true, 'Community Member is not banned');
 
     stop_cheat_caller_address(community_contract_address);
@@ -748,125 +699,75 @@ fn test_set_ban_status_by_owner() {
 
 #[test]
 fn test_set_ban_status_by_mod() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     // join the community
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
-    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     // add a community mod
-    // add mod array
+    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_FOUR.try_into().unwrap());
 
-    // add a community mod
     communityDispatcher.add_community_mods(community_id, moderators);
-
     stop_cheat_caller_address(community_contract_address);
 
+    // set ban status
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
-
-    // ban profile list
     let mut profiles = ArrayTrait::new();
-    profiles.append(USER_THREE.try_into().unwrap());
-    profiles.append(USER_TWO.try_into().unwrap());
+    profiles.append(USER_ONE.try_into().unwrap());
 
-    // ban status list
     let mut ban_statuses = ArrayTrait::new();
-    ban_statuses.append(true);
     ban_statuses.append(true);
 
     communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 
-    let is_ban = communityDispatcher.get_ban_status(USER_TWO.try_into().unwrap(), community_id);
-
+    let is_ban = communityDispatcher.get_ban_status(USER_ONE.try_into().unwrap(), community_id);
     assert(is_ban == true, 'Community Member is not banned');
-
     stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
 fn test_set_ban_status_emit_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
-    //
 
-    // spy on emitted events
-    let mut spy = spy_events();
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-    // add a community mod
-    // add mod array
-    let mut moderators = ArrayTrait::new();
-    moderators.append(USER_FOUR.try_into().unwrap());
-
-    // add a community mod
-    communityDispatcher.add_community_mods(community_id, moderators);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
-    // ban profile list
     let mut profiles = ArrayTrait::new();
-    profiles.append(USER_THREE.try_into().unwrap());
-    profiles.append(USER_TWO.try_into().unwrap());
+    profiles.append(USER_FOUR.try_into().unwrap());
+    profiles.append(USER_ONE.try_into().unwrap());
 
-    // ban status list
     let mut ban_statuses = ArrayTrait::new();
     ban_statuses.append(true);
     ban_statuses.append(true);
 
-    // set ban
+    // set ban and spy on emitted event
+    let mut spy = spy_events();
     communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 
     spy
@@ -878,7 +779,7 @@ fn test_set_ban_status_emit_event() {
                         CommunityComponent::CommunityBanStatusUpdated {
                             community_id: community_id,
                             transaction_executor: USER_SIX.try_into().unwrap(),
-                            profile: USER_TWO.try_into().unwrap(),
+                            profile: USER_FOUR.try_into().unwrap(),
                             ban_status: true,
                             block_timestamp: get_block_timestamp()
                         }
@@ -891,103 +792,66 @@ fn test_set_ban_status_emit_event() {
 #[test]
 #[should_panic(expected: ('Karst: user unauthorized!',))]
 fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     // join the community
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
-    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_FIVE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
+    // add community mod
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // mode array
     let mut moderators = ArrayTrait::new();
     moderators.append(USER_SIX.try_into().unwrap());
-    moderators.append(USER_FIVE.try_into().unwrap());
-
-    // add a community mod
     communityDispatcher.add_community_mods(community_id, moderators);
-
     stop_cheat_caller_address(community_contract_address);
 
+    // set ban status
     start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    // ban status list
     let mut ban_statuses = ArrayTrait::new();
     ban_statuses.append(true);
-    ban_statuses.append(true);
 
-    // ban profile list
     let mut profiles = ArrayTrait::new();
     profiles.append(USER_FOUR.try_into().unwrap());
-    profiles.append(USER_TWO.try_into().unwrap());
-    // set ban
+    
     communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 }
 
 #[test]
 #[should_panic(expected: ('Karst: Not a Community  Member',))]
 fn test_can_only_set_ban_status_for_members() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
+    // set ban status
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-
-    // ban profile list
     let mut profiles = ArrayTrait::new();
     profiles.append(USER_SIX.try_into().unwrap());
     profiles.append(USER_FOUR.try_into().unwrap());
 
-    // ban status list
     let mut ban_statuses = ArrayTrait::new();
     ban_statuses.append(true);
     ban_statuses.append(true);
@@ -996,41 +860,29 @@ fn test_can_only_set_ban_status_for_members() {
 }
 
 
-// TEST TODO: TEST To make sure length of ban status and profiles are same
 #[test]
 #[should_panic(expected: ('Karst: array mismatch',))]
 fn test_should_set_ban_status_for_invalid_array_length() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    //create the community
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    // join the community
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_SIX.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
     communityDispatcher.join_community(community_id);
-
-    stop_cheat_caller_address(community_contract_address);
-
-    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
-    communityDispatcher.join_community(community_id);
-
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    // ban profile list
     let mut profiles = ArrayTrait::new();
     profiles.append(USER_SIX.try_into().unwrap());
 
-    // ban status list
     let mut ban_statuses = ArrayTrait::new();
     ban_statuses.append(true);
     ban_statuses.append(true);
@@ -1038,50 +890,75 @@ fn test_should_set_ban_status_for_invalid_array_length() {
     communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 }
 
-
+// TODO: create subscription
+// TODO: test joining paid communities, nft gated communities, permissioned communities
 #[test]
 fn test_community_upgrade() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, usdt_contract_address) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    let joltDispatcher = IJoltDispatcher { contract_address: community_contract_address };
+    let erc20_dispatcher = IERC20Dispatcher { contract_address: usdt_contract_address };
 
+    // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    stop_cheat_caller_address(community_contract_address);
+
+    // approve contract to spend amount
+    start_cheat_caller_address(usdt_contract_address, USER_ONE.try_into().unwrap());
+    erc20_dispatcher.approve(community_contract_address, 4000000000000000000);
+    stop_cheat_caller_address(usdt_contract_address);
+
+    // upgrade community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard, sub_id, false, 0);
+
     let community = communityDispatcher.get_community(community_id);
     assert(community.community_type == CommunityType::Standard, 'Community Upgrade failed');
-    // TEST TODO: check that upgraded communities have a premium status
-    assert(community.community_premium_status == true, 'No Premium Status for Community');
+    assert(community.community_premium_status == true, 'community should be premium');
     stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_if_caller_upgrading_is_not_owner() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
 
     stop_cheat_caller_address(community_contract_address);
 
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
-    let community = communityDispatcher.get_community(community_id);
-    assert(community.community_type == CommunityType::Standard, 'Community Upgrade failed');
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard, 123, false, 0);
 }
 
 #[test]
 fn test_community_upgrade_emits_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, usdt_contract_address) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    let joltDispatcher = IJoltDispatcher { contract_address: community_contract_address };
+    let erc20_dispatcher = IERC20Dispatcher { contract_address: usdt_contract_address };
+
+    // create subscription
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    stop_cheat_caller_address(community_contract_address);
+
+    // approve contract to spend amount
+    start_cheat_caller_address(usdt_contract_address, USER_ONE.try_into().unwrap());
+    erc20_dispatcher.approve(community_contract_address, 4000000000000000000);
+    stop_cheat_caller_address(usdt_contract_address);
 
     // spy on emitted events
     let mut spy = spy_events();
 
+    // upgrade community
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    let community_id = communityDispatcher.create_community();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard, sub_id, false, 0);
 
     // check events are emitted
     spy
@@ -1104,7 +981,7 @@ fn test_community_upgrade_emits_event() {
 
 #[test]
 fn test_permissioned_gatekeeping() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
@@ -1113,14 +990,14 @@ fn test_permissioned_gatekeeping() {
     permission_addresses.append(USER_THREE.try_into().unwrap());
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     communityDispatcher
         .gatekeep(
             community_id,
             GateKeepType::PermissionedGating,
-            NFT_ONE.try_into().unwrap(),
+            contract_address_const::<0>(),
             permission_addresses,
-            0
+            (contract_address_const::<0>(), 0)
         );
 
     // check is_gatekeeped
@@ -1131,141 +1008,139 @@ fn test_permissioned_gatekeeping() {
 
 #[test]
 fn test_paid_gatekeeping() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, usdt_contract_address) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    let joltDispatcher = IJoltDispatcher { contract_address: community_contract_address };
+    let erc20_dispatcher = IERC20Dispatcher { contract_address: usdt_contract_address };
 
-    let mut permission_addresses = ArrayTrait::new();
-    permission_addresses.append(USER_SIX.try_into().unwrap());
-    permission_addresses.append(USER_FIVE.try_into().unwrap());
-    permission_addresses.append(USER_THREE.try_into().unwrap());
+    // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    stop_cheat_caller_address(community_contract_address);
+
+    // approve contract to spend amount
+    start_cheat_caller_address(usdt_contract_address, USER_ONE.try_into().unwrap());
+    erc20_dispatcher.approve(community_contract_address, 4000000000000000000);
+    stop_cheat_caller_address(usdt_contract_address);
+
+    // upgrade community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Standard, sub_id, false, 0);
+
+    // gatekeep community
     communityDispatcher
         .gatekeep(
             community_id,
             GateKeepType::PaidGating,
-            NFT_ONE.try_into().unwrap(),
-            permission_addresses,
-            450
+            contract_address_const::<0>(),
+            array![contract_address_const::<0>()],
+            (usdt_contract_address, 100)
         );
 
     // check is_gatekeeped
-    let (is_gatekeeped, _) = communityDispatcher.is_gatekeeped(community_id);
+    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
     assert(is_gatekeeped == true, 'Community gatekeep failed');
+    let (erc20_contract, amount) = gatekeep_details.paid_gating_details;
+    assert(erc20_contract == usdt_contract_address, 'invalid paid gating');
+    assert(amount == 100, 'invalid paid gating');
     stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
 fn test_nft_gatekeeping() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, usdt_contract_address) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    let joltDispatcher = IJoltDispatcher { contract_address: community_contract_address };
+    let erc20_dispatcher = IERC20Dispatcher { contract_address: usdt_contract_address };
 
-    let mut permission_addresses = ArrayTrait::new();
-    permission_addresses.append(USER_SIX.try_into().unwrap());
-    permission_addresses.append(USER_FIVE.try_into().unwrap());
-    permission_addresses.append(USER_THREE.try_into().unwrap());
+    // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-    communityDispatcher.upgrade_community(community_id, CommunityType::Standard);
+    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    stop_cheat_caller_address(community_contract_address);
+
+    // approve contract to spend amount
+    start_cheat_caller_address(usdt_contract_address, USER_ONE.try_into().unwrap());
+    erc20_dispatcher.approve(community_contract_address, 4000000000000000000);
+    stop_cheat_caller_address(usdt_contract_address);
+
+    // upgrade community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Business, sub_id, false, 0);
+
+    // gatekeep community
     communityDispatcher
         .gatekeep(
             community_id,
             GateKeepType::NFTGating,
-            NFT_ONE.try_into().unwrap(),
-            permission_addresses,
-            450
+            123.try_into().unwrap(),
+            array![contract_address_const::<0>()],
+            (contract_address_const::<0>(), 0)
         );
 
     // check is_gatekeeped
     let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
+    assert(is_gatekeeped == true, 'Community gatekeep failed');
     assert(
         gatekeep_details.gate_keep_type == GateKeepType::NFTGating, 'Community NFT Gatekeep Failed'
     );
     assert(
-        gatekeep_details.community_nft_address != contract_address_const::<0>(),
-        'NFT Gatekeep was not Added'
+        gatekeep_details.gatekeep_nft_address == 123.try_into().unwrap(),
+        'gatekeeping failed'
     );
 
     stop_cheat_caller_address(community_contract_address);
 }
 
-
 #[test]
 #[should_panic(expected: ('Karst: only premium communities',))]
 fn test_only_premium_communities_can_be_paid_gated() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
-    permission_addresses.append(USER_SIX.try_into().unwrap());
-    permission_addresses.append(USER_FIVE.try_into().unwrap());
-    permission_addresses.append(USER_THREE.try_into().unwrap());
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     communityDispatcher
         .gatekeep(
             community_id,
             GateKeepType::PaidGating,
-            NFT_ONE.try_into().unwrap(),
+            contract_address_const::<0>(),
             permission_addresses,
-            450
+            (1.try_into().unwrap(), 100)
         );
-
-    // check is_gatekeeped
-    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
-    assert(
-        gatekeep_details.gate_keep_type == GateKeepType::PaidGating,
-        'Community Paid Gatekeep Failed'
-    );
-    stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
 #[should_panic(expected: ('Karst: only premium communities',))]
 fn test_only_premium_communities_can_be_nft_gated() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
-    permission_addresses.append(USER_SIX.try_into().unwrap());
-    permission_addresses.append(USER_FIVE.try_into().unwrap());
-    permission_addresses.append(USER_THREE.try_into().unwrap());
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     communityDispatcher
         .gatekeep(
             community_id,
             GateKeepType::PaidGating,
             NFT_ONE.try_into().unwrap(),
             permission_addresses,
-            450
+            (contract_address_const::<0>(), 0)
         );
-
-    // check is_gatekeeped
-    let (is_gatekeeped, gatekeep_details) = communityDispatcher.is_gatekeeped(community_id);
-    assert(
-        gatekeep_details.gate_keep_type == GateKeepType::PaidGating,
-        'Community Paid Gatekeep Failed'
-    );
-    stop_cheat_caller_address(community_contract_address);
 }
-
 
 #[test]
 #[should_panic(expected: ('Karst: Not Community owner',))]
 fn test_should_panic_if_caller_to_gatekeep_is_not_owner() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
-    permission_addresses.append(USER_SIX.try_into().unwrap());
-    permission_addresses.append(USER_FIVE.try_into().unwrap());
-    permission_addresses.append(USER_THREE.try_into().unwrap());
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
-
+    let community_id = communityDispatcher.create_community();
     stop_cheat_caller_address(community_contract_address);
 
     // Wrong owner trying to gate keep
@@ -1276,13 +1151,13 @@ fn test_should_panic_if_caller_to_gatekeep_is_not_owner() {
             GateKeepType::PaidGating,
             NFT_ONE.try_into().unwrap(),
             permission_addresses,
-            450
+            (contract_address_const::<0>(), 0)
         );
 }
 
 #[test]
 fn test_community_gatekeep_emits_event() {
-    let community_contract_address = __setup__();
+    let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     let mut permission_addresses = ArrayTrait::new();
@@ -1294,14 +1169,14 @@ fn test_community_gatekeep_emits_event() {
     let mut spy = spy_events();
 
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let community_id = communityDispatcher.create_comminuty(CommunityType::Free);
+    let community_id = communityDispatcher.create_community();
     communityDispatcher
         .gatekeep(
             community_id,
             GateKeepType::PermissionedGating,
             NFT_ONE.try_into().unwrap(),
             permission_addresses,
-            0
+            (contract_address_const::<0>(), 0)
         );
 
     // check events are emitted
@@ -1323,3 +1198,93 @@ fn test_community_gatekeep_emits_event() {
         );
 }
 
+#[test]
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_permissioned_gating_is_enforced_on_joining() {
+    let (community_contract_address, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    let mut permission_addresses = ArrayTrait::new();
+    permission_addresses.append(USER_SIX.try_into().unwrap());
+    permission_addresses.append(USER_FIVE.try_into().unwrap());
+    permission_addresses.append(USER_THREE.try_into().unwrap());
+
+    // create community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+
+    // gatekeep community
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::PermissionedGating,
+            contract_address_const::<0>(),
+            permission_addresses,
+            (contract_address_const::<0>(), 0)
+        );
+
+    // try to join a community when not permissioned
+   start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+   communityDispatcher.join_community(community_id);
+   stop_cheat_caller_address(community_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_nft_gating_is_enforced_on_joining() {
+    let (community_contract_address, usdt_contract_address) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+    let joltDispatcher = IJoltDispatcher { contract_address: community_contract_address };
+    let erc20_dispatcher = IERC20Dispatcher { contract_address: usdt_contract_address };
+
+    // deploy nft to be used for gating
+    let erc721_contract = declare("ERC721").unwrap().contract_class();
+    let mut erc721_constructor_calldata = array!['TEST_NFT', 'NFT'];
+    let (erc721_contract_address, _) = erc721_contract
+        .deploy(@erc721_constructor_calldata)
+        .unwrap();
+
+    // mint nft to a permissioned user
+    let dispatcher = IERC721Dispatcher { contract_address: erc721_contract_address };
+    dispatcher.mint(USER_TWO.try_into().unwrap(), 1.try_into().unwrap());
+
+    // create subscription
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    stop_cheat_caller_address(community_contract_address);
+
+    // approve contract to spend amount
+    start_cheat_caller_address(usdt_contract_address, USER_ONE.try_into().unwrap());
+    erc20_dispatcher.approve(community_contract_address, 4000000000000000000);
+    stop_cheat_caller_address(usdt_contract_address);
+
+    // upgrade community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+    communityDispatcher.upgrade_community(community_id, CommunityType::Business, sub_id, false, 0);
+
+    // gatekeep community
+    communityDispatcher
+        .gatekeep(
+            community_id,
+            GateKeepType::NFTGating,
+            erc721_contract_address,
+            array![contract_address_const::<0>()],
+            (contract_address_const::<0>(), 0)
+        );
+
+    // try to join community with an address that has the required NFT
+   start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+   communityDispatcher.join_community(community_id);
+   stop_cheat_caller_address(community_contract_address);
+
+    // check user joined successfully
+    let (is_member, _) = communityDispatcher
+        .is_community_member(USER_TWO.try_into().unwrap(), community_id);
+    assert(is_member == true, 'owner is not a member');
+
+    // try joining with another address that does not have the required NFT
+    start_cheat_caller_address(community_contract_address, USER_THREE.try_into().unwrap());
+    communityDispatcher.join_community(community_id);
+    stop_cheat_caller_address(community_contract_address);
+}

@@ -222,7 +222,7 @@ pub mod JoltComponent {
             fee_address: ContractAddress, 
             amount: u256, 
             erc20_contract_address: ContractAddress
-        ) {
+        ) -> u256 {
             let caller = get_caller_address();
             let tx_info = get_tx_info().unbox();
 
@@ -233,15 +233,21 @@ pub mod JoltComponent {
                 erc20_contract_address: erc20_contract_address
             };
 
-            let sub_id = PedersenTrait::new(0)
+            let mut sub_id = PedersenTrait::new(0)
                 .update(fee_address.into())
                 .update(amount.low.into())
                 .update(amount.high.into())
                 .update(tx_info.nonce)
                 .update(4)
                 .finalize();
+            let sub_id = sub_id.try_into().unwrap();
 
-            self.subscriptions.write(sub_id.try_into().unwrap(), subscription_data);
+            // update storage
+            self.subscriptions.write(sub_id, subscription_data);
+
+            // TODO: emit event
+
+            sub_id
         }
 
         /// @notice sets the fee address which receives subscription payments and maybe actual fees
@@ -615,7 +621,7 @@ pub mod JoltComponent {
                 self
                     .whitelisted_renewers
                     .write(*renewers.at(index), status);
-                
+
                 index += 1;
             };
         }
