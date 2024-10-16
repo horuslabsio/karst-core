@@ -208,7 +208,6 @@ pub struct CommunityMember {
     pub community_id: u256,
     pub total_publications: u256,
     pub community_token_id: u256,
-    pub ban_status: bool,
 }
 
 

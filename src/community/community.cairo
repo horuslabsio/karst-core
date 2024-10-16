@@ -49,6 +49,7 @@ pub mod CommunityComponent {
         gate_keep_permissioned_addresses: Map<
             (u256, ContractAddress), bool
         >, // map <(community_id, permissioned_address), bool>,
+        ban_status: Map<(u256, ContractAddress), bool>, // map <(community_id, profile), ban status>
         fee_address: Map<u256, ContractAddress>, // map <community_id, fee address>
         community_nft_classhash: ClassHash,
         community_counter: u256,
@@ -434,8 +435,7 @@ pub mod CommunityComponent {
         fn get_ban_status(
             self: @ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) -> bool {
-            let community_member = self.community_member.read((community_id, profile));
-            community_member.ban_status
+            self.ban_status.read((community_id, profile))
         }
 
         /// @notice gets the fee address
@@ -554,8 +554,7 @@ pub mod CommunityComponent {
                 profile_address: profile,
                 community_id: community_id,
                 total_publications: 0,
-                community_token_id: minted_token_id,
-                ban_status: false
+                community_token_id: minted_token_id
             };
 
             // update storage
@@ -603,8 +602,7 @@ pub mod CommunityComponent {
                 profile_address: contract_address_const::<0>(),
                 community_id: 0,
                 total_publications: 0,
-                community_token_id: 0,
-                ban_status: false
+                community_token_id: 0
             };
             self.community_member.write((community_id, profile_caller), updated_member_details);
             let community_total_members = community.community_total_members - 1;
@@ -694,6 +692,9 @@ pub mod CommunityComponent {
             };
         }
 
+        /// @notice internal function for enforcing gatekeeping
+        /// @param profile profile joining the community
+        /// @param community_id id of community to enforce gatekeeping
         fn _enforce_gatekeeping(
             ref self: ComponentState<TContractState>,
             profile: ContractAddress,
@@ -826,9 +827,7 @@ pub mod CommunityComponent {
                 assert(is_community_member == true, NOT_COMMUNITY_MEMBER);
 
                 // update storage
-                let community_member = self.community_member.read((community_id, profile));
-                let updated_member = CommunityMember { ban_status: ban_status, ..community_member };
-                self.community_member.write((community_id, profile), updated_member);
+                self.ban_status.write((community_id, profile), ban_status);
 
                 // emit event
                 self
