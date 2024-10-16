@@ -194,6 +194,7 @@ pub struct CommunityDetails {
     pub community_metadata_uri: ByteArray,
     pub community_nft_address: ContractAddress,
     pub community_total_members: u256,
+    pub community_censorship: bool,
     pub community_premium_status: bool,
     pub community_type: CommunityType
 }

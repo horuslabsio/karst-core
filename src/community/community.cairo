@@ -367,6 +367,25 @@ pub mod CommunityComponent {
                 );
         }
 
+        /// @notice set the censorship status of a community
+        /// @param community_id The id of the community
+        fn set_community_censorship_status(
+            ref self: ComponentState<TContractState>, community_id: u256, censorship_status: bool
+        ) {
+            let mut community = self.communities.read(community_id);
+
+            // check caller is owner
+            assert(community.community_owner == get_caller_address(), UNAUTHORIZED);
+
+            // update storage
+            community.community_censorship = censorship_status;
+            self.communities.write(community_id, community);
+        }
+
+        // *************************************************************************
+        //                              GETTERS
+        // *************************************************************************
+
         /// @notice gets a particular community details
         /// @param community_id id of community to be returned
         /// @return CommunityDetails details of the community
@@ -421,6 +440,15 @@ pub mod CommunityComponent {
             } else {
                 false
             }
+        }
+
+        /// @notice checks if a community is censored
+        /// @param community_id the id of the community
+        /// @return bool the censorship status
+        fn get_community_censorship_status(
+            self: @ComponentState<TContractState>, community_id: u256
+        ) -> bool {
+            self.communities.read(community_id).community_censorship
         }
 
         /// @notice gets ban status for a particular user
@@ -504,6 +532,7 @@ pub mod CommunityComponent {
                 community_nft_address: community_nft_address,
                 community_premium_status: false,
                 community_total_members: 0,
+                community_censorship: false,
                 community_type: CommunityType::Free,
             };
 

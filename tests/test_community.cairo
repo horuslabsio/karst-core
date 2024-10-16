@@ -660,9 +660,41 @@ fn test_should_panic_if_caller_removing_mod_is_not_owner() {
 }
 
 #[test]
+fn test_set_censorship_status() {
+    let (community_contract_address, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    //create the community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+
+    // set censorship status
+    communityDispatcher.set_community_censorship_status(community_id, true);
+
+    // check censorship status was set to true
+    let censorship_status = communityDispatcher.get_community_censorship_status(community_id);
+    assert(censorship_status == true, 'invalid censorship status');
+    stop_cheat_caller_address(community_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_only_owner_can_set_censorship_status() {
+    let (community_contract_address, _) = __setup__();
+    let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
+
+    //create the community
+    start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = communityDispatcher.create_community();
+    stop_cheat_caller_address(community_contract_address);
+
+    // set censorship status
+    communityDispatcher.set_community_censorship_status(community_id, true);
+}
+
+#[test]
 fn test_set_ban_status_by_owner() {
     let (community_contract_address, _) = __setup__();
-
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
 
     //create the community
