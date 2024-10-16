@@ -1,5 +1,5 @@
 {
-  "name": "irys",
+  "name": "karst_scripts",
   "version": "1.0.0",
   "type": "module",
   "main": "index.ts",
