@@ -26,10 +26,12 @@ pub trait ICommunity<TState> {
         profiles: Array<ContractAddress>,
         ban_statuses: Array<bool>
     );
-    fn set_community_fee_address(ref self: TState, community_id: u256, _fee_address: ContractAddress);
+    fn set_community_fee_address(
+        ref self: TState, community_id: u256, _fee_address: ContractAddress
+    );
     fn upgrade_community(
-        ref self: TState, 
-        community_id: u256, 
+        ref self: TState,
+        community_id: u256,
         upgrade_type: CommunityType,
         subscription_id: u256,
         renewal_status: bool,

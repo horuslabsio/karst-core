@@ -10,9 +10,9 @@ pub trait IJolt<TState> {
     fn auto_renew(ref self: TState, profile: ContractAddress, sub_id: u256) -> bool;
     fn fulfill_request(ref self: TState, jolt_id: u256) -> bool;
     fn create_subscription(
-        ref self: TState, 
-        fee_address: ContractAddress, 
-        amount: u256, 
+        ref self: TState,
+        fee_address: ContractAddress,
+        amount: u256,
         erc20_contract_address: ContractAddress
     ) -> u256;
     fn set_fee_address(ref self: TState, _fee_address: ContractAddress);
@@ -23,7 +23,9 @@ pub trait IJolt<TState> {
     // *************************************************************************
     fn get_jolt(self: @TState, jolt_id: u256) -> JoltData;
     fn get_subscription_data(self: @TState, subscription_id: u256) -> SubscriptionData;
-    fn get_renewal_iterations(self: @TState, profile: ContractAddress, subscription_id: u256) -> u256;
+    fn get_renewal_iterations(
+        self: @TState, profile: ContractAddress, subscription_id: u256
+    ) -> u256;
     fn get_fee_address(self: @TState) -> ContractAddress;
     fn is_whitelisted_renewer(self: @TState, renewer: ContractAddress) -> bool;
 }

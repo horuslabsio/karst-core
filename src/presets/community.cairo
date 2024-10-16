@@ -38,7 +38,9 @@ pub mod KarstCommunity {
     }
 
     #[constructor]
-    fn constructor(ref self: ContractState, community_nft_classhash: felt252, owner: ContractAddress) {
+    fn constructor(
+        ref self: ContractState, community_nft_classhash: felt252, owner: ContractAddress
+    ) {
         self.community._initializer(community_nft_classhash);
         self.jolt._initializer(owner);
     }

@@ -17,15 +17,14 @@ pub mod ChannelComponent {
     use karst::jolt::jolt::JoltComponent;
     use karst::community::community::CommunityComponent;
     use karst::interfaces::{
-        IChannel::IChannel,
-        ICommunity::ICommunity,
+        IChannel::IChannel, ICommunity::ICommunity,
         ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
     };
     use karst::base::{
         constants::errors::Errors::{
-            NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_COMMUNITY_MEMBER, BANNED_FROM_CHANNEL,
-            CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH, COMMUNITY_DOES_NOT_EXIST,
-            NOT_CHANNEL_MODERATOR
+            NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_COMMUNITY_MEMBER,
+            BANNED_FROM_CHANNEL, CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH,
+            COMMUNITY_DOES_NOT_EXIST, NOT_CHANNEL_MODERATOR
         },
         constants::types::{ChannelDetails, ChannelMember}
     };

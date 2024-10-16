@@ -38,8 +38,7 @@ fn __setup__() -> (ContractAddress, ContractAddress) {
     // deploy community preset contract
     let community_contract = declare("KarstCommunity").unwrap().contract_class();
     let mut community_constructor_calldata: Array<felt252> = array![
-        (*community_nft_class_hash.class_hash).into(),
-        ADMIN
+        (*community_nft_class_hash.class_hash).into(), ADMIN
     ];
     let (community_contract_address, _) = community_contract
         .deploy(@community_constructor_calldata)
@@ -232,7 +231,7 @@ fn test_leave_community() {
     stop_cheat_caller_address(community_contract_address);
 
     // join community
-   start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
     communityDispatcher.join_community(community_id);
     stop_cheat_caller_address(community_contract_address);
 
@@ -669,7 +668,7 @@ fn test_set_ban_status_by_owner() {
     //create the community
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
     let community_id = communityDispatcher.create_community();
-    
+
     // join the community
     start_cheat_caller_address(community_contract_address, USER_FOUR.try_into().unwrap());
     communityDispatcher.join_community(community_id);
@@ -823,7 +822,7 @@ fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
 
     let mut profiles = ArrayTrait::new();
     profiles.append(USER_FOUR.try_into().unwrap());
-    
+
     communityDispatcher.set_ban_status(community_id, profiles, ban_statuses);
 }
 
@@ -901,7 +900,8 @@ fn test_community_upgrade() {
 
     // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    let sub_id = joltDispatcher
+        .create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
     stop_cheat_caller_address(community_contract_address);
 
     // approve contract to spend amount
@@ -944,7 +944,8 @@ fn test_community_upgrade_emits_event() {
 
     // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    let sub_id = joltDispatcher
+        .create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
     stop_cheat_caller_address(community_contract_address);
 
     // approve contract to spend amount
@@ -1015,7 +1016,8 @@ fn test_paid_gatekeeping() {
 
     // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    let sub_id = joltDispatcher
+        .create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
     stop_cheat_caller_address(community_contract_address);
 
     // approve contract to spend amount
@@ -1056,7 +1058,8 @@ fn test_nft_gatekeeping() {
 
     // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    let sub_id = joltDispatcher
+        .create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
     stop_cheat_caller_address(community_contract_address);
 
     // approve contract to spend amount
@@ -1085,10 +1088,7 @@ fn test_nft_gatekeeping() {
     assert(
         gatekeep_details.gate_keep_type == GateKeepType::NFTGating, 'Community NFT Gatekeep Failed'
     );
-    assert(
-        gatekeep_details.gatekeep_nft_address == 123.try_into().unwrap(),
-        'gatekeeping failed'
-    );
+    assert(gatekeep_details.gatekeep_nft_address == 123.try_into().unwrap(), 'gatekeeping failed');
 
     stop_cheat_caller_address(community_contract_address);
 }
@@ -1224,9 +1224,9 @@ fn test_permissioned_gating_is_enforced_on_joining() {
         );
 
     // try to join a community when not permissioned
-   start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-   communityDispatcher.join_community(community_id);
-   stop_cheat_caller_address(community_contract_address);
+    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+    communityDispatcher.join_community(community_id);
+    stop_cheat_caller_address(community_contract_address);
 }
 
 #[test]
@@ -1250,7 +1250,8 @@ fn test_nft_gating_is_enforced_on_joining() {
 
     // create subscription
     start_cheat_caller_address(community_contract_address, USER_ONE.try_into().unwrap());
-    let sub_id = joltDispatcher.create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
+    let sub_id = joltDispatcher
+        .create_subscription(ADMIN.try_into().unwrap(), 1000000000000000000, usdt_contract_address);
     stop_cheat_caller_address(community_contract_address);
 
     // approve contract to spend amount
@@ -1274,9 +1275,9 @@ fn test_nft_gating_is_enforced_on_joining() {
         );
 
     // try to join community with an address that has the required NFT
-   start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
-   communityDispatcher.join_community(community_id);
-   stop_cheat_caller_address(community_contract_address);
+    start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
+    communityDispatcher.join_community(community_id);
+    stop_cheat_caller_address(community_contract_address);
 
     // check user joined successfully
     let (is_member, _) = communityDispatcher

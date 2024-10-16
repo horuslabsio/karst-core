@@ -7,8 +7,7 @@ pub mod JoltComponent {
     use core::hash::HashStateTrait;
     use core::pedersen::PedersenTrait;
     use starknet::{
-        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
-        get_tx_info,
+        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp, get_tx_info,
         storage::{
             StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
             StorageMapWriteAccess
@@ -79,7 +78,7 @@ pub mod JoltComponent {
 
     #[embeddable_as(Jolt)]
     impl JoltImpl<
-        TContractState, 
+        TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Ownable: OwnableComponent::HasComponent<TContractState>
@@ -136,7 +135,8 @@ pub mod JoltComponent {
                     jolt_status = _jolt_status;
                 },
                 JoltType::Subscription => {
-                    let (sub_id, renewal_status, renewal_iterations) = jolt_params.subscription_details;
+                    let (sub_id, renewal_status, renewal_iterations) = jolt_params
+                        .subscription_details;
                     let _jolt_status = self
                         ._subscribe(
                             jolt_id,
@@ -206,7 +206,9 @@ pub mod JoltComponent {
         /// @notice contains logic for auto renewal of subscriptions
         /// @dev can be automated using cron jobs in a backend service
         /// @param sub_id id of jolt subscription to auto-renew
-        fn auto_renew(ref self: ComponentState<TContractState>, profile: ContractAddress, sub_id: u256) -> bool {
+        fn auto_renew(
+            ref self: ComponentState<TContractState>, profile: ContractAddress, sub_id: u256
+        ) -> bool {
             let is_whitelisted_renewer = self.is_whitelisted_renewer(get_caller_address());
             assert(is_whitelisted_renewer, Errors::UNAUTHORIZED);
             self._auto_renew(profile, sub_id)
@@ -218,8 +220,8 @@ pub mod JoltComponent {
         /// @param erc20_contract_addrress token to receive subscription in
         fn create_subscription(
             ref self: ComponentState<TContractState>,
-            fee_address: ContractAddress, 
-            amount: u256, 
+            fee_address: ContractAddress,
+            amount: u256,
             erc20_contract_address: ContractAddress
         ) -> u256 {
             let caller = get_caller_address();
@@ -250,21 +252,27 @@ pub mod JoltComponent {
         /// @notice sets the fee address which receives subscription payments and maybe actual fees
         /// in the future?
         /// @param _fee_address address to be set
-        fn set_fee_address(ref self: ComponentState<TContractState>, _fee_address: ContractAddress) {
+        fn set_fee_address(
+            ref self: ComponentState<TContractState>, _fee_address: ContractAddress
+        ) {
             get_dep_component!(@self, Ownable).assert_only_owner();
             self.jolt_fee_address.write(_fee_address);
         }
 
         /// @notice sets an array of addresses as whitelisted renewers
         /// @param renewers addresses to be whitelisted
-        fn set_whitelisted_renewers(ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>) {
+        fn set_whitelisted_renewers(
+            ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>
+        ) {
             get_dep_component!(@self, Ownable).assert_only_owner();
             self._set_whitelisted_renewers_status(renewers, true);
         }
 
         /// @notice removes an array of addresses from whitelisted renewers
         /// @param renewers addresses to be removed from whitelist
-        fn remove_whitelisted_renewers(ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>) {
+        fn remove_whitelisted_renewers(
+            ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>
+        ) {
             get_dep_component!(@self, Ownable).assert_only_owner();
             self._set_whitelisted_renewers_status(renewers, false);
         }
@@ -284,7 +292,8 @@ pub mod JoltComponent {
         /// @param subscription_id id of subscription to be retrieved
         /// @returns SubscriptionData struct containing subscription details
         fn get_subscription_data(
-            self: @ComponentState<TContractState>, subscription_id: u256) -> SubscriptionData {
+            self: @ComponentState<TContractState>, subscription_id: u256
+        ) -> SubscriptionData {
             self.subscriptions.read(subscription_id)
         }
 
@@ -292,7 +301,8 @@ pub mod JoltComponent {
         /// @param subscription_id id of subscription to be retrieved
         /// @returns SubscriptionData struct containing subscription details
         fn get_renewal_iterations(
-            self: @ComponentState<TContractState>, profile: ContractAddress, subscription_id: u256) -> u256 {
+            self: @ComponentState<TContractState>, profile: ContractAddress, subscription_id: u256
+        ) -> u256 {
             self.renewal_iterations.read((profile, subscription_id))
         }
 
@@ -304,7 +314,9 @@ pub mod JoltComponent {
 
         /// @notice checks if an address is a whitelisted renewer
         /// @returns bool (true/false) depending on if address is a whitelisted renewer
-        fn is_whitelisted_renewer(self: @ComponentState<TContractState>, renewer: ContractAddress) -> bool {
+        fn is_whitelisted_renewer(
+            self: @ComponentState<TContractState>, renewer: ContractAddress
+        ) -> bool {
             self.whitelisted_renewers.read(renewer)
         }
     }
@@ -314,7 +326,7 @@ pub mod JoltComponent {
     // *************************************************************************
     #[generate_trait]
     pub impl Private<
-        TContractState, 
+        TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Ownable: OwnableComponent::HasComponent<TContractState>
@@ -325,7 +337,7 @@ pub mod JoltComponent {
             let mut ownable_comp = get_dep_component_mut!(ref self, Ownable);
             ownable_comp.initializer(owner);
         }
-        
+
         /// @notice contains the tipping logic
         /// @param jolt_id id of txn
         /// @param sender the profile performing the tipping
@@ -434,7 +446,13 @@ pub mod JoltComponent {
 
             // send subscription amount to fee address
             let subscription_data = self.subscriptions.read(sub_id);
-            self._transfer_helper(erc20_contract_address, sender, subscription_data.fee_address, subscription_data.amount);
+            self
+                ._transfer_helper(
+                    erc20_contract_address,
+                    sender,
+                    subscription_data.fee_address,
+                    subscription_data.amount
+                );
 
             // emit event
             self
@@ -497,7 +515,10 @@ pub mod JoltComponent {
         /// @param jolt_details details of the jolt to be fulfilled
         /// @returns bool status of the txn
         fn _fulfill_request(
-            ref self: ComponentState<TContractState>, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
+            ref self: ComponentState<TContractState>,
+            jolt_id: u256,
+            sender: ContractAddress,
+            jolt_details: JoltData
         ) -> bool {
             // transfer request amount
             self
@@ -532,7 +553,9 @@ pub mod JoltComponent {
         /// @param sender the profile renewing a subscription
         /// @param sub_id id of sub to be renewed
         /// @returns bool status of the txn
-        fn _auto_renew(ref self: ComponentState<TContractState>, sender: ContractAddress, sub_id: u256) -> bool {
+        fn _auto_renew(
+            ref self: ComponentState<TContractState>, sender: ContractAddress, sub_id: u256
+        ) -> bool {
             let tx_info = get_tx_info().unbox();
             let subscription_data = self.subscriptions.read(sub_id);
             let iterations = self.renewal_iterations.read((sender, sub_id));
@@ -618,14 +641,14 @@ pub mod JoltComponent {
         /// @notice internal logic to set/remove whitelisted renewers
         /// @param renewers addresses to whitelist
         /// @param status (true/false) indicating to add or remove
-        fn _set_whitelisted_renewers_status(ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>, status: bool) {
+        fn _set_whitelisted_renewers_status(
+            ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>, status: bool
+        ) {
             let length = renewers.len();
             let mut index: u32 = 0;
 
             while index < length {
-                self
-                    .whitelisted_renewers
-                    .write(*renewers.at(index), status);
+                self.whitelisted_renewers.write(*renewers.at(index), status);
 
                 index += 1;
             };

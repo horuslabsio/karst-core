@@ -176,6 +176,17 @@ pub struct QuoteParams {
 //                            COMMUNITY
 // *************************************************************************
 
+///**
+// * @notice A struct containing the parameters representing a community
+// *
+// * @param community_id The id of the community
+// * @param community_owner profile address that owns the community
+// * @param community_metadata_uri metatadata uri of the community
+// * @param community_nft_address nft to mint to members of the community
+// * @param community_total_members total members in the community
+// * @param community_premium_status indicates if a community has upgraded
+// * @param community_type type of community upgrade, defaults to none
+// */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityDetails {
     pub community_id: u256,
@@ -187,13 +198,13 @@ pub struct CommunityDetails {
     pub community_type: CommunityType
 }
 
-// /**
-// * @notice A struct containing the parameters required for the `join_community()` function.
+///**
+// * @notice A struct representing details of a community member
 // *
-// * @param profile_address The address of the profile of the community member.
-// * @param community_id The id of the community he join.
-// * @param total_publications The toal publication of the member in the community.
-// * @param community_token_id The community token ID of the member.
+// * @param profile_address The address of community member
+// * @param community_id The id of the community he belongs to
+// * @param total_publications The toal publications of the community member
+// * @param community_token_id community nft minted to the member
 // */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityMember {
@@ -203,7 +214,14 @@ pub struct CommunityMember {
     pub community_token_id: u256,
 }
 
-
+///**
+// * @notice A struct representing details of a community gatekeep
+// *
+// * @param community_id The id of the community he belongs to
+// * @param gate_keep_type The type of gatekeep
+// * @param gatekeep_nft_address nft address used if nft_gated
+// * @param paid_gating_details details of payment if payment gated
+// */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone)]
 pub struct CommunityGateKeepDetails {
     pub community_id: u256,
@@ -212,6 +230,14 @@ pub struct CommunityGateKeepDetails {
     pub paid_gating_details: (ContractAddress, u256)
 }
 
+///**
+// * @notice An enum representing different gatekeep types
+// *
+// * @param None no gating
+// * @param NFTGating member must posess a required NFT to join
+// * @param permissionedGating only a permissioned list of profiles can join
+// * @param PaidGating profile must pay to join
+// */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 pub enum GateKeepType {
     None,
@@ -220,7 +246,13 @@ pub enum GateKeepType {
     PaidGating,
 }
 
-
+///**
+// * @notice An enum representing different community types
+// *
+// * @param Free default for communities
+// * @param Standard second-tier upgrade
+// * @param Business top-tier upgrade
+// */
 #[derive(Debug, Drop, Serde, starknet::Store, Clone, PartialEq)]
 pub enum CommunityType {
     Free,
@@ -232,6 +264,17 @@ pub enum CommunityType {
 //                            CHANNEL
 // *************************************************************************
 
+///**
+// * @notice A struct containing the parameters representing a community
+// *
+// * @param channel_id id of the channel
+// * @param community_id The id of the community the channel belongs to
+// * @param channel_owner profile address that owns the channel
+// * @param channel_metadata_uri metatadata uri of the channel
+// * @param channel_nft_address nft to mint to members of the channel
+// * @param channel_total_members total members in the channel
+// * @param channel_censorship indicates if a channel censors publications
+// */
 #[derive(Drop, Serde, Clone, starknet::Store)]
 pub struct ChannelDetails {
     pub channel_id: u256,
@@ -243,7 +286,14 @@ pub struct ChannelDetails {
     pub channel_censorship: bool,
 }
 
-
+///**
+// * @notice A struct representing details of a channel member
+// *
+// * @param profile_address The address of channel member
+// * @param channel_id The id of the channel he belongs to
+// * @param total_publications The toal publications of the channel member
+// * @param channel_token_id channel nft minted to the member
+// */
 #[derive(Drop, Serde, Clone, starknet::Store)]
 pub struct ChannelMember {
     pub profile: ContractAddress,
@@ -257,6 +307,20 @@ pub struct ChannelMember {
 //                            JOLT
 // *************************************************************************
 
+///**
+// * @notice A struct containing the parameters representing a jolt
+// *
+// * @param jolt_id id of the jolt
+// * @param jolt_type The type of jolt (tip, transfer, request, subscription)
+// * @param sender the profile jolting
+// * @param recipient the profile being jolted
+// * @param memo additional description
+// * @param amount amount being jolted
+// * @param status status of the jolt
+// * @param expiration_stamp time when jolt expires (useful for requests)
+// * @param block_timestamp time when jolting happened
+// * @param erc20_contract_address currency being jolted in
+// */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct JoltData {
     pub jolt_id: u256,
@@ -271,6 +335,17 @@ pub struct JoltData {
     pub erc20_contract_address: ContractAddress
 }
 
+///**
+// * @notice A struct containing the parameters representing a jolt
+// *
+// * @param jolt_type The type of jolt (tip, transfer, request, subscription)
+// * @param recipient the profile being jolted
+// * @param memo additional description
+// * @param amount amount being jolted
+// * @param expiration_stamp time when jolt expires (useful for requests)
+// * @param subscription_details details of subscription (if type is subscription)
+// * @param erc20_contract_address currency being jolted in
+// */
 #[derive(Drop, Serde)]
 pub struct JoltParams {
     pub jolt_type: JoltType,
@@ -278,10 +353,20 @@ pub struct JoltParams {
     pub memo: ByteArray,
     pub amount: u256,
     pub expiration_stamp: u64,
-    pub subscription_details: (u256, bool, u256), //subscription_id, renewal_status, renewal_iterations
+    pub subscription_details: (
+        u256, bool, u256
+    ), //subscription_id, renewal_status, renewal_iterations
     pub erc20_contract_address: ContractAddress,
 }
 
+///**
+// * @notice A struct representing details of a subscription item
+// *
+// * @param creator The address who created the subscription item
+// * @param fee_address The address to send revenues from subscriptions
+// * @param amount subscription amount
+// * @param erc20_contract_address accepted currency for subscription
+// */
 #[derive(Drop, Serde, starknet::Store)]
 pub struct SubscriptionData {
     pub creator: ContractAddress,
@@ -290,6 +375,14 @@ pub struct SubscriptionData {
     pub erc20_contract_address: ContractAddress
 }
 
+///**
+// * @notice An enum representing different jolt types
+// *
+// * @param Tip used for tipping users
+// * @param Transfer used for transferring to other users
+// * @param Subscription used for subscriptions
+// * @param Request used for requests
+// */
 #[derive(Drop, Serde, starknet::Store, PartialEq)]
 pub enum JoltType {
     Tip,
@@ -298,6 +391,15 @@ pub enum JoltType {
     Request
 }
 
+///**
+// * @notice An enum representing different jolt statuses
+// *
+// * @param PENDING when a jolt is pending (usually in request scenarios)
+// * @param SUCCESSFUL when a jolt is completed
+// * @param EXPIRED when a jolt is expired (usually in request scenarios)
+// * @param REJECTED when a jolt was rejected
+// * @param FAILED when a jolt txn fails
+// */
 #[derive(Drop, Serde, starknet::Store, PartialEq)]
 pub enum JoltStatus {
     PENDING,

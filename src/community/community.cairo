@@ -16,18 +16,17 @@ pub mod CommunityComponent {
     use openzeppelin::access::ownable::OwnableComponent;
 
     use karst::jolt::jolt::JoltComponent;
-    use karst::interfaces::{ 
-        ICommunity::ICommunity, 
-        IJolt::IJolt,
-        IERC721::{IERC721Dispatcher, IERC721DispatcherTrait},
-        ICommunityNft::{ ICommunityNftDispatcher, ICommunityNftDispatcherTrait }
+    use karst::interfaces::{
+        ICommunity::ICommunity, IJolt::IJolt, IERC721::{IERC721Dispatcher, IERC721DispatcherTrait},
+        ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
     };
     use karst::base::constants::types::{
-        CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails, JoltParams, JoltType
+        CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails,
+        JoltParams, JoltType
     };
     use karst::base::constants::errors::Errors::{
-        ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_COMMUNITY_MEMBER, NOT_COMMUNITY_MOD, BANNED_MEMBER, UNAUTHORIZED,
-        ONLY_PREMIUM_COMMUNITIES, INVALID_LENGTH
+        ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_COMMUNITY_MEMBER, NOT_COMMUNITY_MOD, BANNED_MEMBER,
+        UNAUTHORIZED, ONLY_PREMIUM_COMMUNITIES, INVALID_LENGTH
     };
 
     // *************************************************************************
@@ -151,16 +150,14 @@ pub mod CommunityComponent {
     // *************************************************************************
     #[embeddable_as(KarstCommunity)]
     impl CommunityImpl<
-        TContractState, 
+        TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
         impl Jolt: JoltComponent::HasComponent<TContractState>,
         impl Ownable: OwnableComponent::HasComponent<TContractState>
     > of ICommunity<ComponentState<TContractState>> {
         /// @notice creates a new community
-        fn create_community(
-            ref self: ComponentState<TContractState>
-        ) -> u256 {
+        fn create_community(ref self: ComponentState<TContractState>) -> u256 {
             let community_owner = get_caller_address();
             let community_nft_classhash = self.community_nft_classhash.read();
             let community_id = self.community_counter.read() + 1;
@@ -172,10 +169,7 @@ pub mod CommunityComponent {
                 );
 
             // create community nft
-            self
-                ._create_community(
-                    community_owner, community_nft_address, community_id
-                );
+            self._create_community(community_owner, community_nft_address, community_id);
 
             community_id
         }
@@ -288,7 +282,11 @@ pub mod CommunityComponent {
 
         /// @notice sets the fee address which receives community-related payments
         /// @param _fee_address address to be set
-        fn set_community_fee_address(ref self: ComponentState<TContractState>, community_id: u256, _fee_address: ContractAddress) {
+        fn set_community_fee_address(
+            ref self: ComponentState<TContractState>,
+            community_id: u256,
+            _fee_address: ContractAddress
+        ) {
             let community_owner = self.community_owner.read(community_id);
             assert(get_caller_address() == community_owner, UNAUTHORIZED);
             self.fee_address.write(community_id, _fee_address);
@@ -309,13 +307,10 @@ pub mod CommunityComponent {
             let community_owner = self.communities.read(community_id).community_owner;
             assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
 
-            self._upgrade_community(
-                community_id, 
-                upgrade_type,
-                subscription_id,
-                renewal_status,
-                renewal_iterations
-            );
+            self
+                ._upgrade_community(
+                    community_id, upgrade_type, subscription_id, renewal_status, renewal_iterations
+                );
         }
 
         /// @notice set the gatekeep rules for a community
@@ -441,7 +436,9 @@ pub mod CommunityComponent {
         /// @notice gets the fee address
         /// @param community_id id of community to get fee address for
         /// @returns the fee address for a community
-        fn get_community_fee_address(self: @ComponentState<TContractState>, community_id: u256) -> ContractAddress {
+        fn get_community_fee_address(
+            self: @ComponentState<TContractState>, community_id: u256
+        ) -> ContractAddress {
             self.fee_address.read(community_id)
         }
 
@@ -638,7 +635,8 @@ pub mod CommunityComponent {
             let community = self.communities.read(community_id);
 
             // jolt subscription
-            let subscription_data = get_dep_component!(@self, Jolt).get_subscription_data(subscription_id);
+            let subscription_data = get_dep_component!(@self, Jolt)
+                .get_subscription_data(subscription_id);
 
             let jolt_params = JoltParams {
                 jolt_type: JoltType::Subscription,
@@ -696,25 +694,26 @@ pub mod CommunityComponent {
         /// @param profile profile joining the community
         /// @param community_id id of community to enforce gatekeeping
         fn _enforce_gatekeeping(
-            ref self: ComponentState<TContractState>,
-            profile: ContractAddress,
-            community_id: u256
+            ref self: ComponentState<TContractState>, profile: ContractAddress, community_id: u256
         ) {
             // get gatekeeping details
             let (_, gatekeep_details) = self.is_gatekeeped(community_id);
 
             match gatekeep_details.gate_keep_type {
-                GateKeepType::None => {
-                    return;
-                },
+                GateKeepType::None => { return; },
                 // enforce nft gatekeeping
                 GateKeepType::NFTGating => {
-                    let balance = IERC721Dispatcher { contract_address: gatekeep_details.gatekeep_nft_address }.balance_of(profile);
+                    let balance = IERC721Dispatcher {
+                        contract_address: gatekeep_details.gatekeep_nft_address
+                    }
+                        .balance_of(profile);
                     assert(balance.is_non_zero(), UNAUTHORIZED);
                 },
                 // enforce permissioned gatekeeping
                 GateKeepType::PermissionedGating => {
-                    let is_permissioned = self.gate_keep_permissioned_addresses.read((community_id, profile));
+                    let is_permissioned = self
+                        .gate_keep_permissioned_addresses
+                        .read((community_id, profile));
                     assert(is_permissioned, UNAUTHORIZED);
                 },
                 // enforce paid gatekeeping
@@ -736,7 +735,7 @@ pub mod CommunityComponent {
                     let mut jolt_comp = get_dep_component_mut!(ref self, Jolt);
                     jolt_comp.jolt(jolt_params);
                 }
-            } 
+            }
         }
 
         /// @notice internal function for add community mod
