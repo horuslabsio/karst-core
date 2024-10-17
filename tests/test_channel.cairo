@@ -327,6 +327,9 @@ fn test_leave_channel_emits_event() {
 
     let mut spy = spy_events();
     start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    let (_, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    let channel_token_id = channel_member.channel_token_id;
     dispatcher.leave_channel(channel_id);
     let (is_member, channel_member) = dispatcher
         .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
@@ -340,7 +343,7 @@ fn test_leave_channel_emits_event() {
                             channel_id: channel_id,
                             transaction_executor: USER_TWO.try_into().unwrap(),
                             profile: USER_TWO.try_into().unwrap(),
-                            token_id: channel_member.channel_token_id,
+                            token_id: channel_token_id,
                             block_timestamp: get_block_timestamp(),
                         }
                     )
