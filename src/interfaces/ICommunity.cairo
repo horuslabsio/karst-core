@@ -12,7 +12,7 @@ pub trait ICommunity<TState> {
     // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************
-    fn create_comminuty(ref self: TState, community_type: CommunityType) -> u256;
+    fn create_community(ref self: TState) -> u256;
     fn join_community(ref self: TState, community_id: u256);
     fn leave_community(ref self: TState, community_id: u256);
     fn set_community_metadata_uri(ref self: TState, community_id: u256, metadata_uri: ByteArray);
@@ -26,14 +26,27 @@ pub trait ICommunity<TState> {
         profiles: Array<ContractAddress>,
         ban_statuses: Array<bool>
     );
-    fn upgrade_community(ref self: TState, community_id: u256, upgrade_type: CommunityType);
+    fn set_community_fee_address(
+        ref self: TState, community_id: u256, _fee_address: ContractAddress
+    );
+    fn set_community_censorship_status(
+        ref self: TState, community_id: u256, censorship_status: bool
+    );
+    fn upgrade_community(
+        ref self: TState,
+        community_id: u256,
+        upgrade_type: CommunityType,
+        subscription_id: u256,
+        renewal_status: bool,
+        renewal_iterations: u256
+    );
     fn gatekeep(
         ref self: TState,
         community_id: u256,
         gate_keep_type: GateKeepType,
         nft_contract_address: ContractAddress,
         permissioned_addresses: Array<ContractAddress>,
-        entry_fee: u256
+        paid_gating_details: (ContractAddress, u256),
     );
 
     // *************************************************************************
@@ -46,7 +59,9 @@ pub trait ICommunity<TState> {
     ) -> (bool, CommunityMember);
     fn get_total_members(self: @TState, community_id: u256) -> u256;
     fn is_community_mod(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
+    fn get_community_censorship_status(self: @TState, community_id: u256) -> bool;
     fn get_ban_status(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
+    fn get_community_fee_address(self: @TState, community_id: u256) -> ContractAddress;
     fn is_premium_community(self: @TState, community_id: u256) -> (bool, CommunityType);
     fn is_gatekeeped(self: @TState, community_id: u256) -> (bool, CommunityGateKeepDetails);
 }

@@ -1,5 +1,5 @@
-#[starknet::contract]
-pub mod Jolt {
+#[starknet::component]
+pub mod JoltComponent {
     // *************************************************************************
     //                            IMPORTS
     // *************************************************************************
@@ -7,8 +7,7 @@ pub mod Jolt {
     use core::hash::HashStateTrait;
     use core::pedersen::PedersenTrait;
     use starknet::{
-        ContractAddress, ClassHash, get_caller_address, get_contract_address, get_block_timestamp,
-        get_tx_info,
+        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp, get_tx_info,
         storage::{
             StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
             StorageMapWriteAccess
@@ -16,40 +15,23 @@ pub mod Jolt {
     };
     use karst::base::{
         constants::errors::Errors,
-        constants::types::{JoltData, JoltParams, JoltType, JoltStatus, RenewalData}
+        constants::types::{JoltData, JoltParams, JoltType, JoltStatus, SubscriptionData}
     };
     use karst::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
 
     use openzeppelin::access::ownable::OwnableComponent;
-    use openzeppelin::upgrades::UpgradeableComponent;
-    use openzeppelin::upgrades::interface::IUpgradeable;
-
-    // *************************************************************************
-    //                            COMPONENTS
-    // *************************************************************************
-    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
-    component!(path: UpgradeableComponent, storage: upgradeable, event: UpgradeableEvent);
-
-    // Ownable
-    #[abi(embed_v0)]
-    impl OwnableMixinImpl = OwnableComponent::OwnableMixinImpl<ContractState>;
-    impl OwnableInternalImpl = OwnableComponent::InternalImpl<ContractState>;
-
-    // Upgradeable
-    impl UpgradeableInternalImpl = UpgradeableComponent::InternalImpl<ContractState>;
+    use openzeppelin::access::ownable::OwnableComponent::{OwnableMixinImpl, InternalImpl};
 
     // *************************************************************************
     //                            STORAGE
     // *************************************************************************
     #[storage]
-    struct Storage {
-        #[substorage(v0)]
-        ownable: OwnableComponent::Storage,
-        #[substorage(v0)]
-        upgradeable: UpgradeableComponent::Storage,
-        fee_address: ContractAddress,
+    pub struct Storage {
         jolt: Map::<u256, JoltData>,
-        renewals: Map::<(ContractAddress, u256), RenewalData>,
+        jolt_fee_address: ContractAddress,
+        subscriptions: Map::<u256, SubscriptionData>,
+        renewal_iterations: Map::<(ContractAddress, u256), u256>,
+        whitelisted_renewers: Map::<ContractAddress, bool>
     }
 
     // *************************************************************************
@@ -58,10 +40,6 @@ pub mod Jolt {
     #[event]
     #[derive(Drop, starknet::Event)]
     pub enum Event {
-        #[flat]
-        OwnableEvent: OwnableComponent::Event,
-        #[flat]
-        UpgradeableEvent: UpgradeableComponent::Event,
         Jolted: Jolted,
         JoltRequested: JoltRequested,
         JoltRequestFullfilled: JoltRequestFullfilled,
@@ -98,23 +76,21 @@ pub mod Jolt {
 
     const MAX_TIP: u256 = 1000;
 
-    // *************************************************************************
-    //                            CONSTRUCTOR
-    // *************************************************************************
-    #[constructor]
-    fn constructor(ref self: ContractState, owner: ContractAddress) {
-        self.ownable.initializer(owner);
-    }
-
-    #[abi(embed_v0)]
-    impl JoltImpl of IJolt<ContractState> {
+    #[embeddable_as(Jolt)]
+    impl JoltImpl<
+        TContractState,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
+    > of IJolt<ComponentState<TContractState>> {
         // *************************************************************************
         //                              EXTERNALS
         // *************************************************************************
 
         /// @notice multi-faceted transfer logic
         /// @param jolt_params required jolting parameters
-        fn jolt(ref self: ContractState, jolt_params: JoltParams) -> u256 {
+        /// TODO: updating subscriptions, tracking auto renewals
+        fn jolt(ref self: ComponentState<TContractState>, jolt_params: JoltParams) -> u256 {
             let sender = get_caller_address();
             let tx_info = get_tx_info().unbox();
             let tx_timestamp = get_block_timestamp();
@@ -159,12 +135,15 @@ pub mod Jolt {
                     jolt_status = _jolt_status;
                 },
                 JoltType::Subscription => {
+                    let (sub_id, renewal_status, renewal_iterations) = jolt_params
+                        .subscription_details;
                     let _jolt_status = self
                         ._subscribe(
                             jolt_id,
+                            sub_id,
                             sender,
-                            jolt_params.amount,
-                            jolt_params.auto_renewal,
+                            renewal_status,
+                            renewal_iterations,
                             erc20_contract_address
                         );
                     jolt_status = _jolt_status;
@@ -203,7 +182,7 @@ pub mod Jolt {
 
         /// @notice fulfills a pending jolt request
         /// @param jolt_id id of jolt request to be fulfilled
-        fn fulfill_request(ref self: ContractState, jolt_id: u256) -> bool {
+        fn fulfill_request(ref self: ComponentState<TContractState>, jolt_id: u256) -> bool {
             // get jolt details
             let mut jolt_details = self.jolt.read(jolt_id);
             let sender = get_caller_address();
@@ -226,17 +205,76 @@ pub mod Jolt {
 
         /// @notice contains logic for auto renewal of subscriptions
         /// @dev can be automated using cron jobs in a backend service
-        /// @param jolt_id id of jolt subscription to auto-renew
-        fn auto_renew(ref self: ContractState, profile: ContractAddress, jolt_id: u256) -> bool {
-            self._auto_renew(profile, jolt_id)
+        /// @param sub_id id of jolt subscription to auto-renew
+        fn auto_renew(
+            ref self: ComponentState<TContractState>, profile: ContractAddress, sub_id: u256
+        ) -> bool {
+            let is_whitelisted_renewer = self.is_whitelisted_renewer(get_caller_address());
+            assert(is_whitelisted_renewer, Errors::UNAUTHORIZED);
+            self._auto_renew(profile, sub_id)
+        }
+
+        /// @notice creates a new subscription item which can be subscribed to
+        /// @param fee_address address to send subscription fees to
+        /// @param amount amount to be paid for subscription
+        /// @param erc20_contract_addrress token to receive subscription in
+        fn create_subscription(
+            ref self: ComponentState<TContractState>,
+            fee_address: ContractAddress,
+            amount: u256,
+            erc20_contract_address: ContractAddress
+        ) -> u256 {
+            let caller = get_caller_address();
+            let tx_info = get_tx_info().unbox();
+
+            let subscription_data = SubscriptionData {
+                creator: caller,
+                fee_address: fee_address,
+                amount: amount,
+                erc20_contract_address: erc20_contract_address
+            };
+
+            let mut sub_id = PedersenTrait::new(0)
+                .update(fee_address.into())
+                .update(amount.low.into())
+                .update(amount.high.into())
+                .update(tx_info.nonce)
+                .update(4)
+                .finalize();
+            let sub_id = sub_id.try_into().unwrap();
+
+            // update storage
+            self.subscriptions.write(sub_id, subscription_data);
+
+            sub_id
         }
 
         /// @notice sets the fee address which receives subscription payments and maybe actual fees
         /// in the future?
         /// @param _fee_address address to be set
-        fn set_fee_address(ref self: ContractState, _fee_address: ContractAddress) {
-            self.ownable.assert_only_owner();
-            self.fee_address.write(_fee_address);
+        fn set_fee_address(
+            ref self: ComponentState<TContractState>, _fee_address: ContractAddress
+        ) {
+            get_dep_component!(@self, Ownable).assert_only_owner();
+            self.jolt_fee_address.write(_fee_address);
+        }
+
+        /// @notice sets an array of addresses as whitelisted renewers
+        /// @param renewers addresses to be whitelisted
+        fn set_whitelisted_renewers(
+            ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>
+        ) {
+            get_dep_component!(@self, Ownable).assert_only_owner();
+            self._set_whitelisted_renewers_status(renewers, true);
+        }
+
+        /// @notice removes an array of addresses from whitelisted renewers
+        /// @param renewers addresses to be removed from whitelist
+        fn remove_whitelisted_renewers(
+            ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>
+        ) {
+            get_dep_component!(@self, Ownable).assert_only_owner();
+            self._set_whitelisted_renewers_status(renewers, false);
         }
 
         // *************************************************************************
@@ -246,36 +284,40 @@ pub mod Jolt {
         /// @notice gets the associated data for a jolt id
         /// @param jolt_id id of jolt who's data is to be gotten
         /// @returns JoltData struct containing jolt details
-        fn get_jolt(self: @ContractState, jolt_id: u256) -> JoltData {
+        fn get_jolt(self: @ComponentState<TContractState>, jolt_id: u256) -> JoltData {
             self.jolt.read(jolt_id)
         }
 
-        /// @notice gets the renewal data for a particular jolt id
-        /// @param jolt_id id of jolt who's renewal data is to be gotten
-        /// @returns RenewalData struct containing jolt renewal details
-        fn get_renewal_data(
-            self: @ContractState, profile: ContractAddress, jolt_id: u256
-        ) -> RenewalData {
-            self.renewals.read((profile, jolt_id))
+        /// @notice gets the subscription data for a particular subscription
+        /// @param subscription_id id of subscription to be retrieved
+        /// @returns SubscriptionData struct containing subscription details
+        fn get_subscription_data(
+            self: @ComponentState<TContractState>, subscription_id: u256
+        ) -> SubscriptionData {
+            self.subscriptions.read(subscription_id)
+        }
+
+        /// @notice gets the subscription data for a particular subscription
+        /// @param subscription_id id of subscription to be retrieved
+        /// @returns SubscriptionData struct containing subscription details
+        fn get_renewal_iterations(
+            self: @ComponentState<TContractState>, profile: ContractAddress, subscription_id: u256
+        ) -> u256 {
+            self.renewal_iterations.read((profile, subscription_id))
         }
 
         /// @notice gets the fee address
         /// @returns the fee address for contract
-        fn get_fee_address(self: @ContractState) -> ContractAddress {
-            self.fee_address.read()
+        fn get_fee_address(self: @ComponentState<TContractState>) -> ContractAddress {
+            self.jolt_fee_address.read()
         }
-    }
 
-    // *************************************************************************
-    //                            UPGRADEABLE IMPL
-    // *************************************************************************
-    #[abi(embed_v0)]
-    impl UpgradeableImpl of IUpgradeable<ContractState> {
-        /// @notice upgrades the contract
-        /// @param new_class_hash the class hash to upgrade to
-        fn upgrade(ref self: ContractState, new_class_hash: ClassHash) {
-            self.ownable.assert_only_owner();
-            self.upgradeable.upgrade(new_class_hash);
+        /// @notice checks if an address is a whitelisted renewer
+        /// @returns bool (true/false) depending on if address is a whitelisted renewer
+        fn is_whitelisted_renewer(
+            self: @ComponentState<TContractState>, renewer: ContractAddress
+        ) -> bool {
+            self.whitelisted_renewers.read(renewer)
         }
     }
 
@@ -283,7 +325,19 @@ pub mod Jolt {
     //                              PRIVATE FUNCTIONS
     // *************************************************************************
     #[generate_trait]
-    impl Private of PrivateTrait {
+    pub impl Private<
+        TContractState,
+        +HasComponent<TContractState>,
+        +Drop<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>
+    > of PrivateTrait<TContractState> {
+        /// @notice initializes the jolt component
+        /// @param owner owner/admin
+        fn _initializer(ref self: ComponentState<TContractState>, owner: ContractAddress) {
+            let mut ownable_comp = get_dep_component_mut!(ref self, Ownable);
+            ownable_comp.initializer(owner);
+        }
+
         /// @notice contains the tipping logic
         /// @param jolt_id id of txn
         /// @param sender the profile performing the tipping
@@ -292,7 +346,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used in tipping
         /// @returns JoltStatus status of the txn
         fn _tip(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -330,7 +384,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _transfer(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -362,40 +416,43 @@ pub mod Jolt {
 
         /// @notice contains the subscription logic
         /// @param jolt_id id of txn
+        /// @param sub_id subscription id
         /// @param sender the profile performing the subscription
         /// @param amount the amount to pay
-        /// @param auto_renewal a tuple containing renewal status and renewal_iterations
+        /// @param renewal_status status of renewal
+        /// @param renewal_iterations no. of times to auto renew
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _subscribe(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
+            sub_id: u256,
             sender: ContractAddress,
-            amount: u256,
-            auto_renewal: (bool, u256),
+            renewal_status: bool,
+            renewal_iterations: u256,
             erc20_contract_address: ContractAddress
         ) -> JoltStatus {
-            let (renewal_status, renewal_iterations) = auto_renewal;
             let dispatcher = IERC20Dispatcher { contract_address: erc20_contract_address };
             let this_contract = get_contract_address();
 
             if (renewal_status == true) {
                 // check allowances match auto-renew iterations
                 let allowance = dispatcher.allowance(sender, this_contract);
+                let amount = self.subscriptions.read(sub_id).amount;
                 assert(allowance >= renewal_iterations * amount, Errors::INSUFFICIENT_ALLOWANCE);
 
-                // write renewal details to storage
-                let renewal_data = RenewalData {
-                    renewal_iterations: renewal_iterations,
-                    renewal_amount: amount,
-                    erc20_contract_address
-                };
-                self.renewals.write((sender, jolt_id), renewal_data);
+                self.renewal_iterations.write((sender, sub_id), renewal_iterations);
             }
 
             // send subscription amount to fee address
-            let fee_address = self.fee_address.read();
-            self._transfer_helper(erc20_contract_address, sender, fee_address, amount);
+            let subscription_data = self.subscriptions.read(sub_id);
+            self
+                ._transfer_helper(
+                    erc20_contract_address,
+                    sender,
+                    subscription_data.fee_address,
+                    subscription_data.amount
+                );
 
             // emit event
             self
@@ -404,7 +461,7 @@ pub mod Jolt {
                         jolt_id,
                         jolt_type: 'SUBSCRIPTION',
                         sender,
-                        recipient: fee_address,
+                        recipient: subscription_data.fee_address,
                         block_timestamp: get_block_timestamp(),
                     }
                 );
@@ -422,7 +479,7 @@ pub mod Jolt {
         /// @param erc20_contract_address the address of token used
         /// @returns JoltStatus status of the txn
         fn _request(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             jolt_id: u256,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -458,7 +515,10 @@ pub mod Jolt {
         /// @param jolt_details details of the jolt to be fulfilled
         /// @returns bool status of the txn
         fn _fulfill_request(
-            ref self: ContractState, jolt_id: u256, sender: ContractAddress, jolt_details: JoltData
+            ref self: ComponentState<TContractState>,
+            jolt_id: u256,
+            sender: ContractAddress,
+            jolt_details: JoltData
         ) -> bool {
             // transfer request amount
             self
@@ -491,22 +551,22 @@ pub mod Jolt {
 
         /// @notice internal logic to auto renew a subscription
         /// @param sender the profile renewing a subscription
-        /// @param renewal_id id jolt to be renewed
+        /// @param sub_id id of sub to be renewed
         /// @returns bool status of the txn
-        fn _auto_renew(ref self: ContractState, sender: ContractAddress, renewal_id: u256) -> bool {
+        fn _auto_renew(
+            ref self: ComponentState<TContractState>, sender: ContractAddress, sub_id: u256
+        ) -> bool {
             let tx_info = get_tx_info().unbox();
-            let amount = self.renewals.read((sender, renewal_id)).renewal_amount;
-            let iteration = self.renewals.read((sender, renewal_id)).renewal_iterations;
-            let erc20_contract_address = self
-                .renewals
-                .read((sender, renewal_id))
-                .erc20_contract_address;
+            let subscription_data = self.subscriptions.read(sub_id);
+            let iterations = self.renewal_iterations.read((sender, sub_id));
 
             // check iteration is greater than 0 else shouldn't auto renew
-            assert(iteration > 0, Errors::AUTO_RENEW_DURATION_ENDED);
+            assert(iterations > 0, Errors::AUTO_RENEW_DURATION_ENDED);
 
             // send subscription amount to fee address
-            let fee_address = self.fee_address.read();
+            let amount = subscription_data.amount;
+            let fee_address = subscription_data.fee_address;
+            let erc20_contract_address = subscription_data.erc20_contract_address;
             self._transfer_helper(erc20_contract_address, sender, fee_address, amount);
 
             // generate jolt_id
@@ -521,10 +581,7 @@ pub mod Jolt {
             let jolt_id: u256 = jolt_hash.try_into().unwrap();
 
             // reduce iteration by one month
-            let renewal_data = RenewalData {
-                renewal_iterations: iteration - 1, renewal_amount: amount, erc20_contract_address
-            };
-            self.renewals.write((sender, renewal_id), renewal_data);
+            self.renewal_iterations.write((sender, sub_id), iterations - 1);
 
             // prefill tx data
             let jolt_data = JoltData {
@@ -565,7 +622,7 @@ pub mod Jolt {
         /// @param recipient profile receiving the token
         /// @param amount amount to be transferred
         fn _transfer_helper(
-            ref self: ContractState,
+            ref self: ComponentState<TContractState>,
             erc20_contract_address: ContractAddress,
             sender: ContractAddress,
             recipient: ContractAddress,
@@ -579,6 +636,22 @@ pub mod Jolt {
 
             // transfer to recipient
             dispatcher.transfer_from(sender, recipient, amount);
+        }
+
+        /// @notice internal logic to set/remove whitelisted renewers
+        /// @param renewers addresses to whitelist
+        /// @param status (true/false) indicating to add or remove
+        fn _set_whitelisted_renewers_status(
+            ref self: ComponentState<TContractState>, renewers: Array<ContractAddress>, status: bool
+        ) {
+            let length = renewers.len();
+            let mut index: u32 = 0;
+
+            while index < length {
+                self.whitelisted_renewers.write(*renewers.at(index), status);
+
+                index += 1;
+            };
         }
     }
 }

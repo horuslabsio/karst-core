@@ -120,6 +120,7 @@ pub mod Handles {
         /// @notice mints a handle to a profile address
         /// @param address profile address to mint handle to
         /// @param local_name username to be minted
+        /// TODO: gate function? so only caller_address can mint
         fn mint_handle(
             ref self: ContractState, address: ContractAddress, local_name: felt252,
         ) -> u256 {
