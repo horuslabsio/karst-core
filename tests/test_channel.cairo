@@ -190,6 +190,78 @@ fn test_profile_can_join_channel() {
     assert(channel_member.total_publications == 0, 'Invalid Total Publication');
     assert(channel_member.channel_token_id != 0, 'Invalid nft mint token ');
 }
+
+// let's add an additional test to check that when a profile joins a channel, the channel NFT is
+// minted to him
+#[test]
+fn test_channel_nft_minted_to_profile() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+
+    // create a community
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    stop_cheat_caller_address(channel_contract_address);
+
+    // create a channel
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // join the community
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // join the channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // check that nft is minted to the profile
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    assert(channel_member.channel_token_id != 0, 'Invalid nft mint token ');
+}
+
+// add an extra test to check that when the profile leaves the channel, his channel nft is burnt
+#[test]
+fn test_channel_nft_burn_on_leaving_channel() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+
+    // create a community
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    stop_cheat_caller_address(channel_contract_address);
+
+    // create a channel
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // join the community
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // join the channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // leave the channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    assert(channel_member.channel_token_id == 0, 'nft is burned ');
+}
+
+
 #[test]
 #[should_panic(expected: ('Karst: already a Member',))]
 fn test_should_panic_if_a_user_joins_one_channel_twice() {
@@ -694,7 +766,7 @@ fn test_only_owner_can_remove_channel_mod() {
 
 #[test]
 #[should_panic(expected: ('Karst: not channel moderator',))]
-fn test_should_panic_if_not_mod_is_removed() {
+fn test_should_panic_if_profile_to_be_removed_is_not_mod() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
     start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
@@ -1099,3 +1171,20 @@ fn test_joining_channel_total_members() {
     assert(total_members == 5, 'invalid total members');
 }
 
+// add an extra test to check that the channel to be left has members in the first place else it
+// panics
+#[test]
+#[should_panic(expected: ('Karst: channel has no members',))]
+fn test_channel_have_members_before_leaving() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+}
