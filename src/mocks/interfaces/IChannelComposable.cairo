@@ -47,7 +47,7 @@ pub trait IChannelComposable<TState> {
     // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************
-    fn create_comminuty(ref self: TState, community_type: CommunityType) -> u256;
+    fn create_community(ref self: TState) -> u256;
     fn join_community(ref self: TState, community_id: u256);
     fn leave_community(ref self: TState, community_id: u256);
     fn set_community_metadata_uri(ref self: TState, community_id: u256, metadata_uri: ByteArray);

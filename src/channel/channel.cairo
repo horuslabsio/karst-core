@@ -39,7 +39,7 @@ pub mod ChannelComponent {
         channel_members: Map<(u256, ContractAddress), ChannelMember>,
         channel_moderators: Map<(u256, ContractAddress), bool>,
         channel_nft_classhash: ClassHash,
-        ban_status: Map<(u256, ContractAddress), bool>,
+        channel_ban_status: Map<(u256, ContractAddress), bool>,
     }
 
     // *************************************************************************
@@ -143,6 +143,11 @@ pub mod ChannelComponent {
                 ._deploy_channel_nft(
                     channel_id, channel_nft_classhash, channel_id.try_into().unwrap()
                 ); // use channel_id as salt since its unique
+
+            // check that caller is a member of the community
+            let (membership_status, _) = community_instance
+                .is_community_member(channel_owner, community_id);
+            assert(membership_status, NOT_COMMUNITY_MEMBER);
 
             let new_channel = ChannelDetails {
                 channel_id: channel_id,
@@ -393,7 +398,7 @@ pub mod ChannelComponent {
         fn get_channel_ban_status(
             self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) -> bool {
-            self.ban_status.read((channel_id, profile))
+            self.channel_ban_status.read((channel_id, profile))
         }
     }
 
@@ -546,13 +551,13 @@ pub mod ChannelComponent {
 
                 // check profile is a channel member
                 let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
-                assert(is_channel_member == true, NOT_COMMUNITY_MEMBER);
+                assert(is_channel_member == true, NOT_CHANNEL_MEMBER);
 
                 // update storage
                 // let channel_member = self.channel_members.read((channel_id, profile));
                 // let updated_member = ChannelMember { ban_status: ban_status, ..channel_member };
                 // self.channel_members.write((channel_id, profile), updated_member);
-                self.ban_status.write((channel_id, profile), ban_status);
+                self.channel_ban_status.write((channel_id, profile), ban_status);
                 // emit event
                 self
                     .emit(
