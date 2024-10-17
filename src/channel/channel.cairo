@@ -39,6 +39,7 @@ pub mod ChannelComponent {
         channel_members: Map<(u256, ContractAddress), ChannelMember>,
         channel_moderators: Map<(u256, ContractAddress), bool>,
         channel_nft_classhash: ClassHash,
+        channel_ban_status: Map<(u256, ContractAddress), bool>,
     }
 
     // *************************************************************************
@@ -58,53 +59,53 @@ pub mod ChannelComponent {
 
     #[derive(Drop, starknet::Event)]
     pub struct ChannelCreated {
-        channel_id: u256,
-        channel_owner: ContractAddress,
-        channel_nft_address: ContractAddress,
-        block_timestamp: u64,
+        pub channel_id: u256,
+        pub channel_owner: ContractAddress,
+        pub channel_nft_address: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct JoinedChannel {
-        channel_id: u256,
-        transaction_executor: ContractAddress,
-        profile: ContractAddress,
-        token_id: u256,
-        block_timestamp: u64,
+        pub channel_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub profile: ContractAddress,
+        pub token_id: u256,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct LeftChannel {
-        channel_id: u256,
-        transaction_executor: ContractAddress,
-        profile: ContractAddress,
-        token_id: u256,
-        block_timestamp: u64,
+        pub channel_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub profile: ContractAddress,
+        pub token_id: u256,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct ChannelModAdded {
-        channel_id: u256,
-        transaction_executor: ContractAddress,
-        mod_address: ContractAddress,
-        block_timestamp: u64,
+        pub channel_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub mod_address: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct ChannelModRemoved {
-        channel_id: u256,
-        transaction_executor: ContractAddress,
-        mod_address: ContractAddress,
-        block_timestamp: u64,
+        pub channel_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub mod_address: ContractAddress,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
     pub struct ChannelBanStatusUpdated {
-        channel_id: u256,
-        transaction_executor: ContractAddress,
-        profile: ContractAddress,
-        ban_status: bool,
-        block_timestamp: u64,
+        pub channel_id: u256,
+        pub transaction_executor: ContractAddress,
+        pub profile: ContractAddress,
+        pub ban_status: bool,
+        pub block_timestamp: u64,
     }
 
     #[derive(Drop, starknet::Event)]
@@ -143,6 +144,11 @@ pub mod ChannelComponent {
                     channel_id, channel_nft_classhash, channel_id.try_into().unwrap()
                 ); // use channel_id as salt since its unique
 
+            // check that caller is a member of the community
+            let (membership_status, _) = community_instance
+                .is_community_member(channel_owner, community_id);
+            assert(membership_status, NOT_COMMUNITY_MEMBER);
+
             let new_channel = ChannelDetails {
                 channel_id: channel_id,
                 community_id: community_id,
@@ -153,11 +159,10 @@ pub mod ChannelComponent {
                 channel_censorship: false,
             };
 
-            // include channel owner as first member
-            self._join_channel(channel_owner, channel_id);
-
             // update storage
             self.channels.write(channel_id, new_channel.clone());
+            // include channel owner as first member
+            self._join_channel(channel_owner, channel_id);
             self.channel_counter.write(channel_id);
 
             // emit event
@@ -182,8 +187,9 @@ pub mod ChannelComponent {
             // check user is not already a channel member and wasn't previously banned
             let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
             let is_banned = self.get_channel_ban_status(profile, channel_id);
-            assert(!is_channel_member, ALREADY_MEMBER);
+
             assert(!is_banned, BANNED_FROM_CHANNEL);
+            assert(!is_channel_member, ALREADY_MEMBER);
 
             // join channel
             self._join_channel(profile, channel_id);
@@ -217,13 +223,11 @@ pub mod ChannelComponent {
                         channel_id: 0,
                         total_publications: 0,
                         channel_token_id: 0,
-                        ban_status: false,
                     }
                 );
 
             channel.channel_total_members -= 1;
             self.channels.write(channel_id, channel);
-
             // emit event
             self
                 .emit(
@@ -362,7 +366,9 @@ pub mod ChannelComponent {
         /// @notice gets the total number of members in a channel
         /// @param channel_id the id of the channel
         /// @return u256 the number of members in a channel
-        fn get_total_members(self: @ComponentState<TContractState>, channel_id: u256) -> u256 {
+        fn get_total_channel_members(
+            self: @ComponentState<TContractState>, channel_id: u256
+        ) -> u256 {
             self.channels.read(channel_id).channel_total_members
         }
 
@@ -392,8 +398,7 @@ pub mod ChannelComponent {
         fn get_channel_ban_status(
             self: @ComponentState<TContractState>, profile: ContractAddress, channel_id: u256
         ) -> bool {
-            let channel_member: ChannelMember = self.channel_members.read((channel_id, profile));
-            channel_member.ban_status
+            self.channel_ban_status.read((channel_id, profile))
         }
     }
 
@@ -438,7 +443,6 @@ pub mod ChannelComponent {
                 channel_id: channel_id,
                 total_publications: 0,
                 channel_token_id: minted_token_id,
-                ban_status: false,
             };
 
             // update storage
@@ -547,13 +551,13 @@ pub mod ChannelComponent {
 
                 // check profile is a channel member
                 let (is_channel_member, _) = self.is_channel_member(profile, channel_id);
-                assert(is_channel_member == true, NOT_COMMUNITY_MEMBER);
+                assert(is_channel_member == true, NOT_CHANNEL_MEMBER);
 
                 // update storage
-                let channel_member = self.channel_members.read((channel_id, profile));
-                let updated_member = ChannelMember { ban_status: ban_status, ..channel_member };
-                self.channel_members.write((channel_id, profile), updated_member);
-
+                // let channel_member = self.channel_members.read((channel_id, profile));
+                // let updated_member = ChannelMember { ban_status: ban_status, ..channel_member };
+                // self.channel_members.write((channel_id, profile), updated_member);
+                self.channel_ban_status.write((channel_id, profile), ban_status);
                 // emit event
                 self
                     .emit(
