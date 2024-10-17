@@ -103,7 +103,7 @@ fn test_create_channel_emits_events() {
                         }
                     )
                 )
-            ]
+            ] 
         );
 }
 
