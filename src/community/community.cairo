@@ -223,7 +223,11 @@ pub mod CommunityComponent {
             ref self: ComponentState<TContractState>, community_id: u256, metadata_uri: ByteArray
         ) {
             let community_owner = self.community_owner.read(community_id);
-            assert(community_owner == get_caller_address(), NOT_COMMUNITY_OWNER);
+            assert(
+                community_owner == get_caller_address()
+                    || self.is_community_mod(get_caller_address(), community_id),
+                UNAUTHORIZED
+            );
 
             let community_details = self.communities.read(community_id);
             let updated_community = CommunityDetails {

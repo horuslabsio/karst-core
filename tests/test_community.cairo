@@ -311,7 +311,6 @@ fn test_leave_community_emits_event() {
         );
 }
 
-
 #[test]
 fn test_set_community_metadata_uri() {
     let (community_contract_address, _) = __setup__();
@@ -335,8 +334,8 @@ fn test_set_community_metadata_uri() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not Community owner',))]
-fn test_should_panic_set_community_metadata_uri() {
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_should_panic_if_unauthorize_profile_set_community_metadata_uri() {
     let (community_contract_address, _) = __setup__();
 
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
