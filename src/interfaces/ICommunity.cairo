@@ -57,7 +57,7 @@ pub trait ICommunity<TState> {
     fn is_community_member(
         self: @TState, profile: ContractAddress, community_id: u256
     ) -> (bool, CommunityMember);
-    fn get_total_members(self: @TState, community_id: u256) -> u256;
+    fn get_total_community_members(self: @TState, community_id: u256) -> u256;
     fn is_community_mod(self: @TState, profile: ContractAddress, community_id: u256) -> bool;
     fn get_community_censorship_status(self: @TState, community_id: u256) -> bool;
     fn get_ban_status(self: @TState, profile: ContractAddress, community_id: u256) -> bool;

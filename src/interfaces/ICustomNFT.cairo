@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 //                              INTERFACE of ICommunity NFT
 // *************************************************************************
 #[starknet::interface]
-pub trait ICommunityNft<TContractState> {
+pub trait ICustomNFT<TContractState> {
     // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************

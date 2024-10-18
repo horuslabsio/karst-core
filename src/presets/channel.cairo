@@ -4,6 +4,7 @@ pub mod KarstChannel {
     use karst::community::community::CommunityComponent;
     use karst::jolt::jolt::JoltComponent;
     use openzeppelin::access::ownable::OwnableComponent;
+    use starknet::ContractAddress;
 
     component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
     component!(path: CommunityComponent, storage: community, event: CommunityEvent);
@@ -12,6 +13,11 @@ pub mod KarstChannel {
 
     #[abi(embed_v0)]
     impl channelImpl = ChannelComponent::KarstChannel<ContractState>;
+    impl channelPrivateImpl = ChannelComponent::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl joltImpl = JoltComponent::Jolt<ContractState>;
+    impl joltPrivateImpl = JoltComponent::Private<ContractState>;
 
     #[storage]
     struct Storage {
@@ -36,5 +42,13 @@ pub mod KarstChannel {
         JoltEvent: JoltComponent::Event,
         #[flat]
         OwnableEvent: OwnableComponent::Event
+    }
+
+    #[constructor]
+    fn constructor(
+        ref self: ContractState, channel_nft_classhash: felt252, owner: ContractAddress
+    ) {
+        self.channel._initializer(channel_nft_classhash);
+        self.jolt._initializer(owner);
     }
 }
