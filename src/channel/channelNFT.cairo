@@ -8,7 +8,7 @@ pub mod ChannelNFT {
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
 
-    use karst::interfaces::ICommunityNft::ICommunityNft;
+    use karst::interfaces::ICustomNFT::ICustomNFT;
 
     use karst::base::{
         constants::errors::Errors::{ALREADY_MINTED, NOT_TOKEN_OWNER, TOKEN_DOES_NOT_EXIST},
@@ -66,7 +66,7 @@ pub mod ChannelNFT {
     }
 
     #[abi(embed_v0)]
-    impl ChannelNFT of ICommunityNft<ContractState> {
+    impl ChannelNFT of ICustomNFT<ContractState> {
         // *************************************************************************
         //                            EXTERNAL
         // *************************************************************************

@@ -102,3 +102,7 @@ Check out the contract architecture below, and join our [working group](https://
 <!-- prettier-ignore-end -->
 
 <!-- ALL-CONTRIBUTORS-LIST:END -->
+- check that only members can post to a community_channel - add test for this in publication
+- check that banned profiles in a community/channel cannot post to that community/channel - add test for this in publication add community, channel and jolt components to hub
+
+- if they are censored - we want to set approved to false for publications and if they are not, set approved to true.

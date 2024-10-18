@@ -247,7 +247,7 @@ fn test_leave_community() {
 
     start_cheat_caller_address(community_contract_address, USER_TWO.try_into().unwrap());
 
-    let get_total_members = communityDispatcher.get_total_members(community_id);
+    let get_total_members = communityDispatcher.get_total_community_members(community_id);
     assert(get_total_members == 1, 'No reduction in total member');
 
     assert(member.community_token_id == 0, 'NFT was not burned');

@@ -8,18 +8,18 @@ pub mod ChannelComponent {
         ContractAddress, contract_address_const, get_caller_address, get_block_timestamp, ClassHash,
         syscalls::deploy_syscall, SyscallResultTrait
     };
+    use openzeppelin::access::ownable::OwnableComponent;
     use starknet::storage::{
         StoragePointerReadAccess, StoragePointerWriteAccess, Map, StorageMapReadAccess,
         StorageMapWriteAccess
     };
-    use openzeppelin::access::ownable::OwnableComponent;
-
-    use karst::jolt::jolt::JoltComponent;
-    use karst::community::community::CommunityComponent;
+    use karst::interfaces::IChannel::IChannel;
     use karst::interfaces::{
-        IChannel::IChannel, ICommunity::ICommunity,
-        ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
+        ICommunity::ICommunity, ICustomNFT::{ICustomNFTDispatcher, ICustomNFTDispatcherTrait}
     };
+    use karst::community::community::CommunityComponent;
+    use karst::jolt::jolt::JoltComponent;
+
     use karst::base::{
         constants::errors::Errors::{
             NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_COMMUNITY_MEMBER,
@@ -606,7 +606,7 @@ pub mod ChannelComponent {
             profile: ContractAddress,
             channel_nft_address: ContractAddress
         ) -> u256 {
-            let token_id = ICommunityNftDispatcher { contract_address: channel_nft_address }
+            let token_id = ICustomNFTDispatcher { contract_address: channel_nft_address }
                 .mint_nft(profile);
             token_id
         }
@@ -619,7 +619,7 @@ pub mod ChannelComponent {
             channel_nft_address: ContractAddress,
             token_id: u256
         ) {
-            ICommunityNftDispatcher { contract_address: channel_nft_address }
+            ICustomNFTDispatcher { contract_address: channel_nft_address }
                 .burn_nft(get_caller_address(), token_id);
         }
     }

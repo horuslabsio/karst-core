@@ -14,11 +14,10 @@ pub mod CommunityComponent {
         }
     };
     use openzeppelin::access::ownable::OwnableComponent;
-
     use karst::jolt::jolt::JoltComponent;
     use karst::interfaces::{
         ICommunity::ICommunity, IJolt::IJolt, IERC721::{IERC721Dispatcher, IERC721DispatcherTrait},
-        ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
+        ICustomNFT::{ICustomNFTDispatcher, ICustomNFTDispatcherTrait}
     };
     use karst::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails,
@@ -422,7 +421,9 @@ pub mod CommunityComponent {
         /// @notice gets total members for a community
         /// @param community_id id of community to be returned
         /// @return u256 total members in the community
-        fn get_total_members(self: @ComponentState<TContractState>, community_id: u256) -> u256 {
+        fn get_total_community_members(
+            self: @ComponentState<TContractState>, community_id: u256
+        ) -> u256 {
             let community = self.communities.read(community_id);
             community.community_total_members
         }
@@ -909,7 +910,7 @@ pub mod CommunityComponent {
             profile: ContractAddress,
             community_nft_address: ContractAddress
         ) -> u256 {
-            let token_id = ICommunityNftDispatcher { contract_address: community_nft_address }
+            let token_id = ICustomNFTDispatcher { contract_address: community_nft_address }
                 .mint_nft(profile);
             token_id
         }
@@ -923,7 +924,7 @@ pub mod CommunityComponent {
             profile: ContractAddress,
             token_id: u256
         ) {
-            ICommunityNftDispatcher { contract_address: community_nft_address }
+            ICustomNFTDispatcher { contract_address: community_nft_address }
                 .burn_nft(profile, token_id);
         }
     }
