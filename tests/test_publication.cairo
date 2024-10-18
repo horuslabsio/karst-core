@@ -65,7 +65,7 @@ fn __setup__() -> (
         .unwrap_syscall();
 
     // declare account
-    let account_class_hash = declare("Account").unwrap().contract_class();
+    let account_class_hash = declare("AccountPreset").unwrap().contract_class();
 
     //declare collectnft
     let collect_nft_classhash = declare("CollectNFT").unwrap().contract_class();
@@ -80,7 +80,8 @@ fn __setup__() -> (
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2478
+            2478,
+            2479
         );
     let content_URI: ByteArray = "ipfs://helloworld";
     let mut spy = spy_events();
@@ -99,7 +100,8 @@ fn __setup__() -> (
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2479
+            2479,
+            2482
         );
     let content_URI: ByteArray = "ipfs://helloworld";
     dispatcher
@@ -118,7 +120,8 @@ fn __setup__() -> (
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2480
+            2480,
+            2481
         );
     let content_URI: ByteArray = "ipfs://helloworld";
     dispatcher

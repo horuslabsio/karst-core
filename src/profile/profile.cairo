@@ -65,7 +65,8 @@ pub mod ProfileComponent {
             karstnft_contract_address: ContractAddress,
             registry_hash: felt252,
             implementation_hash: felt252,
-            salt: felt252
+            salt: felt252,
+            chain_id: felt252,
         ) -> ContractAddress {
             // mint karst nft
             let recipient = get_caller_address();
@@ -77,12 +78,13 @@ pub mod ProfileComponent {
             }
             let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
                 .get_user_token_id(recipient);
-
             // create tokenbound account
             let profile_address = IRegistryLibraryDispatcher {
                 class_hash: registry_hash.try_into().unwrap()
             }
-                .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
+                .create_account(
+                    implementation_hash, karstnft_contract_address, token_id, salt, chain_id
+                );
 
             // deploy follow nft contract
             let mut constructor_calldata: Array<felt252> = array![

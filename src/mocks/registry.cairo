@@ -7,18 +7,14 @@ pub mod Registry {
     use core::hash::HashStateTrait;
     use core::pedersen::PedersenTrait;
     use starknet::{
-        ContractAddress, get_caller_address, syscalls::call_contract_syscall, class_hash::ClassHash,
-        syscalls::deploy_syscall, SyscallResultTrait,
+        ContractAddress, get_caller_address, get_contract_address, syscalls::call_contract_syscall,
+        class_hash::ClassHash, syscalls::deploy_syscall, SyscallResultTrait,
         storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
     };
     use token_bound_accounts::interfaces::IRegistry::IRegistry;
 
     #[storage]
-    struct Storage {
-        registry_deployed_accounts: Map<
-            (ContractAddress, u256), u8
-        >, // tracks no. of deployed accounts by registry for an NFT
-    }
+    pub struct Storage {}
 
     #[event]
     #[derive(Drop, starknet::Event)]
@@ -53,27 +49,26 @@ pub mod Registry {
             implementation_hash: felt252,
             token_contract: ContractAddress,
             token_id: u256,
-            salt: felt252
+            salt: felt252,
+            chain_id: felt252
         ) -> ContractAddress {
             let owner = self._get_owner(token_contract, token_id);
             assert(owner == get_caller_address(), 'CALLER_IS_NOT_OWNER');
 
             let mut constructor_calldata: Array<felt252> = array![
-                token_contract.into(), token_id.low.into(), token_id.high.into()
+                token_contract.into(),
+                token_id.low.into(),
+                token_id.high.into(),
+                get_contract_address().into(),
+                implementation_hash,
+                salt
             ];
 
             let class_hash: ClassHash = implementation_hash.try_into().unwrap();
             let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);
             let (account_address, _) = result.unwrap_syscall();
 
-            let new_deployment_index: u8 = self
-                .registry_deployed_accounts
-                .read((token_contract, token_id))
-                + 1_u8;
-            self.registry_deployed_accounts.write((token_contract, token_id), new_deployment_index);
-
             self.emit(AccountCreated { account_address, token_contract, token_id, });
-
             account_address
         }
 
@@ -87,13 +82,17 @@ pub mod Registry {
             implementation_hash: felt252,
             token_contract: ContractAddress,
             token_id: u256,
-            salt: felt252
+            salt: felt252,
+            chain_id: felt252
         ) -> ContractAddress {
             let constructor_calldata_hash = PedersenTrait::new(0)
                 .update(token_contract.into())
                 .update(token_id.low.into())
                 .update(token_id.high.into())
-                .update(3)
+                .update(get_contract_address().into())
+                .update(implementation_hash)
+                .update(salt)
+                .update(6)
                 .finalize();
 
             let prefix: felt252 = 'STARKNET_CONTRACT_ADDRESS';
@@ -107,15 +106,6 @@ pub mod Registry {
                 .finalize();
 
             account_address.try_into().unwrap()
-        }
-
-        /// @notice returns the total no. of deployed tokenbound accounts for an NFT by the registry
-        /// @param token_contract the contract address of the NFT
-        /// @param token_id the ID of the NFT
-        fn total_deployed_accounts(
-            self: @ContractState, token_contract: ContractAddress, token_id: u256
-        ) -> u8 {
-            self.registry_deployed_accounts.read((token_contract, token_id))
         }
     }
 
