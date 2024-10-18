@@ -12,7 +12,7 @@ keywords = ["Karst", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
 [dependencies]
 starknet = "2.8.2"
 openzeppelin = { git = "https://github.com/OpenZeppelin/cairo-contracts.git", tag = "v0.17.0" }
-token_bound_accounts= { git = "https://github.com/Starknet-Africa-Edu/TBA", tag = "v0.3.0" }
+token_bound_accounts= { git = "https://github.com/horuslabsio/TBA", branch = "v3"}
 alexandria_bytes = { git = "https://github.com/keep-starknet-strange/alexandria.git" }
 
 [dev-dependencies]
@@ -23,5 +23,5 @@ url= "https://starknet-sepolia.public.blastapi.io"
 
 [[target.starknet-contract]]
 casm = true
-build-external-contracts = ["token_bound_accounts::presets::account::Account"]
+build-external-contracts = ["token_bound_accounts::components::presets::account_preset::AccountPreset"]
 allowed-libfuncs-list.name = "experimental"
