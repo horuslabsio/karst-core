@@ -69,7 +69,6 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2478,
             2478
         );
     stop_cheat_caller_address(hub_contract_address);
@@ -80,7 +79,6 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2478,
             2478
         );
 
@@ -92,7 +90,6 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2478,
             2478
         );
     stop_cheat_caller_address(hub_contract_address);

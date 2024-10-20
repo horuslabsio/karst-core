@@ -71,7 +71,7 @@ fn test_profile_creation() {
     start_cheat_caller_address(profile_contract_address, USER.try_into().unwrap());
     start_cheat_caller_address(nft_contract_address, USER.try_into().unwrap());
     let profile_address = profileDispatcher
-        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456, 2456);
+        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
     // test a new karst nft is minted
     let last_minted_id = karstNFTDispatcher.get_last_minted_id();
@@ -103,7 +103,7 @@ fn test_profile_metadata() {
     start_cheat_caller_address(profile_contract_address, USER.try_into().unwrap());
     start_cheat_caller_address(nft_contract_address, USER.try_into().unwrap());
     let profile_address = profileDispatcher
-        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456, 2456);
+        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
     profileDispatcher
         .set_profile_metadata_uri(
@@ -137,7 +137,7 @@ fn test_profile_creation_event() {
     start_cheat_caller_address(nft_contract_address, USER.try_into().unwrap());
 
     let profile_address = profileDispatcher
-        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456, 2456);
+        .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
     let token_id = karstNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
 

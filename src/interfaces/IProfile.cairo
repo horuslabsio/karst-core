@@ -13,8 +13,7 @@ pub trait IProfile<TState> {
         karstnft_contract_address: ContractAddress,
         registry_hash: felt252,
         implementation_hash: felt252,
-        salt: felt252,
-        chain_id: felt252
+        salt: felt252
     ) -> ContractAddress;
     fn set_profile_metadata_uri(
         ref self: TState, profile_address: ContractAddress, metadata_uri: ByteArray

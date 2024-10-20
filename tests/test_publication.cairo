@@ -80,8 +80,7 @@ fn __setup__() -> (
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2478,
-            2479
+            2478
         );
     let content_URI: ByteArray = "ipfs://helloworld";
     let mut spy = spy_events();
@@ -100,8 +99,7 @@ fn __setup__() -> (
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2479,
-            2482
+            2479
         );
     let content_URI: ByteArray = "ipfs://helloworld";
     dispatcher
@@ -120,8 +118,7 @@ fn __setup__() -> (
             nft_contract_address,
             (*registry_class_hash.class_hash).into(),
             (*account_class_hash.class_hash).into(),
-            2480,
-            2481
+            2480
         );
     let content_URI: ByteArray = "ipfs://helloworld";
     dispatcher
