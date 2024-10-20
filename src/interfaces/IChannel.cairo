@@ -27,7 +27,7 @@ pub trait IChannel<TState> {
     fn is_channel_member(
         self: @TState, profile: ContractAddress, channel_id: u256
     ) -> (bool, ChannelMember);
-    fn get_total_members(self: @TState, channel_id: u256) -> u256;
+    fn get_total_channel_members(self: @TState, channel_id: u256) -> u256;
     fn is_channel_mod(self: @TState, profile: ContractAddress, channel_id: u256) -> bool;
     fn get_channel_censorship_status(self: @TState, channel_id: u256) -> bool;
     fn get_channel_ban_status(self: @TState, profile: ContractAddress, channel_id: u256) -> bool;

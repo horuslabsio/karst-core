@@ -301,7 +301,6 @@ pub struct ChannelMember {
     pub channel_id: u256,
     pub total_publications: u256,
     pub channel_token_id: u256,
-    pub ban_status: bool,
 }
 
 // *************************************************************************

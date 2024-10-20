@@ -1,455 +1,1190 @@
-// // *************************************************************************
-// //                               CHANNEL TEST
-// // *************************************************************************
-// use core::option::OptionTrait;
-// use core::starknet::SyscallResultTrait;
-// use core::result::ResultTrait;
-// use core::traits::{TryInto, Into};
-// use starknet::ContractAddress;
+// *************************************************************************
+//                               CHANNEL TEST
+// *************************************************************************
+use core::option::OptionTrait;
+use core::starknet::SyscallResultTrait;
+use core::result::ResultTrait;
+use core::traits::{TryInto, Into};
 
-// use snforge_std::{
-//     declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
-//     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait, EventSpy
-// };
+use snforge_std::{
+    declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
+    EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait, EventSpy
+};
+use core::starknet::{
+    ContractAddress, contract_address_const, get_caller_address, get_block_timestamp, ClassHash,
+    syscalls::deploy_syscall
+};
+use karst::channel::channel::ChannelComponent;
+use karst::community::community::CommunityComponent;
+use karst::base::constants::types::{ChannelDetails, ChannelMember};
+use karst::mocks::interfaces::IChannelComposable::{
+    IChannelComposableDispatcher, IChannelComposableDispatcherTrait
+};
 
-// use karst::channel::channel::ChannelComponent::{
-//     Event as ChannelEvent, ChannelCreated, JoinedChannel, LeftChannel, ChannelModAdded,
-//     ChannelModRemoved, ChannelBanStatusUpdated
-// };
-// use karst::base::constants::types::{channelParams, channelMember};
-// use karst::interfaces::IChannel::{IChannelDispatcher, IChannelDispatcherTrait};
-// use karst::presets::channel;
+use karst::base::constants::types::CommunityType;
+use karst::presets::channel;
 
-// const HUB_ADDRESS: felt252 = 'HUB';
-// const USER_ONE: felt252 = 'BOB';
-// const USER_TWO: felt252 = 'ALICE';
-// // these are the channel users
-// const USER_THREE: felt252 = 'ROB';
-// const USER_FOUR: felt252 = 'DAN';
-// const USER_FIVE: felt252 = 'RANDY';
-// const USER_SIX: felt252 = 'JOE';
-// const MODERATOR1: felt252 = 'MOD1';
-// const MODERATOR2: felt252 = 'MOD2';
-// const NOTOWNER: felt252 = 'NOTOWNER';
-// const NOTMODERATOR: felt252 = 'NOTMODERATOR';
-// const MEMBER1: felt252 = 'MEMBER1';
-// const MEMBER2: felt252 = 'MEMBER2';
+const HUB_ADDRESS: felt252 = 'HUB';
+const ADMIN: felt252 = 'ADMIN';
+const USER_ONE: felt252 = 'BOB';
+const USER_TWO: felt252 = 'ALICE';
+const USER_THREE: felt252 = 'ROB';
+const USER_FOUR: felt252 = 'DAN';
+const USER_FIVE: felt252 = 'RANDY';
+const USER_SIX: felt252 = 'JOE';
+const MODERATOR1: felt252 = 'MOD1';
+const MODERATOR2: felt252 = 'MOD2';
+const NOTOWNER: felt252 = 'NOTOWNER';
+const NOTMODERATOR: felt252 = 'NOTMODERATOR';
+const MEMBER1: felt252 = 'MEMBER1';
+const MEMBER2: felt252 = 'MEMBER2';
 
-// fn __setup__() -> (ContractAddress, u256, ContractAddress, ByteArray) {
-//     let nft_contract = declare("KarstNFT").unwrap().contract_class();
-//     let mut calldata: Array<felt252> = array![USER_ONE];
 
-//     let (nft_contract_address, _) = nft_contract.deploy(@calldata).unwrap_syscall();
+fn __setup__() -> ContractAddress {
+    let community_nft_class_hash = declare("CommunityNFT").unwrap().contract_class().class_hash;
+    let channel_nft_class_hash = declare("ChannelNFT").unwrap().contract_class().class_hash;
 
-//     let registry_class_hash = declare("Registry").unwrap().contract_class();
-//     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
+    let channel_contract = declare("KarstChannel").unwrap().contract_class();
+    let mut channel_constructor_calldata = array![
+        (*(channel_nft_class_hash)).into(), (*(community_nft_class_hash)).into()
+    ];
+    let (channel_contract_address, _) = channel_contract
+        .deploy(@channel_constructor_calldata)
+        .unwrap_syscall();
+    return channel_contract_address;
+}
 
-//     let channel_contract = declare("KarstChannel").unwrap().contract_class();
+#[test]
+fn test_channel_creation() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
 
-//     let mut channel_constructor_calldata = array![];
+    let community_id = dispatcher.create_community();
+    assert(community_id == 1, 'invalid community creation');
 
-//     let (channel_contract_address, _) = channel_contract
-//         .deploy(@channel_constructor_calldata)
-//         .unwrap_syscall();
-//     let account_class_hash = declare("Account").unwrap().contract_class();
-//     let follow_nft_classhash = declare("Follow").unwrap().contract_class();
-//     let collect_nft_classhash = declare("CollectNFT").unwrap().contract_class();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
-//     let mut spy = spy_events();
-//     let metadat_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gQ/";
-//     let channel_id: u256 = dispatcher
-//         .create_channel(
-//             channelParams {
-//                 channel_id: 0,
-//                 channel_owner: USER_ONE.try_into().unwrap(),
-//                 channel_metadata_uri: metadat_uri.clone(),
-//                 channel_nft_address: nft_contract_address,
-//                 channel_total_members: 1,
-//                 channel_censorship: false,
-//             }
-//         );
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     dispatcher.add_channel_mods(channel_id, moderator_array);
-//     stop_cheat_caller_address(channel_contract_address);
+    let channel_id = dispatcher.create_channel(community_id);
+    assert(channel_id == 1, 'invalid channel creation');
+    stop_cheat_caller_address(channel_contract_address);
 
-//     start_cheat_caller_address(channel_contract_address, MEMBER1.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    let channel_details: ChannelDetails = dispatcher.get_channel(channel_id);
+    assert(channel_details.channel_id == 1, 'invalid channel id');
+    assert(channel_details.community_id == community_id, 'invalid community id');
+    assert(channel_details.channel_owner == USER_ONE.try_into().unwrap(), 'invalid channel
+ owner');
+    assert(channel_details.channel_metadata_uri == "", 'invalid metadata uri');
+    assert(channel_details.channel_total_members == 1, 'invalid total members');
+    assert(channel_details.channel_censorship == false, 'invalid censorship status');
+}
 
-//     start_cheat_caller_address(channel_contract_address, MEMBER2.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
-//     return (channel_contract_address, channel_id, USER_ONE.try_into().unwrap(), metadat_uri);
-// }
+#[test]
+fn test_create_channel_emits_events() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    stop_cheat_caller_address(channel_contract_address);
 
-// // writing the test for the set_channel_metadata_uri :
-// #[test]
-// fn test_set_channel_metadata_uri_check_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let metadat_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gH/";
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.set_channel_metadata_uri(channel_id, metadat_uri.clone());
-//     stop_cheat_caller_address(channel_contract_address);
-//     let channel_metadata_uri = dispatcher.get_channel_metadata_uri(channel_id);
-//     assert(channel_metadata_uri == metadat_uri, 'invalid channel uri ');
-// }
+    let mut spy = spy_events();
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let channel_id = dispatcher.create_channel(community_id);
+    assert(channel_id == 1, 'invalid channel creation');
+    let channel_details = dispatcher.get_channel(channel_id);
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    channel_contract_address,
+                    ChannelComponent::Event::ChannelCreated(
+                        ChannelComponent::ChannelCreated {
+                            channel_id: channel_id,
+                            channel_owner: USER_ONE.try_into().unwrap(),
+                            channel_nft_address: channel_details.channel_nft_address,
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
 
-// #[test]
-// fn test_set_channel_metadata_uri_check_moderator() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let metadat_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gH/";
-//     start_cheat_caller_address(channel_contract_address, MODERATOR1.try_into().unwrap());
-//     dispatcher.set_channel_metadata_uri(channel_id, metadat_uri.clone());
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the metadata uri
-//     let channel_metadata_uri = dispatcher.get_channel_metadata_uri(channel_id);
-//     assert(channel_metadata_uri == metadat_uri, 'invalid channel uri ');
-// }
+// test channel reate should be the member of the community
+#[test]
+fn test_create_channel_by_community_member() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    assert(community_id == 1, 'invalid community creation');
 
-// #[test]
-// #[should_panic(expected: ('Karst : Unauthorized access',))]
-// fn test_set_channel_metadata_uri_check_not_owner_or_moderator() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let metadat_uri: ByteArray = "ipfs://QmSkDCsS32eLpcymxtn1cEn7Rc5hfefLBgfvZyjaYXr4gH/";
-//     start_cheat_caller_address(channel_contract_address, NOTOWNER.try_into().unwrap());
-//     dispatcher.set_channel_metadata_uri(channel_id, metadat_uri.clone());
-//     stop_cheat_caller_address(channel_contract_address);
-// }
+    stop_cheat_caller_address(channel_contract_address);
 
-// // writing the test for the add_channel_mods()
-// #[test]
-// fn test_add_channel_mods_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.add_channel_mods(channel_id, moderator_array);
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the moderator
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR1.try_into().unwrap(), channel_id) == true,
-//         'user_two is not mod'
-//     );
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR2.try_into().unwrap(), channel_id) == true,
-//         'user_three isnt mod'
-//     );
-// }
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    let channel_id = dispatcher.create_channel(community_id);
+    assert(channel_id == 1, 'invalid channel creation');
+    stop_cheat_caller_address(channel_contract_address);
 
-// #[test]
-// #[should_panic(expected: ('Channel: not channel owner',))]
-// fn test_add_channel_mods_not_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     start_cheat_caller_address(channel_contract_address, NOTOWNER.try_into().unwrap());
-//     dispatcher.add_channel_mods(channel_id, moderator_array);
-//     stop_cheat_caller_address(channel_contract_address);
-// }
+    let channel_details: ChannelDetails = dispatcher.get_channel(channel_id);
+    assert(channel_details.channel_id == 1, 'invalid channel id');
+    assert(channel_details.community_id == community_id, 'invalid community id');
+    assert(channel_details.channel_owner == USER_TWO.try_into().unwrap(), 'invalid channel
+ owner');
+    assert(channel_details.channel_metadata_uri == "", 'invalid metadata uri');
+    assert(channel_details.channel_total_members == 1, 'invalid total members');
+    assert(channel_details.channel_censorship == false, 'invalid censorship status');
+}
+// test channel reate should be the member of the community
+#[test]
+#[should_panic(expected: ('Karst: Not a Community  Member',))]
+fn test_should_panic_if_create_channel_by_not_community_member() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    assert(community_id == 1, 'invalid community creation');
 
-// // total number of the moderator fucntion is usefull .
-// // then this test is usefull
-// // #[test]
-// // fn test_add_channel_mods_duplicate_moderator() {
-// //     let (channel_contract_address , channel_id , owner , metadata_uri ) = __setup__();
-// //     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-// //     let mut moderator_array = array![MODERATOR1.try_into().unwrap() ,
-// //     MODERATOR1.try_into().unwrap()];
-// //     start_cheat_caller_address(channel_contract_address , owner);
-// //     dispatcher.add_channel_mods(channel_id , moderator_array);
-// //     stop_cheat_caller_address(channel_contract_address);
-// //     // check the moderator
-// //     assert(
-// //         dispatcher.is_channel_mod(MODERATOR1.try_into().unwrap(), channel_id) == true,
-// //         'user_two is not mod'
-// //     );
-// //     assert(
-// //         dispatcher.is_channel_mod(MODERATOR2.try_into().unwrap(), channel_id) == true,
-// //         'user_three isnt mod'
-// //     );
+    stop_cheat_caller_address(channel_contract_address);
 
-// //     // add the moderator again
-// //     start_cheat_caller_address(channel_contract_address , owner);
-// //     dispatcher.add_channel_mods(channel_id , moderator_array);
-// //     stop_cheat_caller_address(channel_contract_address);
-// //     // check the moderator
-// //     let total_mod = dispatcher.total_mod_of_channel(channel_id);
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    // dispatcher.join_community(community_id);
+    let channel_id = dispatcher.create_channel(community_id);
+    assert(channel_id == 1, 'invalid channel creation');
+    stop_cheat_caller_address(channel_contract_address);
 
-// //     assert(
-// //         total_mod.len() == 2 ,
-// //         'user_two is not mod'
-// //     );
-// // }
+    let channel_details: ChannelDetails = dispatcher.get_channel(channel_id);
+    assert(channel_details.channel_id == 1, 'invalid channel id');
+    assert(channel_details.community_id == community_id, 'invalid community id');
+    assert(channel_details.channel_owner == USER_TWO.try_into().unwrap(), 'invalid channel
+ owner');
+    assert(channel_details.channel_metadata_uri == "", 'invalid metadata uri');
+    assert(channel_details.channel_total_members == 1, 'invalid total members');
+    assert(channel_details.channel_censorship == false, 'invalid censorship status');
+}
 
-// // now writing the test for the remove channel mods
-// #[test]
-// fn test_remove_channel_mods_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.add_channel_mods(channel_id, moderator_array);
-//     stop_cheat_caller_address(channel_contract_address);
 
-//     // remove the moderator
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.remove_channel_mods(channel_id, array![MODERATOR1.try_into().unwrap()]);
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the moderator
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR1.try_into().unwrap(), channel_id) == false,
-//         'user_two is not mod'
-//     );
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR2.try_into().unwrap(), channel_id) == true,
-//         'user_three isnt mod'
-//     );
-// }
+#[test]
+fn test_profile_can_join_channel() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// // not the owner of the channel
-// #[test]
-// #[should_panic(expected: ('Channel: not channel owner',))]
-// fn test_remove_channel_mods_not_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.add_channel_mods(channel_id, moderator_array);
-//     stop_cheat_caller_address(channel_contract_address);
+    // join the community first
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // remove the moderator
-//     start_cheat_caller_address(channel_contract_address, NOTOWNER.try_into().unwrap());
-//     dispatcher.remove_channel_mods(channel_id, array![MODERATOR1.try_into().unwrap()]);
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the moderator
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR1.try_into().unwrap(), channel_id) == true,
-//         'user_two is not mod'
-//     );
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR2.try_into().unwrap(), channel_id) == true,
-//         'user_three isnt mod'
-//     );
-// }
-// // also test the moderator is not in the channel
-// #[test]
-// fn test_remove_channel_mods_not_moderator() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.add_channel_mods(channel_id, moderator_array);
-//     stop_cheat_caller_address(channel_contract_address);
+    // join channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    assert(is_member == true, 'Not Channel Member');
 
-//     // remove the moderator
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher
-//         .remove_channel_mods(
-//             channel_id, array![NOTMODERATOR.try_into().unwrap(), MODERATOR2.try_into().unwrap()]
-//         );
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the moderator
+    assert(channel_member.profile == USER_TWO.try_into().unwrap(), 'Invalid Channel Member');
+    assert(channel_member.channel_id == channel_id, 'Invalid Channel Id');
+    assert(channel_member.total_publications == 0, 'Invalid Total Publication');
+    assert(channel_member.channel_token_id != 0, 'Invalid nft mint token ');
+}
 
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR1.try_into().unwrap(), channel_id) == true,
-//         'user_two is not mod'
-//     );
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR2.try_into().unwrap(), channel_id) == false,
-//         'user_three isnt mod'
-//     );
-// }
+// let's add an additional test to check that when a profile joins a channel, the channel NFT is
+// minted to him
+#[test]
+fn test_channel_nft_minted_to_profile() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
 
-// // checking about the persistance  state of the moderator
-// #[test]
-// fn test_remove_channel_mods_persistance_state() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     let mut moderator_array = array![
-//         MODERATOR1.try_into().unwrap(), MODERATOR2.try_into().unwrap()
-//     ];
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.add_channel_mods(channel_id, moderator_array.clone());
-//     dispatcher.remove_channel_mods(channel_id, moderator_array.clone());
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the moderator
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR1.try_into().unwrap(), channel_id) == false,
-//         'user_two is not mod'
-//     );
-//     assert(
-//         dispatcher.is_channel_mod(MODERATOR2.try_into().unwrap(), channel_id) == false,
-//         'user_three isnt mod'
-//     );
-// }
+    // create a community
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    stop_cheat_caller_address(channel_contract_address);
 
-// // set censorship to test
-// #[test]
-// fn test_set_channel_censorship_status_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.set_channel_censorship_status(channel_id, true);
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the censorship status
-//     let censorship_status = dispatcher.get_channel_censorship_status(channel_id);
-//     assert(censorship_status == true, 'invalid censorship status');
-// }
-// // not owner of the channel
-// #[test]
-// #[should_panic(expected: ('Channel: not channel owner',))]
-// fn test_set_channel_censorship_status_not_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     start_cheat_caller_address(channel_contract_address, NOTOWNER.try_into().unwrap());
-//     dispatcher.set_channel_censorship_status(channel_id, true);
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the censorship status
-//     let censorship_status = dispatcher.get_channel_censorship_status(channel_id);
-//     assert(censorship_status == true, 'invalid censorship status');
-// }
+    // create a channel
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// // test for set_ban_status
-// #[test]
-// fn test_set_ban_status_owner() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+    // join the community
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.set_ban_status(channel_id, MEMBER1.try_into().unwrap(), true);
-//     stop_cheat_caller_address(channel_contract_address);
-//     // check the ban status
-//     let ban_status = dispatcher.get_ban_status(MEMBER1.try_into().unwrap(), channel_id);
-//     assert(ban_status == true, 'invalid ban status');
-// }
+    // join the channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// #[test]
-// #[should_panic(expected: ('Karst : Unauthorized access',))]
-// fn test_set_ban_status_owner_or_moderator() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+    // check that nft is minted to the profile
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    assert(channel_member.channel_token_id != 0, 'Invalid nft mint token ');
+}
 
-//     start_cheat_caller_address(channel_contract_address, NOTOWNER.try_into().unwrap());
+// add an extra test to check that when the profile leaves the channel, his channel nft is burnt
+#[test]
+fn test_channel_nft_burn_on_leaving_channel() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
 
-//     dispatcher.set_ban_status(channel_id, MEMBER1.try_into().unwrap(), true);
-//     stop_cheat_caller_address(channel_contract_address);
-// }
+    // create a community
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    stop_cheat_caller_address(channel_contract_address);
 
-// #[test]
-// #[should_panic(expected: ('Channel: not channel member',))]
-// fn test_set_ban_status_profile_is_not_member() {
-//     let (channel_contract_address, channel_id, owner, metadata_uri) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
-//     start_cheat_caller_address(channel_contract_address, owner);
-//     dispatcher.set_ban_status(channel_id, USER_THREE.try_into().unwrap(), true);
-//     stop_cheat_caller_address(channel_contract_address);
-// }
+    // create a channel
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// #[test]
-// fn test_leave_channel_member() {
-//     let (channel_contract_address, channel_id, owner, _) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+    // join the community
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     start_cheat_caller_address(channel_contract_address, MEMBER1.try_into().unwrap());
-//     dispatcher.leave_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    // join the channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // not the member of that
-//     assert(
-//         !dispatcher.is_channel_member(MEMBER1.try_into().unwrap(), channel_id) == true,
-//         'channel not leaved'
-//     );
-// }
+    // leave the channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// #[test]
-// #[should_panic(expected: ('Channel: not channel member',))]
-// fn test_leave_channel_not_member() {
-//     let (channel_contract_address, channel_id, owner, _) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    assert(channel_member.channel_token_id == 0, 'nft is burned ');
+}
 
-//     start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
-//     dispatcher.leave_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
-// }
 
-// // joining the channel testing
-// #[test]
-// fn test_joining_channel() {
-//     let (channel_contract_address, channel_id, owner, _) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+#[test]
+#[should_panic(expected: ('Karst: already a Member',))]
+fn test_should_panic_if_a_user_joins_one_channel_twice() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     let is_channel_member = dispatcher.is_channel_member(MEMBER1.try_into().unwrap(),
-//     channel_id);
-//     assert(is_channel_member == true, 'invalid channel member 1');
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     let is_channel_member = dispatcher.is_channel_member(MEMBER2.try_into().unwrap(),
-//     channel_id);
-//     assert(is_channel_member == true, 'invalid channel member 2');
-// }
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// // // counting of the member of the channel .
-// #[test]
-// fn test_joining_channel_total_members() {
-//     let (channel_contract_address, channel_id, owner, _) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+}
+#[test]
+#[should_panic(expected: ('Karst: banned from channel',))]
+fn test_should_panic_if_banned_members_join_a_channel() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // join the channel
-//     start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // join the channel
-//     start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // join the channel
-//     start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher
+        .set_channel_ban_status(channel_id, array![USER_TWO.try_into().unwrap()], array![true]);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // join the channel
-//     start_cheat_caller_address(channel_contract_address, USER_FIVE.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+}
 
-//     // join the channel
-//     start_cheat_caller_address(channel_contract_address, USER_SIX.try_into().unwrap());
-//     dispatcher.join_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+#[test]
+#[should_panic(expected: ('Karst: banned from channel',))]
+fn test_should_panic_if_banned_user_try_to_leave_channel_and_then_rejoin() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     // check the total member of the channel
-//     let total_members = dispatcher.get_total_members(channel_id);
-//     assert(total_members == 7, 'invalid total members');
-// }
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-// #[test]
-// #[should_panic(expected: ('Channel has no members',))]
-// fn test_leave_channel_less_then_one() {
-//     let (channel_contract_address, channel_id, owner, _) = __setup__();
-//     let dispatcher = IChannelDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     start_cheat_caller_address(channel_contract_address, MEMBER1.try_into().unwrap());
-//     dispatcher.leave_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
+    // banned
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher
+        .set_channel_ban_status(channel_id, array![USER_TWO.try_into().unwrap()], array![true]);
+    stop_cheat_caller_address(channel_contract_address);
 
-//     start_cheat_caller_address(channel_contract_address, MEMBER2.try_into().unwrap());
-//     dispatcher.leave_channel(channel_id);
-//     stop_cheat_caller_address(channel_contract_address);
-// }
+    // leave channel
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    // join channel again
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+}
+
+#[test]
+fn test_joining_channel_emits_event() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    channel_contract_address,
+                    ChannelComponent::Event::JoinedChannel(
+                        ChannelComponent::JoinedChannel {
+                            channel_id: channel_id,
+                            transaction_executor: USER_TWO.try_into().unwrap(),
+                            profile: channel_member.profile,
+                            token_id: channel_member.channel_token_id,
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+#[test]
+fn test_leave_channel() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    assert(is_member != true, 'still a Channel Member');
+    stop_cheat_caller_address(channel_contract_address);
+    let get_total_channel_members = dispatcher.get_total_channel_members(channel_id);
+    assert(get_total_channel_members == 1, 'No reduction in total members');
+    assert(channel_member.channel_token_id == 0, 'NFT is not burn ');
+    assert(channel_member.total_publications == 0, 'Invalid Total Publication');
+    assert(channel_member.profile == contract_address_const::<0>(), 'Invalid Channel Member');
+    assert(channel_member.channel_id == 0, 'Invalid Channel Id');
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not channel member',))]
+fn test_should_panic_if_profile_leaving_is_not_a_member() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+
+#[test]
+fn test_leave_channel_emits_event() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    let (_, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    let channel_token_id = channel_member.channel_token_id;
+    dispatcher.leave_channel(channel_id);
+    let (is_member, channel_member) = dispatcher
+        .is_channel_member(USER_TWO.try_into().unwrap(), channel_id);
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    channel_contract_address,
+                    ChannelComponent::Event::LeftChannel(
+                        ChannelComponent::LeftChannel {
+                            channel_id: channel_id,
+                            transaction_executor: USER_TWO.try_into().unwrap(),
+                            profile: USER_TWO.try_into().unwrap(),
+                            token_id: channel_token_id,
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+
+#[test]
+fn test_channel_metadata_uri_with_owner() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let metadat_uri: ByteArray = "ipfs://demo";
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.set_channel_metadata_uri(channel_id, metadat_uri.clone());
+    stop_cheat_caller_address(channel_contract_address);
+    let channel_metadata_uri = dispatcher.get_channel_metadata_uri(channel_id);
+    assert(channel_metadata_uri == metadat_uri, 'invalid channel uri ');
+}
+
+#[test]
+fn test_set_channel_metadata_with_moderator() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, array![USER_TWO.try_into().unwrap()]);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let metadat_uri: ByteArray = "ipfs://demo";
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.set_channel_metadata_uri(channel_id, metadat_uri.clone());
+    stop_cheat_caller_address(channel_contract_address);
+
+    let channel_metadata_uri = dispatcher.get_channel_metadata_uri(channel_id);
+    assert(channel_metadata_uri == metadat_uri, 'invalid channel uri ');
+}
+
+#[test]
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_set_metadata_should_panic_if_not_owner_or_moderator() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let metadat_uri: ByteArray = "ipfs://demo";
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.set_channel_metadata_uri(channel_id, metadat_uri.clone());
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+#[test]
+fn test_add_channel_mods() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap(), USER_THREE.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+
+    assert(
+        dispatcher.is_channel_mod(USER_TWO.try_into().unwrap(), channel_id) == true,
+        'user_two is not mod'
+    );
+    assert(
+        dispatcher.is_channel_mod(USER_THREE.try_into().unwrap(), channel_id) == true,
+        'user_three isnt mod'
+    );
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not channel owner',))]
+fn test_only_owner_can_add_channel_mod() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap(), USER_THREE.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: Not a Community  Member',))]
+fn test_should_panic_if_mod_is_not_member() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap()];
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+
+#[test]
+fn test_add_channel_mods_emits_event() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+    let mut spy = spy_events();
+    let mut moderator_array = array![USER_TWO.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array.clone());
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    channel_contract_address,
+                    ChannelComponent::Event::ChannelModAdded(
+                        ChannelComponent::ChannelModAdded {
+                            channel_id: channel_id,
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            mod_address: *moderator_array[0],
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+
+#[test]
+fn test_remove_channel_mods() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap(), USER_THREE.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.remove_channel_mods(channel_id, array![USER_TWO.try_into().unwrap()]);
+    stop_cheat_caller_address(channel_contract_address);
+
+    assert(
+        dispatcher.is_channel_mod(USER_TWO.try_into().unwrap(), channel_id) == false,
+        'Channel Mod Not Remove'
+    );
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not channel owner',))]
+fn test_only_owner_can_remove_channel_mod() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap(), USER_THREE.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.remove_channel_mods(channel_id, array![USER_TWO.try_into().unwrap()]);
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+
+#[test]
+#[should_panic(expected: ('Karst: not channel moderator',))]
+fn test_should_panic_if_profile_to_be_removed_is_not_mod() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap(), USER_FOUR.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher
+        .remove_channel_mods(
+            channel_id, array![USER_THREE.try_into().unwrap(), USER_FOUR.try_into().unwrap()]
+        );
+}
+
+#[test]
+fn test_remove_channel_mod_emit_event() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut moderator_array = array![USER_TWO.try_into().unwrap(), USER_THREE.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.remove_channel_mods(channel_id, array![USER_TWO.try_into().unwrap()]);
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    channel_contract_address,
+                    ChannelComponent::Event::ChannelModRemoved(
+                        ChannelComponent::ChannelModRemoved {
+                            channel_id: channel_id,
+                            mod_address: USER_TWO.try_into().unwrap(),
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            block_timestamp: get_block_timestamp(),
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+#[test]
+fn test_set_channel_censorship_status() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.set_channel_censorship_status(channel_id, true);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let censorship_status = dispatcher.get_channel_censorship_status(channel_id);
+    assert(censorship_status == true, 'invalid censorship status');
+}
+
+
+#[test]
+#[should_panic(expected: ('Karst: not channel owner',))]
+fn test_set_channel_censorship_status_not_owner() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.set_channel_censorship_status(channel_id, true);
+}
+
+#[test]
+fn test_set_ban_status_by_owner() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_TWO.try_into().unwrap());
+    profiles.append(USER_THREE.try_into().unwrap());
+
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.set_channel_ban_status(channel_id, profiles, ban_statuses);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let ban_status = dispatcher.get_channel_ban_status(USER_TWO.try_into().unwrap(), channel_id);
+    assert(ban_status == true, 'Channel Member is not ban');
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+#[test]
+fn test_set_ban_status_by_mod() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut spy = spy_events();
+    let mut moderator_array = array![USER_TWO.try_into().unwrap()];
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.add_channel_mods(channel_id, moderator_array.clone());
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_THREE.try_into().unwrap());
+
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.set_channel_ban_status(channel_id, profiles, ban_statuses);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let ban_status = dispatcher.get_channel_ban_status(USER_THREE.try_into().unwrap(), channel_id);
+    assert(ban_status == true, 'Channel Member is not ban');
+    stop_cheat_caller_address(channel_contract_address);
+}
+
+#[test]
+fn test_set_ban_status_emit_event() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_TWO.try_into().unwrap());
+
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+
+    let mut spy = spy_events();
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.set_channel_ban_status(channel_id, profiles, ban_statuses);
+
+    spy
+        .assert_emitted(
+            @array![
+                (
+                    channel_contract_address,
+                    ChannelComponent::Event::ChannelBanStatusUpdated(
+                        ChannelComponent::ChannelBanStatusUpdated {
+                            channel_id: channel_id,
+                            transaction_executor: USER_ONE.try_into().unwrap(),
+                            profile: USER_TWO.try_into().unwrap(),
+                            ban_status: true,
+                            block_timestamp: get_block_timestamp()
+                        }
+                    )
+                )
+            ]
+        );
+}
+
+
+#[test]
+#[should_panic(expected: ('Karst: user unauthorized!',))]
+fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_TWO.try_into().unwrap());
+    profiles.append(USER_THREE.try_into().unwrap());
+
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.set_channel_ban_status(channel_id, profiles, ban_statuses);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: not channel member',))]
+fn test_can_only_set_ban_status_for_members() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_TWO.try_into().unwrap());
+    profiles.append(USER_THREE.try_into().unwrap());
+
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.set_channel_ban_status(channel_id, profiles, ban_statuses);
+}
+
+#[test]
+#[should_panic(expected: ('Karst: array mismatch',))]
+fn test_should_set_ban_status_for_invalid_array_length() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let mut profiles = ArrayTrait::new();
+    profiles.append(USER_TWO.try_into().unwrap());
+
+    let mut ban_statuses = ArrayTrait::new();
+    ban_statuses.append(true);
+    ban_statuses.append(true);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.set_channel_ban_status(channel_id, profiles, ban_statuses);
+}
+
+
+#[test]
+fn test_joining_channel_total_members() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_TWO.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_THREE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FOUR.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FIVE.try_into().unwrap());
+    dispatcher.join_community(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_FIVE.try_into().unwrap());
+    dispatcher.join_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    let total_members = dispatcher.get_total_channel_members(channel_id);
+    assert(total_members == 5, 'invalid total members');
+}
+
+// add an extra test to check that the channel to be left has members in the first place else it
+// panics
+#[test]
+#[should_panic(expected: ('Karst: channel has no members',))]
+fn test_channel_have_members_before_leaving() {
+    let channel_contract_address = __setup__();
+    let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    let community_id = dispatcher.create_community();
+    let channel_id = dispatcher.create_channel(community_id);
+    stop_cheat_caller_address(channel_contract_address);
+
+    start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
+    dispatcher.leave_channel(channel_id);
+    stop_cheat_caller_address(channel_contract_address);
+}
