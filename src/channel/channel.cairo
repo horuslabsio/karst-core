@@ -144,7 +144,7 @@ pub mod ChannelComponent {
                     channel_id, channel_nft_classhash, channel_id.try_into().unwrap()
                 ); // use channel_id as salt since its unique
 
-            // check that caller is a member of the community
+            // check that owner is a member of the community
             let (membership_status, _) = community_instance
                 .is_community_member(channel_owner, community_id);
             assert(membership_status, NOT_COMMUNITY_MEMBER);
@@ -161,9 +161,10 @@ pub mod ChannelComponent {
 
             // update storage
             self.channels.write(channel_id, new_channel.clone());
+            self.channel_counter.write(channel_id);
+
             // include channel owner as first member
             self._join_channel(channel_owner, channel_id);
-            self.channel_counter.write(channel_id);
 
             // emit event
             self
@@ -308,7 +309,6 @@ pub mod ChannelComponent {
             self.channels.write(channel_id, channel);
         }
 
-
         /// @notice set the ban status of a profile in the channel
         /// @param channel_id The id of the channel
         /// @param profile The address of the profile
@@ -330,7 +330,6 @@ pub mod ChannelComponent {
 
             self._set_ban_status(channel_id, profiles, ban_statuses);
         }
-
 
         /// @notice gets the channel parameters
         /// @param channel_id The id of the channel
@@ -479,7 +478,7 @@ pub mod ChannelComponent {
 
                 // check moderator is a channel member
                 let (is_channel_member, _) = self.is_channel_member(moderator, channel_id);
-                assert(is_channel_member == true, NOT_COMMUNITY_MEMBER);
+                assert(is_channel_member == true, NOT_CHANNEL_MEMBER);
 
                 self.channel_moderators.write((channel_id, moderator), true);
 
