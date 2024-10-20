@@ -10,9 +10,7 @@ use snforge_std::{
     declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
-use core::starknet::{
-    ContractAddress, contract_address_const, get_block_timestamp
-};
+use core::starknet::{ContractAddress, contract_address_const, get_block_timestamp};
 use karst::channel::channel::ChannelComponent;
 use karst::base::constants::types::{ChannelDetails};
 use karst::mocks::interfaces::IChannelComposable::{
