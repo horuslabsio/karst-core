@@ -18,7 +18,7 @@ pub mod CommunityComponent {
     use karst::jolt::jolt::JoltComponent;
     use karst::interfaces::{
         ICommunity::ICommunity, IJolt::IJolt, IERC721::{IERC721Dispatcher, IERC721DispatcherTrait},
-        ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
+        ICustomNFT::{ICustomNFTDispatcher, ICustomNFTDispatcherTrait}
     };
     use karst::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails,
@@ -913,7 +913,7 @@ pub mod CommunityComponent {
             profile: ContractAddress,
             community_nft_address: ContractAddress
         ) -> u256 {
-            let token_id = ICommunityNftDispatcher { contract_address: community_nft_address }
+            let token_id = ICustomNFTDispatcher { contract_address: community_nft_address }
                 .mint_nft(profile);
             token_id
         }
@@ -927,7 +927,7 @@ pub mod CommunityComponent {
             profile: ContractAddress,
             token_id: u256
         ) {
-            ICommunityNftDispatcher { contract_address: community_nft_address }
+            ICustomNFTDispatcher { contract_address: community_nft_address }
                 .burn_nft(profile, token_id);
         }
     }

@@ -33,6 +33,10 @@ pub mod KarstHub {
     };
     use karst::profile::profile::ProfileComponent;
     use karst::publication::publication::PublicationComponent;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use karst::community::community::CommunityComponent;
+    use karst::channel::channel::ChannelComponent;
+    use karst::jolt::jolt::JoltComponent;
     use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
     use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
     use karst::interfaces::IHandleRegistry::{
@@ -47,6 +51,10 @@ pub mod KarstHub {
     // *************************************************************************
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
     component!(path: PublicationComponent, storage: publication, event: PublicationEvent);
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: JoltComponent, storage: jolt, event: JoltEvent);
+    component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
+    component!(path: CommunityComponent, storage: community, event: CommunityEvent);
 
     #[abi(embed_v0)]
     impl ProfileImpl = ProfileComponent::KarstProfile<ContractState>;
@@ -55,6 +63,18 @@ pub mod KarstHub {
 
     impl ProfilePrivateImpl = ProfileComponent::Private<ContractState>;
 
+
+    #[abi(embed_v0)]
+    impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
+    impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
+
+    #[abi(embed_v0)]
+    impl channelImpl = ChannelComponent::KarstChannel<ContractState>;
+    impl channelPrivateImpl = ChannelComponent::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl joltImpl = JoltComponent::Jolt<ContractState>;
+    impl joltPrivateImpl = JoltComponent::Private<ContractState>;
     // *************************************************************************
     //                              STORAGE
     // *************************************************************************
@@ -64,6 +84,14 @@ pub mod KarstHub {
         profile: ProfileComponent::Storage,
         #[substorage(v0)]
         publication: PublicationComponent::Storage,
+        #[substorage(v0)]
+        jolt: JoltComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        community: CommunityComponent::Storage,
+        #[substorage(v0)]
+        channel: ChannelComponent::Storage,
         handle_contract_address: ContractAddress,
         handle_registry_contract_address: ContractAddress
     }
@@ -75,7 +103,15 @@ pub mod KarstHub {
     #[derive(Drop, starknet::Event)]
     enum Event {
         ProfileEvent: ProfileComponent::Event,
-        PublicationEvent: PublicationComponent::Event
+        PublicationEvent: PublicationComponent::Event,
+        #[flat]
+        JoltEvent: JoltComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        CommunityEvent: CommunityComponent::Event,
+        #[flat]
+        ChannelEvent: ChannelComponent::Event,
     }
 
     // *************************************************************************
@@ -87,13 +123,19 @@ pub mod KarstHub {
         karstnft_contract_address: ContractAddress,
         handle_contract_address: ContractAddress,
         handle_registry_contract_address: ContractAddress,
-        follow_nft_classhash: felt252
+        follow_nft_classhash: felt252,
+        channel_nft_classhash: felt252,
+        community_nft_classhash: felt252,
+        owner: ContractAddress
     ) {
         self
             .profile
             ._initializer(karstnft_contract_address, get_contract_address(), follow_nft_classhash);
         self.handle_contract_address.write(handle_contract_address);
         self.handle_registry_contract_address.write(handle_registry_contract_address);
+        self.channel._initializer(channel_nft_classhash);
+        self.community._initializer(community_nft_classhash);
+        self.jolt._initializer(owner);
     }
 
     #[abi(embed_v0)]

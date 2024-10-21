@@ -1,6 +1,7 @@
 use starknet::ContractAddress;
 use karst::base::constants::types::{
-    Profile, PublicationType, Publication, RepostParams, PostParams, CommentParams
+    Profile, PublicationType, Publication, RepostParams, PostParams, CommentParams, UpVoteParams,
+    DownVoteParams, TipParams, CollectParams
 };
 // *************************************************************************
 //                              INTERFACE of KARST PROFILE
@@ -38,17 +39,10 @@ pub trait IComposable<TState> {
     fn post(ref self: TState, post_params: PostParams) -> u256;
     fn comment(ref self: TState, comment_params: CommentParams) -> u256;
     fn repost(ref self: TState, mirror_params: RepostParams) -> u256;
-    fn upvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
-    fn downvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
-    fn tip(ref self: TState, profile_address: ContractAddress, pub_id: u256, amount: u256);
-    fn collect(
-        ref self: TState,
-        karst_hub: ContractAddress,
-        profile_address: ContractAddress,
-        pub_id: u256,
-        collect_nft_impl_class_hash: felt252,
-        salt: felt252
-    ) -> u256;
+    fn upvote(ref self: TState, upvote_params: UpVoteParams);
+    fn downvote(ref self: TState, downvote_params: DownVoteParams);
+    fn tip(ref self: TState, tip_params: TipParams);
+    fn collect(ref self: TState, collect_params: CollectParams) -> u256;
 
     // *************************************************************************
     //                              GETTERS
