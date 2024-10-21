@@ -992,7 +992,6 @@ fn test_set_ban_status_by_mod() {
     dispatcher.join_channel(channel_id);
     stop_cheat_caller_address(channel_contract_address);
 
-    let mut spy = spy_events();
     let mut moderator_array = array![USER_TWO.try_into().unwrap()];
     start_cheat_caller_address(channel_contract_address, USER_ONE.try_into().unwrap());
     dispatcher.add_channel_mods(channel_id, moderator_array.clone());

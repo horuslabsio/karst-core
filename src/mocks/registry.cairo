@@ -8,8 +8,7 @@ pub mod Registry {
     use core::pedersen::PedersenTrait;
     use starknet::{
         ContractAddress, get_caller_address, get_contract_address, syscalls::call_contract_syscall,
-        class_hash::ClassHash, syscalls::deploy_syscall, SyscallResultTrait,
-        storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
+        class_hash::ClassHash, syscalls::deploy_syscall, SyscallResultTrait
     };
     use token_bound_accounts::interfaces::IRegistry::IRegistry;
 

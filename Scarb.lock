@@ -181,4 +181,7 @@ dependencies = [
 [[package]]
 name = "token_bound_accounts"
 version = "0.3.0"
-source = "git+https://github.com/Starknet-Africa-Edu/TBA?tag=v0.3.0#1f8b5e3c45422fb188ef2cf874b46d02f642973b"
+source = "git+https://github.com/horuslabsio/TBA?branch=v3#6a7ea81d619cb3b5f3bd7c4360bdc1619799d884"
+dependencies = [
+ "openzeppelin",
+]
