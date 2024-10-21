@@ -18,7 +18,7 @@ pub mod ChannelComponent {
     use karst::community::community::CommunityComponent;
     use karst::interfaces::{
         IChannel::IChannel, ICommunity::ICommunity,
-        ICommunityNft::{ICommunityNftDispatcher, ICommunityNftDispatcherTrait}
+        ICustomNFT::{ICustomNFTDispatcher, ICustomNFTDispatcherTrait}
     };
     use karst::base::{
         constants::errors::Errors::{
@@ -609,7 +609,7 @@ pub mod ChannelComponent {
             profile: ContractAddress,
             channel_nft_address: ContractAddress
         ) -> u256 {
-            let token_id = ICommunityNftDispatcher { contract_address: channel_nft_address }
+            let token_id = ICustomNFTDispatcher { contract_address: channel_nft_address }
                 .mint_nft(profile);
             token_id
         }
@@ -622,7 +622,7 @@ pub mod ChannelComponent {
             channel_nft_address: ContractAddress,
             token_id: u256
         ) {
-            ICommunityNftDispatcher { contract_address: channel_nft_address }
+            ICustomNFTDispatcher { contract_address: channel_nft_address }
                 .burn_nft(get_caller_address(), token_id);
         }
     }
