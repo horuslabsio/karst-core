@@ -65,7 +65,7 @@ fn __setup__() -> (
         .unwrap_syscall();
 
     // declare account
-    let account_class_hash = declare("AccountPreset").unwrap().contract_class();
+    let account_class_hash = declare("AccountV3").unwrap().contract_class();
 
     //declare collectnft
     let collect_nft_classhash = declare("CollectNFT").unwrap().contract_class();

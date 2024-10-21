@@ -32,7 +32,7 @@ fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractA
     let (registry_contract_address, _) = registry_class_hash.deploy(@array![]).unwrap_syscall();
 
     // declare account
-    let account_class_hash = declare("AccountPreset").unwrap().contract_class();
+    let account_class_hash = declare("AccountV3").unwrap().contract_class();
 
     // declare follownft
     let follow_nft_classhash = declare("Follow").unwrap().contract_class();

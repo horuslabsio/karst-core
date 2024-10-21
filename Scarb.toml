@@ -23,5 +23,5 @@ url= "https://starknet-sepolia.public.blastapi.io"
 
 [[target.starknet-contract]]
 casm = true
-build-external-contracts = ["token_bound_accounts::components::presets::account_preset::AccountPreset"]
+build-external-contracts = ["token_bound_accounts::accountV3::accountV3::AccountV3"]
 allowed-libfuncs-list.name = "experimental"

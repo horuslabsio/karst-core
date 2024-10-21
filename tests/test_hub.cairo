@@ -46,7 +46,7 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
     let registry_class_hash = declare("Registry").unwrap().contract_class();
 
     // declare tokenbound account
-    let account_class_hash = declare("AccountPreset").unwrap().contract_class();
+    let account_class_hash = declare("AccountV3").unwrap().contract_class();
 
     // declare follownft
     let follow_nft_classhash = declare("Follow").unwrap().contract_class();
