@@ -5,7 +5,7 @@ pub mod ProfileComponent {
     // *************************************************************************
     use core::{traits::TryInto};
     use starknet::{
-        ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
+        get_tx_info, ContractAddress, get_caller_address, get_block_timestamp, ClassHash,
         syscalls::deploy_syscall, SyscallResultTrait,
         storage::{
             StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
@@ -77,12 +77,15 @@ pub mod ProfileComponent {
             }
             let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
                 .get_user_token_id(recipient);
-
+            let tx_info = get_tx_info().unbox();
+            let chain_id = tx_info.chain_id;
             // create tokenbound account
             let profile_address = IRegistryLibraryDispatcher {
                 class_hash: registry_hash.try_into().unwrap()
             }
-                .create_account(implementation_hash, karstnft_contract_address, token_id, salt);
+                .create_account(
+                    implementation_hash, karstnft_contract_address, token_id, salt, chain_id
+                );
 
             // deploy follow nft contract
             let mut constructor_calldata: Array<felt252> = array![

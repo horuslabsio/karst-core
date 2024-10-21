@@ -46,7 +46,7 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
     let registry_class_hash = declare("Registry").unwrap().contract_class();
 
     // declare tokenbound account
-    let account_class_hash = declare("Account").unwrap().contract_class();
+    let account_class_hash = declare("AccountV3").unwrap().contract_class();
 
     // declare follownft
     let follow_nft_classhash = declare("Follow").unwrap().contract_class();
@@ -81,6 +81,7 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
             (*account_class_hash.class_hash).into(),
             2478
         );
+
     stop_cheat_caller_address(hub_contract_address);
 
     start_cheat_caller_address(hub_contract_address, ADDRESS3.try_into().unwrap());
@@ -249,7 +250,6 @@ fn test_set_block_status() {
 #[test]
 fn test_get_handle_id() {
     let (hub_contract_address, user_one_profile_address, _, _, minted_handle_id) = __setup__();
-
     let dispatcher = IHubDispatcher { contract_address: hub_contract_address };
     let handle_id = dispatcher.get_handle_id(user_one_profile_address);
     assert(handle_id == minted_handle_id, 'invalid handle id');

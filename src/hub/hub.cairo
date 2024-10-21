@@ -190,7 +190,9 @@ pub mod KarstHub {
             let dispatcher = IHandleRegistryDispatcher {
                 contract_address: self.handle_registry_contract_address.read()
             };
-            dispatcher.get_handle(profile_address)
+
+            let handle_id = dispatcher.get_handle(profile_address);
+            handle_id
         }
 
         /// @notice returns the full handle of a user
