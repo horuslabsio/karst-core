@@ -20,6 +20,7 @@ const ADDRESS2: felt252 = 53453;
 const ADDRESS3: felt252 = 24252;
 const ADDRESS4: felt252 = 24552;
 const TEST_LOCAL_NAME: felt252 = 'user';
+const OWNER: felt252 = 2357;
 
 // *************************************************************************
 //                              SETUP
@@ -51,13 +52,21 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
     // declare follownft
     let follow_nft_classhash = declare("Follow").unwrap().contract_class();
 
+    let channel_nft_classhash = declare("ChannelNFT").unwrap().contract_class();
+    // declare community_nft
+
+    let community_nft_classhash = declare("CommunityNFT").unwrap().contract_class();
+
     // deploy hub contract
     let hub_class_hash = declare("KarstHub").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![
         nft_contract_address.into(),
         handle_contract_address.into(),
         handle_registry_contract_address.into(),
-        (*follow_nft_classhash.class_hash).into()
+        (*follow_nft_classhash.class_hash).into(),
+        (*channel_nft_classhash.class_hash).into(),
+        (*community_nft_classhash.class_hash).into(),
+        OWNER
     ];
     let (hub_contract_address, _) = hub_class_hash.deploy(@calldata).unwrap_syscall();
 
