@@ -371,6 +371,12 @@ pub mod ChannelComponent {
             self.channels.read(channel_id).channel_total_members
         }
 
+        ///@notice gets the community id of a channel
+        /// @param channel_id the id of the channel
+        /// @return u256 the community id
+        fn get_channel_community(self: @ComponentState<TContractState>, channel_id: u256) -> u256 {
+            self.channels.read(channel_id).community_id
+        }
         /// @notice checks if a profile is a moderator
         /// @param profile addresss to be checked
         /// @param channel_id the id of the channel
