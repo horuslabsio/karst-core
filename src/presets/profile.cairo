@@ -1,12 +1,12 @@
 #[starknet::contract]
-pub mod KarstProfile {
+pub mod ColonizProfile {
     use starknet::ContractAddress;
-    use karst::profile::profile::ProfileComponent;
+    use coloniz::profile::profile::ProfileComponent;
 
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
 
     #[abi(embed_v0)]
-    impl profileImpl = ProfileComponent::KarstProfile<ContractState>;
+    impl profileImpl = ProfileComponent::colonizProfile<ContractState>;
     impl ProfilePrivateImpl = ProfileComponent::Private<ContractState>;
 
     #[storage]
@@ -25,10 +25,10 @@ pub mod KarstProfile {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        karstnft_contract_address: ContractAddress,
+        coloniznft_contract_address: ContractAddress,
         hub_address: ContractAddress,
         follow_nft_classhash: felt252
     ) {
-        self.profile._initializer(karstnft_contract_address, hub_address, follow_nft_classhash);
+        self.profile._initializer(coloniznft_contract_address, hub_address, follow_nft_classhash);
     }
 }

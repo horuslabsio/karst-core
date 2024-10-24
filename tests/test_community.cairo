@@ -11,12 +11,12 @@ use snforge_std::{
     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
 
-use karst::community::community::CommunityComponent;
-use karst::base::constants::types::{GateKeepType, CommunityType};
-use karst::interfaces::ICommunity::{ICommunityDispatcher, ICommunityDispatcherTrait};
-use karst::interfaces::IJolt::{IJoltDispatcher, IJoltDispatcherTrait};
-use karst::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
-use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+use coloniz::community::community::CommunityComponent;
+use coloniz::base::constants::types::{GateKeepType, CommunityType};
+use coloniz::interfaces::ICommunity::{ICommunityDispatcher, ICommunityDispatcherTrait};
+use coloniz::interfaces::IJolt::{IJoltDispatcher, IJoltDispatcherTrait};
+use coloniz::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
+use coloniz::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const ADMIN: felt252 = 'ADMIN';
@@ -36,7 +36,7 @@ fn __setup__() -> (ContractAddress, ContractAddress) {
     let community_nft_class_hash = declare("CommunityNFT").unwrap().contract_class();
 
     // deploy community preset contract
-    let community_contract = declare("KarstCommunity").unwrap().contract_class();
+    let community_contract = declare("ColonizCommunity").unwrap().contract_class();
     let mut community_constructor_calldata: Array<felt252> = array![
         (*community_nft_class_hash.class_hash).into(), ADMIN
     ];
@@ -156,7 +156,7 @@ fn test_join_community() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: already a Member',))]
+#[should_panic(expected: ('coloniz: already a Member',))]
 fn test_should_panic_if_a_user_joins_one_community_twice() {
     let (community_contract_address, _) = __setup__();
 
@@ -255,7 +255,7 @@ fn test_leave_community() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
+#[should_panic(expected: ('coloniz: Not Community Member',))]
 fn test_should_panic_if_profile_leaving_is_not_a_member() {
     let (community_contract_address, _) = __setup__();
 
@@ -334,7 +334,7 @@ fn test_set_community_metadata_uri() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_should_panic_if_unauthorize_profile_set_community_metadata_uri() {
     let (community_contract_address, _) = __setup__();
 
@@ -430,7 +430,7 @@ fn test_add_community_mod_emits_event() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not Community owner',))]
+#[should_panic(expected: ('coloniz: Not Community owner',))]
 fn test_should_panic_if_caller_adding_mod_is_not_owner() {
     let (community_contract_address, _) = __setup__();
 
@@ -448,7 +448,7 @@ fn test_should_panic_if_caller_adding_mod_is_not_owner() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
+#[should_panic(expected: ('coloniz: Not Community Member',))]
 fn test_should_panic_if_mod_is_not_member() {
     let (community_contract_address, _) = __setup__();
 
@@ -579,7 +579,7 @@ fn test_remove_community_mod_emit_event() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a community mod',))]
+#[should_panic(expected: ('coloniz: Not a community mod',))]
 fn test_should_panic_if_mod_to_be_removed_is_not_a_mod() {
     let (community_contract_address, _) = __setup__();
 
@@ -618,7 +618,7 @@ fn test_should_panic_if_mod_to_be_removed_is_not_a_mod() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not Community owner',))]
+#[should_panic(expected: ('coloniz: Not Community owner',))]
 fn test_should_panic_if_caller_removing_mod_is_not_owner() {
     let (community_contract_address, _) = __setup__();
 
@@ -677,7 +677,7 @@ fn test_set_censorship_status() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_only_owner_can_set_censorship_status() {
     let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -820,7 +820,7 @@ fn test_set_ban_status_emit_event() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
     let (community_contract_address, _) = __setup__();
 
@@ -858,7 +858,7 @@ fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
+#[should_panic(expected: ('coloniz: Not Community Member',))]
 fn test_can_only_set_ban_status_for_members() {
     let (community_contract_address, _) = __setup__();
 
@@ -891,7 +891,7 @@ fn test_can_only_set_ban_status_for_members() {
 
 
 #[test]
-#[should_panic(expected: ('Karst: array mismatch',))]
+#[should_panic(expected: ('coloniz: array mismatch',))]
 fn test_should_set_ban_status_for_invalid_array_length() {
     let (community_contract_address, _) = __setup__();
 
@@ -952,7 +952,7 @@ fn test_community_upgrade() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not Community owner',))]
+#[should_panic(expected: ('coloniz: Not Community owner',))]
 fn test_should_panic_if_caller_upgrading_is_not_owner() {
     let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -1125,7 +1125,7 @@ fn test_nft_gatekeeping() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: only premium communities',))]
+#[should_panic(expected: ('coloniz: only premium communiti',))]
 fn test_only_premium_communities_can_be_paid_gated() {
     let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -1144,7 +1144,7 @@ fn test_only_premium_communities_can_be_paid_gated() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: only premium communities',))]
+#[should_panic(expected: ('coloniz: only premium communiti',))]
 fn test_only_premium_communities_can_be_nft_gated() {
     let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -1163,7 +1163,7 @@ fn test_only_premium_communities_can_be_nft_gated() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not Community owner',))]
+#[should_panic(expected: ('coloniz: Not Community owner',))]
 fn test_should_panic_if_caller_to_gatekeep_is_not_owner() {
     let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -1230,7 +1230,7 @@ fn test_community_gatekeep_emits_event() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_permissioned_gating_is_enforced_on_joining() {
     let (community_contract_address, _) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };
@@ -1261,7 +1261,7 @@ fn test_permissioned_gating_is_enforced_on_joining() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_nft_gating_is_enforced_on_joining() {
     let (community_contract_address, usdt_contract_address) = __setup__();
     let communityDispatcher = ICommunityDispatcher { contract_address: community_contract_address };

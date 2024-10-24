@@ -4,7 +4,7 @@ use starknet::ContractAddress;
 //                            PROFILE
 // *************************************************************************
 // * @notice A struct containing profile data.
-// * profile_address The profile ID of a karst profile
+// * profile_address The profile ID of a coloniz profile
 // * profile_owner The address that created the profile_address
 // * @param pub_count The number of publications made to this profile.
 // * @param metadataURI MetadataURI is used to store the profile's metadata, for example: displayed
@@ -71,9 +71,11 @@ pub struct Publication {
     pub root_pub_id: u256,
     pub upvote: u256,
     pub downvote: u256,
-    pub channel_id: felt252,
+    pub channel_id: u256,
     pub collect_nft: ContractAddress,
-    pub tipped_amount: u256
+    pub tipped_amount: u256,
+    pub community_id: u256,
+    pub approved: bool
 }
 
 // /**
@@ -103,7 +105,8 @@ pub enum PublicationType {
 pub struct PostParams {
     pub content_URI: ByteArray,
     pub profile_address: ContractAddress,
-    pub channel_id: felt252
+    pub channel_id: u256,
+    pub community_id: u256,
 }
 
 ///**
@@ -121,6 +124,8 @@ pub struct CommentParams {
     pub pointed_profile_address: ContractAddress,
     pub pointed_pub_id: u256,
     pub reference_pub_type: PublicationType,
+    pub channel_id: u256,
+    pub community_id: u256,
 }
 
 ///**
@@ -153,6 +158,8 @@ pub struct RepostParams {
     pub profile_address: ContractAddress,
     pub pointed_profile_address: ContractAddress,
     pub pointed_pub_id: u256,
+    pub channel_id: u256,
+    pub community_id: u256,
 }
 
 // /**

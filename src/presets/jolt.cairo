@@ -1,7 +1,7 @@
 #[starknet::contract]
 pub mod Jolt {
     use starknet::ContractAddress;
-    use karst::jolt::jolt::JoltComponent;
+    use coloniz::jolt::jolt::JoltComponent;
     use openzeppelin::access::ownable::OwnableComponent;
 
     component!(path: JoltComponent, storage: jolt, event: JoltEvent);

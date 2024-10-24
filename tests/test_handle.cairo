@@ -9,23 +9,23 @@ use snforge_std::{
     EventSpyAssertionsTrait, DeclareResultTrait
 };
 
-use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
-use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-use karst::namespaces::handles::Handles;
+use coloniz::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+use coloniz::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+use coloniz::namespaces::handles::Handles;
 
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
 const USER_TWO: felt252 = 'JOHN';
-const TEST_LOCAL_NAME: felt252 = 'karst';
-const TEST_LOCAL_NAME_TWO: felt252 = 'karst_two';
-const TEST_LOCAL_NAME_THREE: felt252 = 'karstdoe_';
-const TEST_LOCAL_NAME_FOUR: felt252 = 'karstdoe2';
-const TEST_BAD_LOCAL_NAME_1: felt252 = '_karst';
-const TEST_BAD_LOCAL_NAME_2: felt252 = 'Karst';
-const TEST_BAD_LOCAL_NAME_3: felt252 = 'karst-';
+const TEST_LOCAL_NAME: felt252 = 'coloniz';
+const TEST_LOCAL_NAME_TWO: felt252 = 'coloniz_two';
+const TEST_LOCAL_NAME_THREE: felt252 = 'colonizdoe_';
+const TEST_LOCAL_NAME_FOUR: felt252 = 'colonizdoe2';
+const TEST_BAD_LOCAL_NAME_1: felt252 = '_coloniz';
+const TEST_BAD_LOCAL_NAME_2: felt252 = 'Coloniz';
+const TEST_BAD_LOCAL_NAME_3: felt252 = 'coloniz-';
 
 const TEST_TOKEN_ID: u256 =
-    2821396919044486126129003092173544296283884532301009869065707438220168412703;
+    3382571571946029498300446473584208976610422898231982587356291365654797409289;
 
 fn __setup__() -> ContractAddress {
     // deploy handles contract
@@ -67,7 +67,7 @@ fn test_mint_handle_two() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid local name!',))]
+#[should_panic(expected: ('coloniz: invalid local name!',))]
 fn test_mint_handle_with_bad_local_name_1() {
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
@@ -75,9 +75,8 @@ fn test_mint_handle_with_bad_local_name_1() {
     start_cheat_caller_address(handles_contract_address, USER_ONE.try_into().unwrap());
     handles_dispatcher.mint_handle(USER_ONE.try_into().unwrap(), TEST_BAD_LOCAL_NAME_1);
 }
-
 #[test]
-#[should_panic(expected: ('Karst: invalid local name!',))]
+#[should_panic(expected: ('coloniz: invalid local name!',))]
 fn test_mint_handle_with_bad_local_name_2() {
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
@@ -87,7 +86,7 @@ fn test_mint_handle_with_bad_local_name_2() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid local name!',))]
+#[should_panic(expected: ('coloniz: invalid local name!',))]
 fn test_mint_handle_with_bad_local_name_3() {
     let handles_contract_address = __setup__();
     let handles_dispatcher = IHandleDispatcher { contract_address: handles_contract_address };
@@ -158,7 +157,7 @@ fn test_burn() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: caller is not owner!',))]
+#[should_panic(expected: ('coloniz: caller is not owner!',))]
 fn test_cannot_burn_if_not_owner_of() {
     let contract_address = __setup__();
     let dispatcher = IHandleDispatcher { contract_address };
@@ -185,13 +184,13 @@ fn test_get_handle() {
 
     let handle: ByteArray = handles_dispatcher.get_handle(token_id);
 
-    assert(handle == "karst.kst", 'Invalid handle');
+    assert(handle == "coloniz.kst", 'Invalid handle');
 
     stop_cheat_caller_address(handles_contract_address);
 }
 
 #[test]
-#[should_panic(expected: ('Karst: handle does not exist!',))]
+#[should_panic(expected: ('coloniz: handle does not exist!',))]
 fn test_get_handle_should_panic() {
     let handles_contract_address = __setup__();
 

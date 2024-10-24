@@ -54,7 +54,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "karst"
+name = "coloniz"
 version = "0.1.0"
 dependencies = [
  "alexandria_bytes",

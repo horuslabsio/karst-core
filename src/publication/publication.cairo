@@ -4,23 +4,36 @@ pub mod PublicationComponent {
     //                              IMPORTS
     // *************************************************************************
     use core::traits::TryInto;
-    use karst::interfaces::IProfile::IProfile;
+    use coloniz::interfaces::IProfile::IProfile;
     use core::num::traits::zero::Zero;
     use core::option::OptionTrait;
     use starknet::{
-        ContractAddress, get_caller_address, get_block_timestamp, syscalls::{deploy_syscall},
-        class_hash::ClassHash, SyscallResultTrait,
+        ContractAddress, get_caller_address, get_contract_address, get_block_timestamp,
+        syscalls::{deploy_syscall}, class_hash::ClassHash, SyscallResultTrait,
         storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
     };
-    use karst::interfaces::IPublication::IKarstPublications;
-    use karst::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
-    use karst::base::{
-        constants::errors::Errors::{NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED},
-        constants::types::{PostParams, Publication, PublicationType, CommentParams, RepostParams}
+    use coloniz::interfaces::IPublication::IColonizPublications;
+    use coloniz::interfaces::IJolt::IJolt;
+    use coloniz::interfaces::ICommunity::ICommunity;
+    use coloniz::interfaces::IChannel::IChannel;
+    use coloniz::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
+    use coloniz::base::{
+        constants::errors::Errors::{
+            NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED, NOT_COMMUNITY_MEMBER,
+            BANNED_MEMBER, NOT_CHANNEL_MEMBER, BANNED_FROM_CHANNEL
+        },
+        constants::types::{
+            PostParams, Publication, PublicationType, CommentParams, RepostParams, JoltParams,
+            JoltType
+        }
     };
 
-    use karst::profile::profile::ProfileComponent;
-    use karst::profile::profile::ProfileComponent::PrivateTrait;
+    use coloniz::profile::profile::ProfileComponent;
+    use coloniz::profile::profile::ProfileComponent::PrivateTrait;
+    use coloniz::jolt::jolt::JoltComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::channel::channel::ChannelComponent;
+    use openzeppelin::access::ownable::OwnableComponent;
 
 
     // *************************************************************************
@@ -105,31 +118,45 @@ pub mod PublicationComponent {
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(KarstPublication)]
+    #[embeddable_as(colonizPublication)]
     impl PublicationsImpl<
         TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
-        impl Profile: ProfileComponent::HasComponent<TContractState>
-    > of IKarstPublications<ComponentState<TContractState>> {
+        impl Profile: ProfileComponent::HasComponent<TContractState>,
+        impl Jolt: JoltComponent::HasComponent<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>,
+        impl Community: CommunityComponent::HasComponent<TContractState>,
+        impl Channel: ChannelComponent::HasComponent<TContractState>,
+    > of IColonizPublications<ComponentState<TContractState>> {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
         /// @notice performs post action
         /// @param contentURI uri of the content to be posted
         /// @param profile_address address of profile performing the post action
-        fn post(ref self: ComponentState<TContractState>, post_params: PostParams) -> u256 {
+        fn post(ref self: ComponentState<TContractState>, mut post_params: PostParams) -> u256 {
+            // Initialize approval flag as false
+            let mut is_approved: bool = false;
+
+            // Clone the post parameters for future use (emission)
             let ref_post_params = post_params.clone();
+
+            // Get the owner of the profile from the Profile component
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(post_params.profile_address)
                 .profile_owner;
+
+            // Ensure the caller is the owner of the profile
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
 
+            // Get the Profile component and increment the publication count (new pub_id assigned)
             let mut profile_component = get_dep_component_mut!(ref self, Profile);
             let pub_id_assigned = profile_component
                 .increment_publication_count(post_params.profile_address);
 
-            let new_post = Publication {
+            // Initialize the new post struct with default values
+            let mut new_post = Publication {
                 pointed_profile_address: 0.try_into().unwrap(),
                 pointed_pub_id: 0,
                 content_URI: post_params.content_URI,
@@ -140,10 +167,32 @@ pub mod PublicationComponent {
                 downvote: 0,
                 channel_id: 0,
                 collect_nft: 0.try_into().unwrap(),
-                tipped_amount: 0
+                tipped_amount: 0,
+                community_id: 0,
+                approved: false
             };
 
+            // Check if the post is for a community (non-zero community_id)
+            if post_params.community_id != 0 {
+                is_approved = self
+                    ._check_community_approval(profile_owner, post_params.community_id);
+                // Update post struct to reflect community post
+                new_post.community_id = post_params.community_id;
+                new_post.channel_id = 0; // Set channel_id to 0 since it's a community post
+                new_post.approved = is_approved; // Set approval status based on checks
+            } else {
+                is_approved = self._check_channel_approval(profile_owner, post_params.channel_id);
+
+                // Update post struct to reflect channel post
+                new_post.community_id = 0; // Set community_id to 0 since it's a channel post
+                new_post.channel_id = post_params.channel_id;
+                new_post.approved = is_approved; // Set approval status based on checks
+            }
+
+            // Write the new post into the storage (identified by profile_address and pub_id)
             self.publication.write((post_params.profile_address, pub_id_assigned), new_post);
+
+            // Emit a post event with the details of the post
             self
                 .emit(
                     Post {
@@ -153,8 +202,11 @@ pub mod PublicationComponent {
                         block_timestamp: get_block_timestamp(),
                     }
                 );
+
+            // Return the assigned publication ID
             pub_id_assigned
         }
+
 
         /// @notice performs comment action
         /// @param profile_address address of profile performing the comment action
@@ -167,6 +219,14 @@ pub mod PublicationComponent {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(comment_params.profile_address)
                 .profile_owner;
+            self
+                ._validate_channel_membership_and_ban_status(
+                    profile_owner, comment_params.channel_id
+                );
+            self
+                ._validate_community_membership_and_ban_status(
+                    profile_owner, comment_params.community_id
+                );
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
 
             let ref_comment_params = comment_params.clone();
@@ -201,6 +261,14 @@ pub mod PublicationComponent {
             let profile_owner: ContractAddress = get_dep_component!(@self, Profile)
                 .get_profile(repost_params.profile_address)
                 .profile_owner;
+            self
+                ._validate_channel_membership_and_ban_status(
+                    profile_owner, repost_params.channel_id
+                );
+            self
+                ._validate_community_membership_and_ban_status(
+                    profile_owner, repost_params.community_id
+                );
             assert(profile_owner == get_caller_address(), NOT_PROFILE_OWNER);
 
             let ref_repostParams = repost_params.clone();
@@ -233,13 +301,16 @@ pub mod PublicationComponent {
         /// @notice upvote a post
         /// @param profile_address address of profile performing the upvote action
         ///  @param pub_id id of the publication to upvote
-        /// todo!(gate function)
         fn upvote(
-            ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+            ref self: ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            pub_id: u256,
         ) {
             let mut publication = self.get_publication(profile_address, pub_id);
             let caller = get_caller_address();
             let has_voted = self.vote_status.read((caller, pub_id));
+            self._validate_channel_membership_and_ban_status(caller, publication.channel_id);
+            self._validate_community_membership_and_ban_status(caller, publication.community_id);
             let upvote_current_count = publication.upvote + 1;
             assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication { upvote: upvote_current_count, ..publication };
@@ -261,11 +332,15 @@ pub mod PublicationComponent {
         /// todo!(gate function)
 
         fn downvote(
-            ref self: ComponentState<TContractState>, profile_address: ContractAddress, pub_id: u256
+            ref self: ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            pub_id: u256,
         ) {
             let mut publication = self.get_publication(profile_address, pub_id);
             let caller = get_caller_address();
             let has_voted = self.vote_status.read((caller, pub_id));
+            self._validate_channel_membership_and_ban_status(caller, publication.channel_id);
+            self._validate_community_membership_and_ban_status(caller, publication.community_id);
             let downvote_current_count = publication.downvote + 1;
             assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication {
@@ -292,28 +367,41 @@ pub mod PublicationComponent {
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
             pub_id: u256,
-            amount: u256
+            amount: u256,
+            erc20_contract_address: ContractAddress,
         ) {
+            let caller = get_caller_address();
             let mut publication = self.get_publication(profile_address, pub_id);
-            let current_tip_amount = publication.tipped_amount;
-            let updated_publication = Publication {
-                tipped_amount: current_tip_amount + amount, ..publication
+            self._validate_channel_membership_and_ban_status(caller, publication.channel_id);
+            self._validate_community_membership_and_ban_status(caller, publication.community_id);
+            let jolt_param = JoltParams {
+                jolt_type: JoltType::Tip,
+                recipient: profile_address,
+                memo: "Tip User",
+                amount: amount,
+                expiration_stamp: 0,
+                subscription_details: (0, false, 0),
+                erc20_contract_address: erc20_contract_address
             };
+            let mut jolt_comp = get_dep_component_mut!(ref self, Jolt);
+            jolt_comp.jolt(jolt_param);
+            let updated_publication = Publication { tipped_amount: amount, ..publication };
             self.publication.write((profile_address, pub_id), updated_publication)
         }
         // @notice collect nft for a publication
         fn collect(
             ref self: ComponentState<TContractState>,
-            karst_hub: ContractAddress,
             profile_address: ContractAddress,
             pub_id: u256,
+            channel_id: u256,
+            community_id: u256,
             collect_nft_impl_class_hash: felt252,
-            salt: felt252
         ) -> u256 {
+            let caller = get_caller_address();
+            self._validate_channel_membership_and_ban_status(caller, channel_id);
+            self._validate_community_membership_and_ban_status(caller, community_id);
             let collect_nft_address = self
-                ._get_or_deploy_collect_nft(
-                    karst_hub, profile_address, pub_id, collect_nft_impl_class_hash, salt
-                );
+                ._get_or_deploy_collect_nft(profile_address, pub_id, collect_nft_impl_class_hash);
             let token_id = self._mint_collect_nft(collect_nft_address);
 
             self
@@ -398,11 +486,15 @@ pub mod PublicationComponent {
     //                            PRIVATE FUNCTIONS
     // *************************************************************************
     #[generate_trait]
-    impl InternalImpl<
+    pub impl InternalImpl<
         TContractState,
         +HasComponent<TContractState>,
         +Drop<TContractState>,
-        impl Profile: ProfileComponent::HasComponent<TContractState>
+        impl Profile: ProfileComponent::HasComponent<TContractState>,
+        impl Jolt: JoltComponent::HasComponent<TContractState>,
+        impl Ownable: OwnableComponent::HasComponent<TContractState>,
+        impl Community: CommunityComponent::HasComponent<TContractState>,
+        impl Channel: ChannelComponent::HasComponent<TContractState>,
     > of InternalTrait<TContractState> {
         /// @notice fill reference publication
         /// @param profile_address the profile address creating the publication
@@ -457,7 +549,9 @@ pub mod PublicationComponent {
                 downvote: 0,
                 channel_id: pointed_pub.channel_id,
                 collect_nft: 0.try_into().unwrap(),
-                tipped_amount: 0
+                tipped_amount: 0,
+                community_id: pointed_pub.community_id,
+                approved: pointed_pub.approved
             };
 
             self.publication.write((profile_address, pub_id_assigned), updated_reference);
@@ -566,14 +660,14 @@ pub mod PublicationComponent {
 
         fn _deploy_collect_nft(
             ref self: ComponentState<TContractState>,
-            karst_hub: ContractAddress,
+            coloniz_hub: ContractAddress,
             profile_address: ContractAddress,
             pub_id: u256,
             collect_nft_impl_class_hash: felt252,
             salt: felt252
         ) -> ContractAddress {
             let mut constructor_calldata: Array<felt252> = array![
-                karst_hub.into(), profile_address.into(), pub_id.low.into(), pub_id.high.into()
+                coloniz_hub.into(), profile_address.into(), pub_id.low.into(), pub_id.high.into()
             ];
             let class_hash: ClassHash = collect_nft_impl_class_hash.try_into().unwrap();
             let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);
@@ -592,11 +686,9 @@ pub mod PublicationComponent {
         }
         fn _get_or_deploy_collect_nft(
             ref self: ComponentState<TContractState>,
-            karst_hub: ContractAddress,
             profile_address: ContractAddress,
             pub_id: u256,
             collect_nft_impl_class_hash: felt252,
-            salt: felt252
         ) -> ContractAddress {
             let mut publication = self.get_publication(profile_address, pub_id);
             let collect_nft = publication.collect_nft;
@@ -604,7 +696,11 @@ pub mod PublicationComponent {
                 // Deploy a new Collect NFT contract
                 let deployed_collect_nft_address = self
                     ._deploy_collect_nft(
-                        karst_hub, profile_address, pub_id, collect_nft_impl_class_hash, salt
+                        get_contract_address(),
+                        profile_address,
+                        pub_id,
+                        collect_nft_impl_class_hash,
+                        get_block_timestamp().try_into().unwrap()
                     );
 
                 // Update the publication with the deployed Collect NFT address
@@ -626,6 +722,76 @@ pub mod PublicationComponent {
             let caller: ContractAddress = get_caller_address();
             let token_id = ICollectNFTDispatcher { contract_address: collect_nft }.mint_nft(caller);
             token_id
+        }
+
+        fn _check_community_approval(
+            self: @ComponentState<TContractState>,
+            profile_owner: ContractAddress,
+            community_id: u256
+        ) -> bool {
+            // Get community censorship and banned status
+            let community_comp = get_dep_component!(self, Community);
+
+            let banned_status = community_comp.get_ban_status(profile_owner, community_id);
+
+            let community_censorship_status = community_comp
+                .get_community_censorship_status(community_id);
+            // Check if the caller is a member of the community
+            let (is_community_member, _) = community_comp
+                .is_community_member(profile_owner, community_id);
+
+            // Ensure the caller is a valid member of the community and not banned
+            assert(is_community_member == true, NOT_COMMUNITY_MEMBER);
+            assert(banned_status == false, BANNED_MEMBER);
+
+            !community_censorship_status
+        }
+
+        fn _check_channel_approval(
+            self: @ComponentState<TContractState>, profile_owner: ContractAddress, channel_id: u256
+        ) -> bool {
+            let channel_comp = get_dep_component!(self, Channel);
+
+            let channel_censorship_status = channel_comp.get_channel_censorship_status(channel_id);
+            let channel_ban_status = channel_comp.get_channel_ban_status(profile_owner, channel_id);
+
+            // Check if the caller is a member of the channel
+            let (is_channel_member, _) = channel_comp.is_channel_member(profile_owner, channel_id);
+
+            // Ensure the user is a valid member and not banned
+            assert(is_channel_member == true, NOT_CHANNEL_MEMBER);
+            assert(channel_ban_status == false, BANNED_FROM_CHANNEL);
+
+            !channel_censorship_status
+        }
+
+
+        fn _validate_channel_membership_and_ban_status(
+            self: @ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            channel_id: u256
+        ) {
+            let channel_comp = get_dep_component!(self, Channel);
+            let (is_channel_member, _) = channel_comp
+                .is_channel_member(profile_address, channel_id);
+            let channel_ban_status = channel_comp
+                .get_channel_ban_status(profile_address, channel_id);
+            assert(channel_ban_status == false, BANNED_FROM_CHANNEL);
+            assert(is_channel_member == true, NOT_CHANNEL_MEMBER);
+        }
+
+        fn _validate_community_membership_and_ban_status(
+            self: @ComponentState<TContractState>,
+            profile_address: ContractAddress,
+            community_id: u256
+        ) {
+            let community_comp = get_dep_component!(self, Community);
+            let (is_community_member, _) = community_comp
+                .is_community_member(profile_address, community_id);
+            let community_ban_status = community_comp.get_ban_status(profile_address, community_id);
+
+            assert(community_ban_status == false, BANNED_MEMBER);
+            assert(is_community_member == true, NOT_COMMUNITY_MEMBER);
         }
     }
 }

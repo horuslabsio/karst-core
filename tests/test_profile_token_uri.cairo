@@ -1,4 +1,4 @@
-use karst::base::token_uris::profile_token_uri::ProfileTokenUri::get_token_uri;
+use coloniz::base::token_uris::profile_token_uri::ProfileTokenUri::get_token_uri;
 
 #[test]
 fn test_profile_token_uri() {

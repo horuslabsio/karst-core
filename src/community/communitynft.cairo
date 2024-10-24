@@ -8,9 +8,9 @@ pub mod CommunityNFT {
     use openzeppelin::introspection::src5::SRC5Component;
     use openzeppelin::token::erc721::{ERC721Component, ERC721HooksEmptyImpl};
 
-    use karst::interfaces::ICommunityNft::ICommunityNft;
+    use coloniz::interfaces::ICustomNFT::ICustomNFT;
 
-    use karst::base::{
+    use coloniz::base::{
         constants::errors::Errors::{ALREADY_MINTED, NOT_TOKEN_OWNER, TOKEN_DOES_NOT_EXIST},
         utils::base64_extended::convert_into_byteArray,
         token_uris::community_token_uri::CommunityTokenUri::get_token_uri,
@@ -66,7 +66,7 @@ pub mod CommunityNFT {
     }
 
     #[abi(embed_v0)]
-    impl CommunityNft of ICommunityNft<ContractState> {
+    impl CommunityNft of ICustomNFT<ContractState> {
         // *************************************************************************
         //                            EXTERNAL
         // *************************************************************************
@@ -114,7 +114,7 @@ pub mod CommunityNFT {
         fn name(self: @ContractState) -> ByteArray {
             let mut collection_name = ArrayTrait::<felt252>::new();
             let community_id_felt252: felt252 = self.community_id.read().try_into().unwrap();
-            collection_name.append('Karst Community | #');
+            collection_name.append('coloniz Community | #');
             collection_name.append(community_id_felt252);
             let collection_name_byte = convert_into_byteArray(ref collection_name);
             collection_name_byte
@@ -122,7 +122,7 @@ pub mod CommunityNFT {
 
         /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
-            return "KARST:COMMUNITY";
+            return "coloniz:COMMUNITY";
         }
 
         /// @notice returns the token_uri for a particular token_id

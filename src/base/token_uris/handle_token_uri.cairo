@@ -3,9 +3,9 @@
 
 pub mod HandleTokenUri {
     use core::array::ArrayTrait;
-    use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
-    use karst::base::utils::base64_extended::{convert_into_byteArray, get_base64_encode};
-    use karst::base::token_uris::traits::handle::handle::get_svg_handle;
+    use coloniz::base::utils::byte_array_extra::FeltTryIntoByteArray;
+    use coloniz::base::utils::base64_extended::{convert_into_byteArray, get_base64_encode};
+    use coloniz::base::token_uris::traits::handle::handle::get_svg_handle;
 
     pub fn get_token_uri(token_id: u256, local_name: felt252, namespace: felt252) -> ByteArray {
         let baseuri = 'data:image/svg+xml;base64,';

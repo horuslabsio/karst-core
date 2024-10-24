@@ -1,8 +1,8 @@
-# KARST Code of Conduct
+# coloniz Code of Conduct
 
 ## Preamble
 
-The KARST Community was created to foster an open, innovative and inclusive community around open source development.
+The coloniz Community was created to foster an open, innovative and inclusive community around open source development.
 To clarify expected behaviour in our community we have adopted the Contributor Covenant. This code of conduct
 has been adopted by many other open source communities and we feel it expresses our values well.
 

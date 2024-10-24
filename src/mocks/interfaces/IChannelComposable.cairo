@@ -1,10 +1,10 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{ChannelDetails, ChannelMember};
-use karst::base::constants::types::{
+use coloniz::base::constants::types::{ChannelDetails, ChannelMember};
+use coloniz::base::constants::types::{
     GateKeepType, CommunityGateKeepDetails, CommunityType, CommunityDetails, CommunityMember
 };
 // *************************************************************************
-//                              INTERFACE of KARST CHANNEL
+//                              INTERFACE of coloniz CHANNEL
 // *************************************************************************
 #[starknet::interface]
 pub trait IChannelComposable<TState> {

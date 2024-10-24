@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{ChannelDetails, ChannelMember};
+use coloniz::base::constants::types::{ChannelDetails, ChannelMember};
 
 #[starknet::interface]
 pub trait IChannel<TState> {

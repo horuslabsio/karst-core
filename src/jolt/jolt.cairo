@@ -13,11 +13,11 @@ pub mod JoltComponent {
             StorageMapWriteAccess
         }
     };
-    use karst::base::{
+    use coloniz::base::{
         constants::errors::Errors,
         constants::types::{JoltData, JoltParams, JoltType, JoltStatus, SubscriptionData}
     };
-    use karst::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
+    use coloniz::interfaces::{IJolt::IJolt, IERC20::{IERC20Dispatcher, IERC20DispatcherTrait}};
 
     use openzeppelin::access::ownable::OwnableComponent;
     use openzeppelin::access::ownable::OwnableComponent::{OwnableMixinImpl, InternalImpl};

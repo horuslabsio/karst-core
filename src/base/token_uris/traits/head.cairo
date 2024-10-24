@@ -1,7 +1,7 @@
 // let make the face of the profile svg
 
 pub mod head {
-    use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
+    use coloniz::base::utils::byte_array_extra::FeltTryIntoByteArray;
 
     #[derive(Drop)]
     enum FaceVariants {

@@ -11,10 +11,10 @@ pub mod HandleRegistry {
             StorageMapWriteAccess
         }
     };
-    use karst::interfaces::IHandleRegistry::IHandleRegistry;
-    use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::base::{constants::errors::Errors};
-    use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+    use coloniz::interfaces::IHandleRegistry::IHandleRegistry;
+    use coloniz::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+    use coloniz::base::{constants::errors::Errors};
+    use coloniz::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 
     // *************************************************************************
     //                            STORAGE

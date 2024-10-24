@@ -1,32 +1,25 @@
 #[starknet::contract]
-pub mod CollectNFT {
+pub mod ColonizNFT {
     // *************************************************************************
     //                             IMPORTS
     // *************************************************************************
-    use core::array::ArrayTrait;
-    use core::traits::Into;
-    use core::option::OptionTrait;
-    use core::traits::TryInto;
-    use starknet::{ContractAddress, get_block_timestamp};
-    use core::num::traits::zero::Zero;
-    use karst::interfaces::ICollectNFT::ICollectNFT;
-    use karst::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
-    use karst::base::{
-        constants::errors::Errors::{ALREADY_MINTED, TOKEN_DOES_NOT_EXIST},
-        utils::base64_extended::convert_into_byteArray
+    use starknet::{
+        ContractAddress, get_block_timestamp,
+        storage::{
+            StoragePointerWriteAccess, StoragePointerReadAccess, Map, StorageMapReadAccess,
+            StorageMapWriteAccess
+        }
     };
-    use starknet::storage::{
-        Map, StoragePointerWriteAccess, StoragePointerReadAccess, StorageMapReadAccess,
-        StorageMapWriteAccess
+    use core::num::traits::zero::Zero;
+    use coloniz::interfaces::IColonizNFT;
+    use coloniz::base::{
+        constants::errors::Errors::ALREADY_MINTED,
+        token_uris::profile_token_uri::ProfileTokenUri::get_token_uri,
     };
     use openzeppelin::{
         access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
-
-    // *************************************************************************
-    //                             COMPONENTS
-    // *************************************************************************
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
     component!(path: ERC721Component, storage: erc721, event: ERC721Event);
@@ -60,12 +53,10 @@ pub mod CollectNFT {
         src5: SRC5Component::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
-        karst_hub: ContractAddress,
+        admin: ContractAddress,
         last_minted_id: u256,
         mint_timestamp: Map<u256, u64>,
         user_token_id: Map<ContractAddress, u256>,
-        profile_address: ContractAddress,
-        pub_id: u256,
     }
 
     // *************************************************************************
@@ -86,35 +77,29 @@ pub mod CollectNFT {
     //                              CONSTRUCTOR
     // *************************************************************************
     #[constructor]
-    fn constructor(
-        ref self: ContractState,
-        karst_hub: ContractAddress,
-        profile_address: ContractAddress,
-        pub_id: u256,
-    ) {
-        self.karst_hub.write(karst_hub);
-        self.profile_address.write(profile_address);
-        self.pub_id.write(pub_id);
+    fn constructor(ref self: ContractState, admin: ContractAddress,) {
+        self.admin.write(admin);
+        self.erc721.initializer("coloniz", "KST", "");
     }
 
     #[abi(embed_v0)]
-    impl CollectNFTImpl of ICollectNFT<ContractState> {
+    impl colonizImpl of IColonizNFT::IColonizNFT<ContractState> {
         // *************************************************************************
         //                            EXTERNAL
         // *************************************************************************
-        /// @notice mints the collect NFT
-        /// @param address address of user trying to mint the collect NFT
-        fn mint_nft(ref self: ContractState, address: ContractAddress) -> u256 {
+        /// @notice mints the coloniz NFT
+        /// @param address address of user trying to mint the coloniz NFT
+        fn mint_coloniznft(ref self: ContractState, address: ContractAddress) {
             let balance = self.erc721.balance_of(address);
             assert(balance.is_zero(), ALREADY_MINTED);
 
             let mut token_id = self.last_minted_id.read() + 1;
             self.erc721.mint(address, token_id);
             let timestamp: u64 = get_block_timestamp();
+
             self.user_token_id.write(address, token_id);
             self.last_minted_id.write(token_id);
             self.mint_timestamp.write(token_id, timestamp);
-            self.last_minted_id.read()
         }
 
         // *************************************************************************
@@ -134,43 +119,24 @@ pub mod CollectNFT {
         fn get_last_minted_id(self: @ContractState) -> u256 {
             self.last_minted_id.read()
         }
-        ///@notice get source publication pointer
-        ///
-        fn get_source_publication_pointer(self: @ContractState) -> (ContractAddress, u256) {
-            let profile_address = self.profile_address.read();
-            let pub_id = self.pub_id.read();
-            (profile_address, pub_id)
-        }
+
         // *************************************************************************
         //                            METADATA
         // *************************************************************************
         /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
-            let mut collection_name = ArrayTrait::<felt252>::new();
-            let profile_address_felt252: felt252 = self.profile_address.read().into();
-            let pub_id_felt252: felt252 = self.pub_id.read().try_into().unwrap();
-            collection_name.append('Karst Collect | Profile #');
-            collection_name.append(profile_address_felt252);
-            collection_name.append('- Publication #');
-            collection_name.append(pub_id_felt252);
-            let collection_name_byte = convert_into_byteArray(ref collection_name);
-            collection_name_byte
+            return "coloniz";
         }
 
         /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
-            return "KARST:COLLECT";
+            return "KST";
         }
 
         /// @notice returns the token_uri for a particular token_id
         fn token_uri(self: @ContractState, token_id: u256) -> ByteArray {
-            assert(self.erc721.exists(token_id), TOKEN_DOES_NOT_EXIST);
-            let profile_address = self.profile_address.read();
-            let pub_id = self.pub_id.read();
-            let karst_hub = self.karst_hub.read();
-            let token_uri = IHubDispatcher { contract_address: karst_hub }
-                .get_publication_content_uri(profile_address, pub_id);
-            token_uri
+            let mint_timestamp: u64 = self.get_token_mint_timestamp(token_id);
+            get_token_uri(token_id, mint_timestamp)
         }
     }
 }

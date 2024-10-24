@@ -1,4 +1,4 @@
-pub mod IKarstNFT;
+pub mod IColonizNFT;
 pub mod IERC721;
 pub mod IERC20;
 pub mod IRegistry;
@@ -10,7 +10,7 @@ pub mod IHandleRegistry;
 pub mod IHub;
 pub mod ICommunity;
 pub mod ICollectNFT;
-pub mod ICommunityNft;
+pub mod ICustomNFT;
 pub mod IJolt;
 pub mod IUpgradeable;
 pub mod IChannel;

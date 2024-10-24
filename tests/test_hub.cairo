@@ -10,9 +10,11 @@ use snforge_std::{
     declare, DeclareResultTrait, ContractClassTrait, start_cheat_caller_address,
     stop_cheat_caller_address
 };
-use karst::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
-use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
-use karst::interfaces::IHandleRegistry::{IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait};
+use coloniz::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
+use coloniz::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+use coloniz::interfaces::IHandleRegistry::{
+    IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait
+};
 
 const ADMIN: felt252 = 13245;
 const ADDRESS1: felt252 = 1234;
@@ -20,13 +22,14 @@ const ADDRESS2: felt252 = 53453;
 const ADDRESS3: felt252 = 24252;
 const ADDRESS4: felt252 = 24552;
 const TEST_LOCAL_NAME: felt252 = 'user';
+const OWNER: felt252 = 2357;
 
 // *************************************************************************
 //                              SETUP
 // *************************************************************************
 fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAddress, u256) {
     // deploy NFT
-    let nft_class_hash = declare("KarstNFT").unwrap().contract_class();
+    let nft_class_hash = declare("ColonizNFT").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![ADMIN];
     let (nft_contract_address, _) = nft_class_hash.deploy(@calldata).unwrap_syscall();
 
@@ -51,13 +54,21 @@ fn __setup__() -> (ContractAddress, ContractAddress, ContractAddress, ContractAd
     // declare follownft
     let follow_nft_classhash = declare("Follow").unwrap().contract_class();
 
+    let channel_nft_classhash = declare("ChannelNFT").unwrap().contract_class();
+    // declare community_nft
+
+    let community_nft_classhash = declare("CommunityNFT").unwrap().contract_class();
+
     // deploy hub contract
-    let hub_class_hash = declare("KarstHub").unwrap().contract_class();
+    let hub_class_hash = declare("ColonizHub").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![
         nft_contract_address.into(),
         handle_contract_address.into(),
         handle_registry_contract_address.into(),
-        (*follow_nft_classhash.class_hash).into()
+        (*follow_nft_classhash.class_hash).into(),
+        (*channel_nft_classhash.class_hash).into(),
+        (*community_nft_classhash.class_hash).into(),
+        OWNER
     ];
     let (hub_contract_address, _) = hub_class_hash.deploy(@calldata).unwrap_syscall();
 
@@ -142,7 +153,7 @@ fn test_hub_following() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid profile address!',))]
+#[should_panic(expected: ('coloniz: invalid profile_addr!',))]
 fn test_hub_following_fails_if_any_profile_is_invalid() {
     let (hub_contract_address, user_one_profile_address, _, user_three_profile_address, _) =
         __setup__();
@@ -156,7 +167,7 @@ fn test_hub_following_fails_if_any_profile_is_invalid() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: self follow is forbidden',))]
+#[should_panic(expected: ('coloniz: self_follow forbidden',))]
 fn test_hub_following_fails_if_profile_is_self_following() {
     let (hub_contract_address, user_one_profile_address, _, _, _) = __setup__();
 

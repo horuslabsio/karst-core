@@ -3,9 +3,9 @@
 
 pub mod FollowTokenUri {
     use starknet::ContractAddress;
-    use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
-    use karst::base::utils::base64_extended::{convert_into_byteArray, get_base64_encode};
-    use karst::base::token_uris::traits::follow::follow::get_svg_follow;
+    use coloniz::base::utils::byte_array_extra::FeltTryIntoByteArray;
+    use coloniz::base::utils::base64_extended::{convert_into_byteArray, get_base64_encode};
+    use coloniz::base::token_uris::traits::follow::follow::get_svg_follow;
 
     pub fn get_token_uri(
         follow_token_id: u256, followed_profile_address: ContractAddress, follow_timestamp: u64

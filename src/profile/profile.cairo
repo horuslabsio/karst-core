@@ -12,11 +12,11 @@ pub mod ProfileComponent {
             StorageMapWriteAccess
         }
     };
-    use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-    use karst::interfaces::IRegistry::{IRegistryDispatcherTrait, IRegistryLibraryDispatcher};
-    use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
-    use karst::interfaces::IProfile::IProfile;
-    use karst::base::{constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER};
+    use coloniz::interfaces::IColonizNFT::{IColonizNFTDispatcher, IColonizNFTDispatcherTrait};
+    use coloniz::interfaces::IRegistry::{IRegistryDispatcherTrait, IRegistryLibraryDispatcher};
+    use coloniz::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+    use coloniz::interfaces::IProfile::IProfile;
+    use coloniz::base::{constants::types::Profile, constants::errors::Errors::NOT_PROFILE_OWNER};
 
     // *************************************************************************
     //                              STORAGE
@@ -24,7 +24,7 @@ pub mod ProfileComponent {
     #[storage]
     pub struct Storage {
         profile: Map<ContractAddress, Profile>,
-        karst_nft_address: ContractAddress,
+        coloniz_nft_address: ContractAddress,
         hub_address: ContractAddress,
         follow_nft_classhash: ClassHash
     }
@@ -51,31 +51,33 @@ pub mod ProfileComponent {
     // *************************************************************************
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(KarstProfile)]
+    #[embeddable_as(colonizProfile)]
     impl ProfileImpl<
         TContractState, +HasComponent<TContractState>
     > of IProfile<ComponentState<TContractState>> {
-        /// @notice creates karst profile
-        /// @param karstnft_contract_address address of karstnft
+        /// @notice creates coloniz profile
+        /// @param coloniznft_contract_address address of coloniznft
         /// @param registry_hash class_hash of registry contract
         /// @param implementation_hash the class hash of the reference account
         /// @param salt random salt for deployment
         fn create_profile(
             ref self: ComponentState<TContractState>,
-            karstnft_contract_address: ContractAddress,
+            coloniznft_contract_address: ContractAddress,
             registry_hash: felt252,
             implementation_hash: felt252,
             salt: felt252
         ) -> ContractAddress {
-            // mint karst nft
+            // mint coloniz nft
             let recipient = get_caller_address();
-            let owns_karstnft = IERC721Dispatcher { contract_address: karstnft_contract_address }
-                .balance_of(recipient);
-            if owns_karstnft == 0 {
-                IKarstNFTDispatcher { contract_address: karstnft_contract_address }
-                    .mint_karstnft(recipient);
+            let owns_coloniznft = IERC721Dispatcher {
+                contract_address: coloniznft_contract_address
             }
-            let token_id = IKarstNFTDispatcher { contract_address: karstnft_contract_address }
+                .balance_of(recipient);
+            if owns_coloniznft == 0 {
+                IColonizNFTDispatcher { contract_address: coloniznft_contract_address }
+                    .mint_coloniznft(recipient);
+            }
+            let token_id = IColonizNFTDispatcher { contract_address: coloniznft_contract_address }
                 .get_user_token_id(recipient);
             let tx_info = get_tx_info().unbox();
             let chain_id = tx_info.chain_id;
@@ -84,7 +86,7 @@ pub mod ProfileComponent {
                 class_hash: registry_hash.try_into().unwrap()
             }
                 .create_account(
-                    implementation_hash, karstnft_contract_address, token_id, salt, chain_id
+                    implementation_hash, coloniznft_contract_address, token_id, salt, chain_id
                 );
 
             // deploy follow nft contract
@@ -176,11 +178,11 @@ pub mod ProfileComponent {
         /// @notice initialize profile component
         fn _initializer(
             ref self: ComponentState<TContractState>,
-            karst_nft_address: ContractAddress,
+            coloniz_nft_address: ContractAddress,
             hub_address: ContractAddress,
             follow_nft_classhash: felt252
         ) {
-            self.karst_nft_address.write(karst_nft_address);
+            self.coloniz_nft_address.write(coloniz_nft_address);
             self.hub_address.write(hub_address);
             self.follow_nft_classhash.write(follow_nft_classhash.try_into().unwrap());
         }

@@ -1,9 +1,9 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{
+use coloniz::base::constants::types::{
     Profile, PublicationType, Publication, RepostParams, PostParams, CommentParams
 };
 // *************************************************************************
-//                              INTERFACE of KARST PROFILE
+//                              INTERFACE of coloniz PROFILE
 // *************************************************************************
 #[starknet::interface]
 pub trait IComposable<TState> {
@@ -12,7 +12,7 @@ pub trait IComposable<TState> {
     // *************************************************************************
     fn create_profile(
         ref self: TState,
-        karstnft_contract_address: ContractAddress,
+        coloniznft_contract_address: ContractAddress,
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252
@@ -37,17 +37,23 @@ pub trait IComposable<TState> {
     fn initialize(ref self: TState, hub_address: ContractAddress);
     fn post(ref self: TState, post_params: PostParams) -> u256;
     fn comment(ref self: TState, comment_params: CommentParams) -> u256;
-    fn repost(ref self: TState, mirror_params: RepostParams) -> u256;
-    fn upvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
-    fn downvote(ref self: TState, profile_address: ContractAddress, pub_id: u256);
-    fn tip(ref self: TState, profile_address: ContractAddress, pub_id: u256, amount: u256);
-    fn collect(
+    fn repost(ref self: TState, repost_params: RepostParams) -> u256;
+    fn upvote(ref self: TState, profile_address: ContractAddress, pub_id: u256,);
+    fn downvote(ref self: TState, profile_address: ContractAddress, pub_id: u256,);
+    fn tip(
         ref self: TState,
-        karst_hub: ContractAddress,
         profile_address: ContractAddress,
         pub_id: u256,
+        amount: u256,
+        erc20_contract_address: ContractAddress,
+    );
+    fn collect(
+        ref self: TState,
+        profile_address: ContractAddress,
+        pub_id: u256,
+        channel_id: u256,
+        community_id: u256,
         collect_nft_impl_class_hash: felt252,
-        salt: felt252
     ) -> u256;
 
     // *************************************************************************

@@ -9,11 +9,13 @@ use snforge_std::{
 };
 
 
-use karst::interfaces::IHandleRegistry::{IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait};
-use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+use coloniz::interfaces::IHandleRegistry::{
+    IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait
+};
+use coloniz::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
 
-use karst::namespaces::handle_registry::HandleRegistry::{Event as LinkedEvent, HandleLinked};
-use karst::namespaces::handle_registry::HandleRegistry::{Event as UnlinkedEvent, HandleUnlinked};
+use coloniz::namespaces::handle_registry::HandleRegistry::{Event as LinkedEvent, HandleLinked};
+use coloniz::namespaces::handle_registry::HandleRegistry::{Event as UnlinkedEvent, HandleUnlinked};
 
 const ADMIN_ADDRESS: felt252 = 'ADMIN';
 const USER_ONE: felt252 = 'BOB';
@@ -46,7 +48,7 @@ fn __setup__() -> (ContractAddress, ContractAddress) {
 // *************************************************************************
 
 #[test]
-#[should_panic(expected: ('Karst: handle does not exist!',))]
+#[should_panic(expected: ('coloniz: handle does not exist!',))]
 fn test_cannot_resolve_if_handle_does_not_exist() {
     let (handle_registry_contract_address, _) = __setup__();
     let dispatcher = IHandleRegistryDispatcher {
@@ -98,7 +100,7 @@ fn test_link() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: profile is not owner!',))]
+#[should_panic(expected: ('coloniz: profile is not owner!',))]
 fn test_linking_fails_if_profile_address_is_not_owner() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
@@ -114,7 +116,7 @@ fn test_linking_fails_if_profile_address_is_not_owner() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: handle already linked!',))]
+#[should_panic(expected: ('coloniz: handle already linked!',))]
 fn test_does_not_link_twice_for_same_handle() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {
@@ -157,7 +159,7 @@ fn test_unlink() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: caller is not owner!',))]
+#[should_panic(expected: ('coloniz: caller is not owner!',))]
 fn test_unlink_fails_if_caller_is_not_owner() {
     let (handle_registry_address, handle_contract_address) = __setup__();
     let registryDispatcher = IHandleRegistryDispatcher {

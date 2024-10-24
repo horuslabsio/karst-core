@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{
+use coloniz::base::constants::types::{
     Profile, PostParams, RepostParams, CommentParams, PublicationType, Publication
 };
 
@@ -13,7 +13,7 @@ pub trait IHub<TState> {
     // *************************************************************************
     fn create_profile(
         ref self: TState,
-        karstnft_contract_address: ContractAddress,
+        coloniznft_contract_address: ContractAddress,
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252

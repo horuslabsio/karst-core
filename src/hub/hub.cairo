@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
 
 #[starknet::interface]
-trait IKarstHub<TState> {
+trait IcolonizHub<TState> {
     fn follow(
         ref self: TState,
         follower_profile_address: ContractAddress,
@@ -25,20 +25,24 @@ trait IKarstHub<TState> {
 }
 
 #[starknet::contract]
-pub mod KarstHub {
+pub mod ColonizHub {
     use core::array::SpanTrait;
     use starknet::{
         ContractAddress, get_caller_address, get_contract_address,
         storage::{StoragePointerWriteAccess, StoragePointerReadAccess}
     };
-    use karst::profile::profile::ProfileComponent;
-    use karst::publication::publication::PublicationComponent;
-    use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
-    use karst::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
-    use karst::interfaces::IHandleRegistry::{
+    use coloniz::profile::profile::ProfileComponent;
+    use coloniz::publication::publication::PublicationComponent;
+    use openzeppelin::access::ownable::OwnableComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::channel::channel::ChannelComponent;
+    use coloniz::jolt::jolt::JoltComponent;
+    use coloniz::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
+    use coloniz::interfaces::IHandle::{IHandleDispatcher, IHandleDispatcherTrait};
+    use coloniz::interfaces::IHandleRegistry::{
         IHandleRegistryDispatcher, IHandleRegistryDispatcherTrait
     };
-    use karst::base::constants::errors::Errors::{
+    use coloniz::base::constants::errors::Errors::{
         BLOCKED_STATUS, INVALID_PROFILE_ADDRESS, SELF_FOLLOWING
     };
 
@@ -47,14 +51,30 @@ pub mod KarstHub {
     // *************************************************************************
     component!(path: ProfileComponent, storage: profile, event: ProfileEvent);
     component!(path: PublicationComponent, storage: publication, event: PublicationEvent);
+    component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
+    component!(path: JoltComponent, storage: jolt, event: JoltEvent);
+    component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
+    component!(path: CommunityComponent, storage: community, event: CommunityEvent);
 
     #[abi(embed_v0)]
-    impl ProfileImpl = ProfileComponent::KarstProfile<ContractState>;
+    impl ProfileImpl = ProfileComponent::colonizProfile<ContractState>;
     #[abi(embed_v0)]
-    impl PublicationImpl = PublicationComponent::KarstPublication<ContractState>;
+    impl PublicationImpl = PublicationComponent::colonizPublication<ContractState>;
 
     impl ProfilePrivateImpl = ProfileComponent::Private<ContractState>;
 
+
+    #[abi(embed_v0)]
+    impl communityImpl = CommunityComponent::colonizCommunity<ContractState>;
+    impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
+
+    #[abi(embed_v0)]
+    impl channelImpl = ChannelComponent::colonizChannel<ContractState>;
+    impl channelPrivateImpl = ChannelComponent::InternalImpl<ContractState>;
+
+    #[abi(embed_v0)]
+    impl joltImpl = JoltComponent::Jolt<ContractState>;
+    impl joltPrivateImpl = JoltComponent::Private<ContractState>;
     // *************************************************************************
     //                              STORAGE
     // *************************************************************************
@@ -64,6 +84,14 @@ pub mod KarstHub {
         profile: ProfileComponent::Storage,
         #[substorage(v0)]
         publication: PublicationComponent::Storage,
+        #[substorage(v0)]
+        jolt: JoltComponent::Storage,
+        #[substorage(v0)]
+        ownable: OwnableComponent::Storage,
+        #[substorage(v0)]
+        community: CommunityComponent::Storage,
+        #[substorage(v0)]
+        channel: ChannelComponent::Storage,
         handle_contract_address: ContractAddress,
         handle_registry_contract_address: ContractAddress
     }
@@ -75,7 +103,15 @@ pub mod KarstHub {
     #[derive(Drop, starknet::Event)]
     enum Event {
         ProfileEvent: ProfileComponent::Event,
-        PublicationEvent: PublicationComponent::Event
+        PublicationEvent: PublicationComponent::Event,
+        #[flat]
+        JoltEvent: JoltComponent::Event,
+        #[flat]
+        OwnableEvent: OwnableComponent::Event,
+        #[flat]
+        CommunityEvent: CommunityComponent::Event,
+        #[flat]
+        ChannelEvent: ChannelComponent::Event,
     }
 
     // *************************************************************************
@@ -84,20 +120,28 @@ pub mod KarstHub {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        karstnft_contract_address: ContractAddress,
+        coloniznft_contract_address: ContractAddress,
         handle_contract_address: ContractAddress,
         handle_registry_contract_address: ContractAddress,
-        follow_nft_classhash: felt252
+        follow_nft_classhash: felt252,
+        channel_nft_classhash: felt252,
+        community_nft_classhash: felt252,
+        owner: ContractAddress
     ) {
         self
             .profile
-            ._initializer(karstnft_contract_address, get_contract_address(), follow_nft_classhash);
+            ._initializer(
+                coloniznft_contract_address, get_contract_address(), follow_nft_classhash
+            );
         self.handle_contract_address.write(handle_contract_address);
         self.handle_registry_contract_address.write(handle_registry_contract_address);
+        self.channel._initializer(channel_nft_classhash);
+        self.community._initializer(community_nft_classhash);
+        self.jolt._initializer(owner);
     }
 
     #[abi(embed_v0)]
-    impl KarstHubImpl of super::IKarstHub<ContractState> {
+    impl colonizHubImpl of super::IcolonizHub<ContractState> {
         // *************************************************************************
         //                            EXTERNAL FUNCTIONS
         // *************************************************************************
@@ -190,9 +234,7 @@ pub mod KarstHub {
             let dispatcher = IHandleRegistryDispatcher {
                 contract_address: self.handle_registry_contract_address.read()
             };
-
-            let handle_id = dispatcher.get_handle(profile_address);
-            handle_id
+            dispatcher.get_handle(profile_address)
         }
 
         /// @notice returns the full handle of a user
