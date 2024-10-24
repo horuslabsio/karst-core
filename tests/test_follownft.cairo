@@ -12,13 +12,13 @@ use snforge_std::{
     stop_cheat_block_timestamp
 };
 
-use karst::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
-use karst::follownft::follownft::Follow::{Event as FollowEvent, Followed};
-use karst::follownft::follownft::Follow::{Event as UnfollowEvent, Unfollowed};
-use karst::follownft::follownft::Follow::{Event as FollowerBlockedEvent, FollowerBlocked};
-use karst::follownft::follownft::Follow::{Event as FollowerUnblockedEvent, FollowerUnblocked};
-use karst::base::constants::types::FollowData;
-use karst::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
+use coloniz::interfaces::IFollowNFT::{IFollowNFTDispatcher, IFollowNFTDispatcherTrait};
+use coloniz::follownft::follownft::Follow::{Event as FollowEvent, Followed};
+use coloniz::follownft::follownft::Follow::{Event as UnfollowEvent, Unfollowed};
+use coloniz::follownft::follownft::Follow::{Event as FollowerBlockedEvent, FollowerBlocked};
+use coloniz::follownft::follownft::Follow::{Event as FollowerUnblockedEvent, FollowerUnblocked};
+use coloniz::base::constants::types::FollowData;
+use coloniz::interfaces::IERC721::{IERC721Dispatcher, IERC721DispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 24205;
 const ADMIN: felt252 = 13245;
@@ -49,7 +49,7 @@ fn test_follower_count_on_init_is_zero() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: caller is not Hub!',))]
+#[should_panic(expected: ('coloniz: caller is not Hub!',))]
 fn test_cannot_call_follow_if_not_hub() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -59,7 +59,7 @@ fn test_cannot_call_follow_if_not_hub() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: caller is not Hub!',))]
+#[should_panic(expected: ('coloniz: caller is not Hub!',))]
 fn test_cannot_call_unfollow_if_not_hub() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -69,7 +69,7 @@ fn test_cannot_call_unfollow_if_not_hub() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user already following!',))]
+#[should_panic(expected: ('coloniz: already following!',))]
 fn test_cannot_follow_if_already_following() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -168,7 +168,7 @@ fn test_unfollow() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user not following!',))]
+#[should_panic(expected: ('coloniz: user not following!',))]
 fn test_cannot_unfollow_if_not_following() {
     let follow_nft_contract_address = __setup__();
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
@@ -209,7 +209,7 @@ fn test_metadata() {
     let dispatcher = IFollowNFTDispatcher { contract_address: follow_nft_contract_address };
     let nft_name = dispatcher.name();
     let nft_symbol = dispatcher.symbol();
-    assert(nft_name == "KARST:FOLLOWER", 'invalid name');
+    assert(nft_name == "coloniz:FOLLOWER", 'invalid name');
     assert(nft_symbol == "KFL", 'invalid symbol');
     stop_cheat_caller_address(follow_nft_contract_address);
 }

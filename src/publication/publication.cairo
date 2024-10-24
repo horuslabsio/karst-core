@@ -4,7 +4,7 @@ pub mod PublicationComponent {
     //                              IMPORTS
     // *************************************************************************
     use core::traits::TryInto;
-    use karst::interfaces::IProfile::IProfile;
+    use coloniz::interfaces::IProfile::IProfile;
     use core::num::traits::zero::Zero;
     use core::option::OptionTrait;
     use starknet::{
@@ -12,12 +12,12 @@ pub mod PublicationComponent {
         syscalls::{deploy_syscall}, class_hash::ClassHash, SyscallResultTrait,
         storage::{Map, StorageMapReadAccess, StorageMapWriteAccess}
     };
-    use karst::interfaces::IPublication::IKarstPublications;
-    use karst::interfaces::IJolt::IJolt;
-    use karst::interfaces::ICommunity::ICommunity;
-    use karst::interfaces::IChannel::IChannel;
-    use karst::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
-    use karst::base::{
+    use coloniz::interfaces::IPublication::IColonizPublications;
+    use coloniz::interfaces::IJolt::IJolt;
+    use coloniz::interfaces::ICommunity::ICommunity;
+    use coloniz::interfaces::IChannel::IChannel;
+    use coloniz::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
+    use coloniz::base::{
         constants::errors::Errors::{
             NOT_PROFILE_OWNER, UNSUPPORTED_PUB_TYPE, ALREADY_REACTED, NOT_COMMUNITY_MEMBER,
             BANNED_MEMBER, NOT_CHANNEL_MEMBER, BANNED_FROM_CHANNEL
@@ -28,11 +28,11 @@ pub mod PublicationComponent {
         }
     };
 
-    use karst::profile::profile::ProfileComponent;
-    use karst::profile::profile::ProfileComponent::PrivateTrait;
-    use karst::jolt::jolt::JoltComponent;
-    use karst::community::community::CommunityComponent;
-    use karst::channel::channel::ChannelComponent;
+    use coloniz::profile::profile::ProfileComponent;
+    use coloniz::profile::profile::ProfileComponent::PrivateTrait;
+    use coloniz::jolt::jolt::JoltComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::channel::channel::ChannelComponent;
     use openzeppelin::access::ownable::OwnableComponent;
 
 
@@ -118,7 +118,7 @@ pub mod PublicationComponent {
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(KarstPublication)]
+    #[embeddable_as(colonizPublication)]
     impl PublicationsImpl<
         TContractState,
         +HasComponent<TContractState>,
@@ -128,7 +128,7 @@ pub mod PublicationComponent {
         impl Ownable: OwnableComponent::HasComponent<TContractState>,
         impl Community: CommunityComponent::HasComponent<TContractState>,
         impl Channel: ChannelComponent::HasComponent<TContractState>,
-    > of IKarstPublications<ComponentState<TContractState>> {
+    > of IColonizPublications<ComponentState<TContractState>> {
         // *************************************************************************
         //                              PUBLISHING FUNCTIONS
         // *************************************************************************
@@ -305,14 +305,12 @@ pub mod PublicationComponent {
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
             pub_id: u256,
-            channel_id: u256,
-            community_id: u256
         ) {
             let mut publication = self.get_publication(profile_address, pub_id);
             let caller = get_caller_address();
             let has_voted = self.vote_status.read((caller, pub_id));
-            self._validate_channel_membership_and_ban_status(caller, channel_id);
-            self._validate_community_membership_and_ban_status(caller, community_id);
+            self._validate_channel_membership_and_ban_status(caller, publication.channel_id);
+            self._validate_community_membership_and_ban_status(caller, publication.community_id);
             let upvote_current_count = publication.upvote + 1;
             assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication { upvote: upvote_current_count, ..publication };
@@ -337,14 +335,12 @@ pub mod PublicationComponent {
             ref self: ComponentState<TContractState>,
             profile_address: ContractAddress,
             pub_id: u256,
-            channel_id: u256,
-            community_id: u256
         ) {
             let mut publication = self.get_publication(profile_address, pub_id);
             let caller = get_caller_address();
             let has_voted = self.vote_status.read((caller, pub_id));
-            self._validate_channel_membership_and_ban_status(caller, channel_id);
-            self._validate_community_membership_and_ban_status(caller, community_id);
+            self._validate_channel_membership_and_ban_status(caller, publication.channel_id);
+            self._validate_community_membership_and_ban_status(caller, publication.community_id);
             let downvote_current_count = publication.downvote + 1;
             assert(has_voted == false, ALREADY_REACTED);
             let updated_publication = Publication {
@@ -372,20 +368,17 @@ pub mod PublicationComponent {
             profile_address: ContractAddress,
             pub_id: u256,
             amount: u256,
-            channel_id: u256,
-            community_id: u256,
             erc20_contract_address: ContractAddress,
         ) {
             let caller = get_caller_address();
             let mut publication = self.get_publication(profile_address, pub_id);
-            self._validate_channel_membership_and_ban_status(caller, channel_id);
-            self._validate_community_membership_and_ban_status(caller, community_id);
-            let current_tip_amount = publication.tipped_amount;
+            self._validate_channel_membership_and_ban_status(caller, publication.channel_id);
+            self._validate_community_membership_and_ban_status(caller, publication.community_id);
             let jolt_param = JoltParams {
                 jolt_type: JoltType::Tip,
                 recipient: profile_address,
                 memo: "Tip User",
-                amount: current_tip_amount + amount,
+                amount: amount,
                 expiration_stamp: 0,
                 subscription_details: (0, false, 0),
                 erc20_contract_address: erc20_contract_address
@@ -667,14 +660,14 @@ pub mod PublicationComponent {
 
         fn _deploy_collect_nft(
             ref self: ComponentState<TContractState>,
-            karst_hub: ContractAddress,
+            coloniz_hub: ContractAddress,
             profile_address: ContractAddress,
             pub_id: u256,
             collect_nft_impl_class_hash: felt252,
             salt: felt252
         ) -> ContractAddress {
             let mut constructor_calldata: Array<felt252> = array![
-                karst_hub.into(), profile_address.into(), pub_id.low.into(), pub_id.high.into()
+                coloniz_hub.into(), profile_address.into(), pub_id.low.into(), pub_id.high.into()
             ];
             let class_hash: ClassHash = collect_nft_impl_class_hash.try_into().unwrap();
             let result = deploy_syscall(class_hash, salt, constructor_calldata.span(), true);

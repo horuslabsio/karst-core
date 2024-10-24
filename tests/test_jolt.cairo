@@ -8,15 +8,15 @@ use snforge_std::{
     stop_cheat_caller_address, start_cheat_nonce, stop_cheat_nonce, start_cheat_block_timestamp,
     stop_cheat_block_timestamp, spy_events, EventSpyAssertionsTrait
 };
-use karst::interfaces::IJolt::{IJoltDispatcher, IJoltDispatcherTrait};
-use karst::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
+use coloniz::interfaces::IJolt::{IJoltDispatcher, IJoltDispatcherTrait};
+use coloniz::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
 
-use karst::jolt::jolt::JoltComponent::{
+use coloniz::jolt::jolt::JoltComponent::{
     {Event as JoltEvent, Jolted}, {Event as JoltRequestEvent, JoltRequested},
     {Event as JoltRequestFulfillEvent, JoltRequestFullfilled},
 };
 
-use karst::base::constants::types::{JoltParams, JoltType, JoltStatus};
+use coloniz::base::constants::types::{JoltParams, JoltType, JoltStatus};
 
 const ADMIN: felt252 = 5382942;
 const ADDRESS1: felt252 = 254290;
@@ -153,7 +153,7 @@ fn test_jolting_with_same_params_have_different_jolt_ids() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: self-tip forbidden!',))]
+#[should_panic(expected: ('coloniz: self-tip forbidden!',))]
 fn test_tipper_cant_self_tip() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -182,7 +182,7 @@ fn test_tipper_cant_self_tip() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid profile address!',))]
+#[should_panic(expected: ('coloniz: invalid profile_addr!',))]
 fn test_tipper_cant_tip_a_zero_address() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -318,7 +318,7 @@ fn test_jolt_transfer() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid profile address!',))]
+#[should_panic(expected: ('coloniz: invalid profile_addr!',))]
 fn test_sender_cant_transfer_to_a_zero_address() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -347,7 +347,7 @@ fn test_sender_cant_transfer_to_a_zero_address() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: self-transfer forbidden!',))]
+#[should_panic(expected: ('coloniz: self-transfer forbiden',))]
 fn test_sender_cant_self_transfer() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -473,7 +473,7 @@ fn test_jolt_request() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid profile address!',))]
+#[should_panic(expected: ('coloniz: invalid profile_addr!',))]
 fn test_requester_cant_request_to_a_zero_address() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -498,7 +498,7 @@ fn test_requester_cant_request_to_a_zero_address() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: self-request forbidden!',))]
+#[should_panic(expected: ('coloniz: self-request forbiden',))]
 fn test_requester_cant_self_request() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -563,7 +563,7 @@ fn test_jolt_event_is_emitted_on_request() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid expiration stamp',))]
+#[should_panic(expected: ('coloniz: invld expiration stamp',))]
 fn test_request_expiration_time_must_be_greater_than_current_time() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -589,7 +589,7 @@ fn test_request_expiration_time_must_be_greater_than_current_time() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid jolt!',))]
+#[should_panic(expected: ('coloniz: invalid jolt!',))]
 fn test_cant_fulfill_request_if_jolt_type_is_not_a_request() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -630,7 +630,7 @@ fn test_cant_fulfill_request_if_jolt_type_is_not_a_request() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: invalid jolt!',))]
+#[should_panic(expected: ('coloniz: invalid jolt!',))]
 fn test_cant_fulfill_request_if_jolt_status_is_not_pending() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -672,7 +672,7 @@ fn test_cant_fulfill_request_if_jolt_status_is_not_pending() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not request recipient!',))]
+#[should_panic(expected: ('coloniz: not request recipient!',))]
 fn test_cant_fulfill_request_if_sender_is_not_initial_recipient() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -942,7 +942,7 @@ fn test_jolt_subscription() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: insufficient allowance!',))]
+#[should_panic(expected: ('coloniz: not enough allowance!',))]
 fn test_jolt_subscription_fails_if_insufficient_allowance() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };
@@ -1094,7 +1094,7 @@ fn test_auto_renewal() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: auto renew ended!',))]
+#[should_panic(expected: ('coloniz: auto renew ended!',))]
 fn test_auto_renewal_fails_once_iteration_count_is_zero() {
     let (jolt_contract_address, erc20_contract_address) = __setup__();
     let dispatcher = IJoltDispatcher { contract_address: jolt_contract_address };

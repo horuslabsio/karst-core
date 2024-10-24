@@ -1,11 +1,11 @@
 [package]
-name = "karst"
+name = "coloniz"
 version = "0.1.0"
 edition = "2024_07"
 authors = ["Horus Labs <horuslabsio@gmail.com>"]
 description = "Decentralized Social Graph on Starknet"
-repository = "https://github.com/horuslabsio/karst-core"
-keywords = ["Karst", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
+repository = "https://github.com/horuslabsio/coloniz-core"
+keywords = ["coloniz", "SocialFi", "tokenbound", "cairo", "contracts", "starknet"]
 
 # See more keys and their definitions at https://docs.swmansion.com/scarb/docs/reference/manifest.html
 

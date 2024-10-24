@@ -2,8 +2,8 @@
 
 mod eyecolor {
     use core::traits::TryInto;
-    use karst::base::token_uris::traits::color::karstColors;
-    use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
+    use coloniz::base::token_uris::traits::color::colonizColors;
+    use coloniz::base::utils::byte_array_extra::FeltTryIntoByteArray;
 
     #[derive(Drop)]
     enum EyeColorVariants {

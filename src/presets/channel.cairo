@@ -1,8 +1,8 @@
 #[starknet::contract]
-pub mod KarstChannel {
-    use karst::channel::channel::ChannelComponent;
-    use karst::community::community::CommunityComponent;
-    use karst::jolt::jolt::JoltComponent;
+pub mod ColonizChannel {
+    use coloniz::channel::channel::ChannelComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::jolt::jolt::JoltComponent;
     use openzeppelin::access::ownable::OwnableComponent;
 
     component!(path: ChannelComponent, storage: channel, event: ChannelEvent);
@@ -11,11 +11,11 @@ pub mod KarstChannel {
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
 
     #[abi(embed_v0)]
-    impl channelImpl = ChannelComponent::KarstChannel<ContractState>;
+    impl channelImpl = ChannelComponent::colonizChannel<ContractState>;
     impl channelPrivateImpl = ChannelComponent::InternalImpl<ContractState>;
 
     #[abi(embed_v0)]
-    impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
+    impl communityImpl = CommunityComponent::colonizCommunity<ContractState>;
     impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
 
     #[storage]

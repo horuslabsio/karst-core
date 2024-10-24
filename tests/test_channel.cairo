@@ -11,9 +11,9 @@ use snforge_std::{
     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
 use core::starknet::{ContractAddress, contract_address_const, get_block_timestamp};
-use karst::channel::channel::ChannelComponent;
-use karst::base::constants::types::{ChannelDetails};
-use karst::mocks::interfaces::IChannelComposable::{
+use coloniz::channel::channel::ChannelComponent;
+use coloniz::base::constants::types::{ChannelDetails};
+use coloniz::mocks::interfaces::IChannelComposable::{
     IChannelComposableDispatcher, IChannelComposableDispatcherTrait
 };
 
@@ -29,7 +29,7 @@ fn __setup__() -> ContractAddress {
     let community_nft_class_hash = declare("CommunityNFT").unwrap().contract_class().class_hash;
     let channel_nft_class_hash = declare("ChannelNFT").unwrap().contract_class().class_hash;
 
-    let channel_contract = declare("KarstChannel").unwrap().contract_class();
+    let channel_contract = declare("ColonizChannel").unwrap().contract_class();
     let mut channel_constructor_calldata = array![
         (*(channel_nft_class_hash)).into(), (*(community_nft_class_hash)).into()
     ];
@@ -120,7 +120,7 @@ fn test_create_channel_by_community_member() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
+#[should_panic(expected: ('coloniz: Not Community Member',))]
 fn test_should_panic_if_channel_creator_is_not_community_member() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -242,7 +242,7 @@ fn test_channel_nft_is_burnt_on_leaving_channel() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: already a Member',))]
+#[should_panic(expected: ('coloniz: already a Member',))]
 fn test_should_panic_if_a_user_joins_one_channel_twice() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -264,7 +264,7 @@ fn test_should_panic_if_a_user_joins_one_channel_twice() {
     stop_cheat_caller_address(channel_contract_address);
 }
 #[test]
-#[should_panic(expected: ('Karst: banned from channel',))]
+#[should_panic(expected: ('coloniz: banned from channel',))]
 fn test_should_panic_if_banned_members_join_a_channel() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -292,7 +292,7 @@ fn test_should_panic_if_banned_members_join_a_channel() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: banned from channel',))]
+#[should_panic(expected: ('coloniz: banned from channel',))]
 fn test_should_panic_if_banned_user_tries_to_leave_channel_and_then_rejoin() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -439,7 +439,7 @@ fn test_leave_channel() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel member',))]
+#[should_panic(expected: ('coloniz: not channel member',))]
 fn test_should_panic_if_profile_leaving_is_not_a_member() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -454,7 +454,7 @@ fn test_should_panic_if_profile_leaving_is_not_a_member() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: channel has no members',))]
+#[should_panic(expected: ('coloniz: channel has no members',))]
 fn test_channel_have_members_before_leaving() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -559,7 +559,7 @@ fn test_set_channel_metadata_with_moderator() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_set_metadata_should_panic_if_caller_is_not_owner_or_moderator() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -623,7 +623,7 @@ fn test_add_channel_mods() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel owner',))]
+#[should_panic(expected: ('coloniz: not channel owner',))]
 fn test_only_owner_can_add_channel_mod() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -663,7 +663,7 @@ fn test_only_owner_can_add_channel_mod() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel member',))]
+#[should_panic(expected: ('coloniz: not channel member',))]
 fn test_should_panic_if_mod_is_not_member() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -762,7 +762,7 @@ fn test_remove_channel_mods() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel owner',))]
+#[should_panic(expected: ('coloniz: not channel owner',))]
 fn test_only_owner_can_remove_channel_mod() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -798,7 +798,7 @@ fn test_only_owner_can_remove_channel_mod() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel moderator',))]
+#[should_panic(expected: ('coloniz: not channel moderator',))]
 fn test_should_panic_if_profile_to_be_removed_is_not_mod() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -912,7 +912,7 @@ fn test_set_channel_censorship_status() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel owner',))]
+#[should_panic(expected: ('coloniz: not channel owner',))]
 fn test_set_channel_censorship_status_not_owner() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -1059,7 +1059,7 @@ fn test_set_ban_status_emit_event() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: user unauthorized!',))]
+#[should_panic(expected: ('coloniz: user unauthorized!',))]
 fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -1097,7 +1097,7 @@ fn test_should_panic_if_caller_to_set_ban_status_is_not_owner_or_mod() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: not channel member',))]
+#[should_panic(expected: ('coloniz: not channel member',))]
 fn test_can_only_set_ban_status_for_members() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };
@@ -1127,7 +1127,7 @@ fn test_can_only_set_ban_status_for_members() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: array mismatch',))]
+#[should_panic(expected: ('coloniz: array mismatch',))]
 fn test_should_not_set_ban_status_for_invalid_array_length() {
     let channel_contract_address = __setup__();
     let dispatcher = IChannelComposableDispatcher { contract_address: channel_contract_address };

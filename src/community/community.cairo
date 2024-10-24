@@ -15,16 +15,16 @@ pub mod CommunityComponent {
     };
     use openzeppelin::access::ownable::OwnableComponent;
 
-    use karst::jolt::jolt::JoltComponent;
-    use karst::interfaces::{
+    use coloniz::jolt::jolt::JoltComponent;
+    use coloniz::interfaces::{
         ICommunity::ICommunity, IJolt::IJolt, IERC721::{IERC721Dispatcher, IERC721DispatcherTrait},
         ICustomNFT::{ICustomNFTDispatcher, ICustomNFTDispatcherTrait}
     };
-    use karst::base::constants::types::{
+    use coloniz::base::constants::types::{
         CommunityDetails, GateKeepType, CommunityType, CommunityMember, CommunityGateKeepDetails,
         JoltParams, JoltType
     };
-    use karst::base::constants::errors::Errors::{
+    use coloniz::base::constants::errors::Errors::{
         ALREADY_MEMBER, NOT_COMMUNITY_OWNER, NOT_COMMUNITY_MEMBER, NOT_COMMUNITY_MOD, BANNED_MEMBER,
         UNAUTHORIZED, ONLY_PREMIUM_COMMUNITIES, INVALID_LENGTH
     };
@@ -148,7 +148,7 @@ pub mod CommunityComponent {
     // *************************************************************************
     //                            EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(KarstCommunity)]
+    #[embeddable_as(colonizCommunity)]
     impl CommunityImpl<
         TContractState,
         +HasComponent<TContractState>,

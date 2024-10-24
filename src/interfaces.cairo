@@ -1,4 +1,4 @@
-pub mod IKarstNFT;
+pub mod IColonizNFT;
 pub mod IERC721;
 pub mod IERC20;
 pub mod IRegistry;

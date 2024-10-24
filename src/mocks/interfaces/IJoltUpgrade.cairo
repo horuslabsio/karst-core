@@ -1,4 +1,4 @@
-use karst::base::constants::types::{JoltParams};
+use coloniz::base::constants::types::{JoltParams};
 
 #[starknet::interface]
 pub trait IJoltUpgrade<TState> {

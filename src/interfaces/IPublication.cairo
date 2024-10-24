@@ -1,40 +1,26 @@
 // *************************************************************************
-//                              INTERFACE of KARST PUBLICATIONS
+//                              INTERFACE of coloniz PUBLICATIONS
 // *************************************************************************
 use starknet::ContractAddress;
-use karst::base::constants::types::{
+use coloniz::base::constants::types::{
     PostParams, RepostParams, CommentParams, PublicationType, Publication
 };
 
 #[starknet::interface]
-pub trait IKarstPublications<TState> {
+pub trait IColonizPublications<TState> {
     // *************************************************************************
     //                              EXTERNALS
     // *************************************************************************
     fn post(ref self: TState, post_params: PostParams) -> u256;
     fn comment(ref self: TState, comment_params: CommentParams) -> u256;
     fn repost(ref self: TState, repost_params: RepostParams) -> u256;
-    fn upvote(
-        ref self: TState,
-        profile_address: ContractAddress,
-        pub_id: u256,
-        channel_id: u256,
-        community_id: u256
-    );
-    fn downvote(
-        ref self: TState,
-        profile_address: ContractAddress,
-        pub_id: u256,
-        channel_id: u256,
-        community_id: u256
-    );
+    fn upvote(ref self: TState, profile_address: ContractAddress, pub_id: u256,);
+    fn downvote(ref self: TState, profile_address: ContractAddress, pub_id: u256,);
     fn tip(
         ref self: TState,
         profile_address: ContractAddress,
         pub_id: u256,
         amount: u256,
-        channel_id: u256,
-        community_id: u256,
         erc20_contract_address: ContractAddress,
     );
     fn collect(

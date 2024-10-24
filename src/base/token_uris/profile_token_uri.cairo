@@ -3,8 +3,8 @@
 
 pub mod ProfileTokenUri {
     use core::array::ArrayTrait;
-    use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
-    use karst::base::utils::base64_extended::{get_base64_encode, convert_into_byteArray};
+    use coloniz::base::utils::byte_array_extra::FeltTryIntoByteArray;
+    use coloniz::base::utils::base64_extended::{get_base64_encode, convert_into_byteArray};
 
     fn get_svg(token_id: u256, mint_timestamp: u64) -> Array<felt252> {
         let mut svg = ArrayTrait::<felt252>::new();

@@ -1,5 +1,5 @@
 use core::array::ArrayTrait;
-use karst::base::utils::byte_array_extra::FeltTryIntoByteArray;
+use coloniz::base::utils::byte_array_extra::FeltTryIntoByteArray;
 use alexandria_encoding::base64::{Base64UrlEncoder};
 
 pub fn get_base64_encode(res: ByteArray) -> ByteArray {

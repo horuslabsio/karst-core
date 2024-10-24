@@ -1,8 +1,8 @@
 #[starknet::contract]
-pub mod KarstCommunity {
+pub mod ColonizCommunity {
     use starknet::ContractAddress;
-    use karst::community::community::CommunityComponent;
-    use karst::jolt::jolt::JoltComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::jolt::jolt::JoltComponent;
     use openzeppelin::access::ownable::OwnableComponent;
 
     component!(path: CommunityComponent, storage: community, event: CommunityEvent);
@@ -10,7 +10,7 @@ pub mod KarstCommunity {
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
 
     #[abi(embed_v0)]
-    impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
+    impl communityImpl = CommunityComponent::colonizCommunity<ContractState>;
     impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
     #[abi(embed_v0)]
     impl joltImpl = JoltComponent::Jolt<ContractState>;

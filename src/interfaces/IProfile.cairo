@@ -1,7 +1,7 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::Profile;
+use coloniz::base::constants::types::Profile;
 // *************************************************************************
-//                              INTERFACE of KARST PROFILE
+//                              INTERFACE of coloniz PROFILE
 // *************************************************************************
 #[starknet::interface]
 pub trait IProfile<TState> {
@@ -10,7 +10,7 @@ pub trait IProfile<TState> {
     // *************************************************************************
     fn create_profile(
         ref self: TState,
-        karstnft_contract_address: ContractAddress,
+        coloniznft_contract_address: ContractAddress,
         registry_hash: felt252,
         implementation_hash: felt252,
         salt: felt252

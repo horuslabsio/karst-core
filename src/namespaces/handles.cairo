@@ -18,11 +18,11 @@ pub mod Handles {
         access::ownable::OwnableComponent, token::erc721::{ERC721Component, ERC721HooksEmptyImpl},
         introspection::{src5::SRC5Component}
     };
-    use karst::base::{
+    use coloniz::base::{
         constants::errors::Errors, utils::byte_array_extra::FeltTryIntoByteArray,
         token_uris::handle_token_uri::HandleTokenUri,
     };
-    use karst::interfaces::{IHandle::IHandle};
+    use coloniz::interfaces::{IHandle::IHandle};
 
     component!(path: OwnableComponent, storage: ownable, event: OwnableEvent);
     component!(path: SRC5Component, storage: src5, event: SRC5Event);
@@ -109,7 +109,7 @@ pub mod Handles {
     #[constructor]
     fn constructor(ref self: ContractState, admin: ContractAddress) {
         self.admin.write(admin);
-        self.erc721.initializer("Karst Handles", "KARST", "");
+        self.erc721.initializer("coloniz Handles", "coloniz", "");
     }
 
     // *************************************************************************
@@ -152,7 +152,7 @@ pub mod Handles {
         // *************************************************************************
         //                            GETTERS
         // *************************************************************************
-        /// @notice returns Karst namespace
+        /// @notice returns coloniz namespace
         fn get_namespace(self: @ContractState) -> felt252 {
             return NAMESPACE;
         }
@@ -201,12 +201,12 @@ pub mod Handles {
         // *************************************************************************
         /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
-            return "Karst Handles";
+            return "coloniz Handles";
         }
 
         /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
-            return "KARST";
+            return "coloniz";
         }
 
         /// @notice returns the token URI of a particular handle

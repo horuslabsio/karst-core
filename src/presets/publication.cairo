@@ -1,12 +1,12 @@
 #[starknet::contract]
-pub mod KarstPublication {
+pub mod ColonizPublication {
     use starknet::ContractAddress;
-    use karst::publication::publication::PublicationComponent;
-    use karst::profile::profile::ProfileComponent;
-    use karst::jolt::jolt::JoltComponent;
+    use coloniz::publication::publication::PublicationComponent;
+    use coloniz::profile::profile::ProfileComponent;
+    use coloniz::jolt::jolt::JoltComponent;
     use openzeppelin::access::ownable::OwnableComponent;
-    use karst::community::community::CommunityComponent;
-    use karst::channel::channel::ChannelComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::channel::channel::ChannelComponent;
 
 
     component!(path: PublicationComponent, storage: publication, event: PublicationEvent);
@@ -18,10 +18,10 @@ pub mod KarstPublication {
 
 
     #[abi(embed_v0)]
-    impl publicationImpl = PublicationComponent::KarstPublication<ContractState>;
+    impl publicationImpl = PublicationComponent::colonizPublication<ContractState>;
     impl publicationInternalImpl = PublicationComponent::InternalImpl<ContractState>;
     #[abi(embed_v0)]
-    impl profileImpl = ProfileComponent::KarstProfile<ContractState>;
+    impl profileImpl = ProfileComponent::colonizProfile<ContractState>;
     impl ProfilePrivateImpl = ProfileComponent::Private<ContractState>;
 
     #[abi(embed_v0)]
@@ -29,11 +29,11 @@ pub mod KarstPublication {
     impl joltPrivateImpl = JoltComponent::Private<ContractState>;
 
     #[abi(embed_v0)]
-    impl communityImpl = CommunityComponent::KarstCommunity<ContractState>;
+    impl communityImpl = CommunityComponent::colonizCommunity<ContractState>;
     impl communityPrivateImpl = CommunityComponent::Private<ContractState>;
 
     #[abi(embed_v0)]
-    impl channelImpl = ChannelComponent::KarstChannel<ContractState>;
+    impl channelImpl = ChannelComponent::colonizChannel<ContractState>;
     impl channelPrivateImpl = ChannelComponent::InternalImpl<ContractState>;
 
     #[storage]
@@ -72,14 +72,14 @@ pub mod KarstPublication {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        karstnft_contract_address: ContractAddress,
+        coloniznft_contract_address: ContractAddress,
         hub_address: ContractAddress,
         follow_nft_classhash: felt252,
         channel_nft_classhash: felt252,
         community_nft_classhash: felt252,
         owner: ContractAddress
     ) {
-        self.profile._initializer(karstnft_contract_address, hub_address, follow_nft_classhash);
+        self.profile._initializer(coloniznft_contract_address, hub_address, follow_nft_classhash);
         self.channel._initializer(channel_nft_classhash);
         self.community._initializer(community_nft_classhash);
         self.jolt._initializer(owner);

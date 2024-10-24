@@ -14,13 +14,13 @@ pub mod ChannelComponent {
     };
     use openzeppelin::access::ownable::OwnableComponent;
 
-    use karst::jolt::jolt::JoltComponent;
-    use karst::community::community::CommunityComponent;
-    use karst::interfaces::{
+    use coloniz::jolt::jolt::JoltComponent;
+    use coloniz::community::community::CommunityComponent;
+    use coloniz::interfaces::{
         IChannel::IChannel, ICommunity::ICommunity,
         ICustomNFT::{ICustomNFTDispatcher, ICustomNFTDispatcherTrait}
     };
-    use karst::base::{
+    use coloniz::base::{
         constants::errors::Errors::{
             NOT_CHANNEL_OWNER, ALREADY_MEMBER, NOT_CHANNEL_MEMBER, NOT_COMMUNITY_MEMBER,
             BANNED_FROM_CHANNEL, CHANNEL_HAS_NO_MEMBER, UNAUTHORIZED, INVALID_LENGTH,
@@ -118,7 +118,7 @@ pub mod ChannelComponent {
     // *************************************************************************
     //                              EXTERNAL FUNCTIONS
     // *************************************************************************
-    #[embeddable_as(KarstChannel)]
+    #[embeddable_as(colonizChannel)]
     impl ChannelImpl<
         TContractState,
         +HasComponent<TContractState>,

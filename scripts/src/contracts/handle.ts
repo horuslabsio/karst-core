@@ -1,3 +1,3 @@
-// script for karst Handles contract goes in here
+// script for coloniz Handles contract goes in here
 
-console.log('Karst Handle')
+console.log('coloniz Handle')

@@ -10,15 +10,15 @@ use snforge_std::{
     declare, start_cheat_caller_address, stop_cheat_caller_address, spy_events,
     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
-use karst::publication::publication::PublicationComponent::{
+use coloniz::publication::publication::PublicationComponent::{
     Event as PublicationEvent, Post, CommentCreated, RepostCreated, Upvoted, Downvoted
 };
-use karst::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
-use karst::base::constants::types::{PostParams, RepostParams, CommentParams, PublicationType};
-use karst::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
-use karst::interfaces::ICommunity::{ICommunityDispatcher, ICommunityDispatcherTrait};
-use karst::interfaces::IChannel::{IChannelDispatcher, IChannelDispatcherTrait};
-use karst::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
+use coloniz::mocks::interfaces::IComposable::{IComposableDispatcher, IComposableDispatcherTrait};
+use coloniz::base::constants::types::{PostParams, RepostParams, CommentParams, PublicationType};
+use coloniz::interfaces::ICollectNFT::{ICollectNFTDispatcher, ICollectNFTDispatcherTrait};
+use coloniz::interfaces::ICommunity::{ICommunityDispatcher, ICommunityDispatcherTrait};
+use coloniz::interfaces::IChannel::{IChannelDispatcher, IChannelDispatcherTrait};
+use coloniz::interfaces::IERC20::{IERC20Dispatcher, IERC20DispatcherTrait};
 
 
 const HUB_ADDRESS: felt252 = 'HUB';
@@ -38,7 +38,7 @@ fn __setup__() -> (
     ContractAddress, ContractAddress, ContractAddress, felt252, felt252, felt252, ContractAddress
 ) {
     // deploy NFT
-    let nft_contract = declare("KarstNFT").unwrap().contract_class();
+    let nft_contract = declare("ColonizNFT").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![USER_ONE];
 
     let (nft_contract_address, _) = nft_contract.deploy(@calldata).unwrap_syscall();
@@ -53,7 +53,7 @@ fn __setup__() -> (
     // declare community_nft
     let community_nft_classhash = declare("CommunityNFT").unwrap().contract_class();
     // deploy publication preset
-    let publication_contract = declare("KarstPublication").unwrap().contract_class();
+    let publication_contract = declare("ColonizPublication").unwrap().contract_class();
     let mut publication_constructor_calldata = array![
         nft_contract_address.into(),
         HUB_ADDRESS,
@@ -429,7 +429,7 @@ fn test_if_is_channel_post() {
 }
 
 // community_post
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
+#[should_panic(expected: ('coloniz: Not Community Member',))]
 #[test]
 fn test_should_fail_if_user_is_not_a_community_member() {
     let (
@@ -489,7 +489,7 @@ fn test_should_fail_if_user_is_not_a_community_member() {
     stop_cheat_caller_address(publication_contract_address);
 }
 
-#[should_panic(expected: ('Karst: not channel member',))]
+#[should_panic(expected: ('coloniz: not channel member',))]
 #[test]
 fn test_should_fail_if_user_is_not_a_channel_member() {
     let (
@@ -649,12 +649,7 @@ fn test_upvote() {
             }
         );
     publication_dispatcher
-        .upvote(
-            profile_address: user_two_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .upvote(profile_address: user_two_profile_address, pub_id: pub_assigned_id,);
     let upvote_count = publication_dispatcher
         .get_upvote_count(user_two_profile_address, pub_assigned_id);
     assert(upvote_count == 1, 'invalid upvote count');
@@ -697,12 +692,7 @@ fn test_downvote() {
             }
         );
     publication_dispatcher
-        .downvote(
-            profile_address: user_two_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .downvote(profile_address: user_two_profile_address, pub_id: pub_assigned_id,);
     let downvote_count = publication_dispatcher
         .get_downvote_count(user_two_profile_address, pub_assigned_id);
     assert(downvote_count == 1, 'invalid upvote count');
@@ -753,12 +743,7 @@ fn test_upvote_event_emission() {
     community_dispatcher.join_community(community_id);
     channel_dispatcher.join_channel(channel_id);
     publication_dispatcher
-        .upvote(
-            profile_address: user_one_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .upvote(profile_address: user_one_profile_address, pub_id: pub_assigned_id,);
     let expected_event = PublicationEvent::Upvoted(
         Upvoted {
             publication_id: pub_assigned_id,
@@ -814,12 +799,7 @@ fn test_downvote_event_emission() {
     community_dispatcher.join_community(community_id);
     channel_dispatcher.join_channel(channel_id);
     publication_dispatcher
-        .downvote(
-            profile_address: user_one_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .downvote(profile_address: user_one_profile_address, pub_id: pub_assigned_id,);
     let expected_event = PublicationEvent::Downvoted(
         Downvoted {
             publication_id: pub_assigned_id,
@@ -832,7 +812,7 @@ fn test_downvote_event_emission() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: already react to post!',))]
+#[should_panic(expected: ('coloniz: already react to post!',))]
 fn test_upvote_should_fail_if_user_already_upvoted() {
     let (
         nft_contract_address,
@@ -868,24 +848,14 @@ fn test_upvote_should_fail_if_user_already_upvoted() {
             }
         );
     publication_dispatcher
-        .upvote(
-            profile_address: user_two_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .upvote(profile_address: user_two_profile_address, pub_id: pub_assigned_id,);
     publication_dispatcher
-        .upvote(
-            profile_address: user_two_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .upvote(profile_address: user_two_profile_address, pub_id: pub_assigned_id,);
     stop_cheat_caller_address(publication_contract_address);
 }
 
 #[test]
-#[should_panic(expected: ('Karst: already react to post!',))]
+#[should_panic(expected: ('coloniz: already react to post!',))]
 fn test_downvote_should_fail_if_user_already_downvoted() {
     let (
         nft_contract_address,
@@ -921,19 +891,9 @@ fn test_downvote_should_fail_if_user_already_downvoted() {
             }
         );
     publication_dispatcher
-        .downvote(
-            profile_address: user_two_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .downvote(profile_address: user_two_profile_address, pub_id: pub_assigned_id,);
     publication_dispatcher
-        .downvote(
-            profile_address: user_two_profile_address,
-            pub_id: pub_assigned_id,
-            channel_id: channel_id,
-            community_id: community_id,
-        );
+        .downvote(profile_address: user_two_profile_address, pub_id: pub_assigned_id,);
     stop_cheat_caller_address(publication_contract_address);
 }
 
@@ -1385,7 +1345,7 @@ fn test_get_publication_type() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Profile is banned!',))]
+#[should_panic(expected: ('coloniz: Profile is banned!',))]
 fn test_should_fail_if_banned_profile_from_posting() {
     let (
         nft_contract_address,
@@ -1455,7 +1415,7 @@ fn test_should_fail_if_banned_profile_from_posting() {
 }
 
 #[test]
-#[should_panic(expected: ('Karst: Not a Community  Member',))]
+#[should_panic(expected: ('coloniz: Not Community Member',))]
 fn test_should_fail_if_not_community_member_while_posting() {
     let (
         nft_contract_address,
@@ -1567,8 +1527,6 @@ fn test_tip() {
             profile_address: user_one_profile_address,
             pub_id: pub_assigned_id,
             amount: 2000000000000000000,
-            channel_id: channel_id,
-            community_id: community_id,
             erc20_contract_address: erc20_contract_address
         );
     stop_cheat_caller_address(publication_contract_address);

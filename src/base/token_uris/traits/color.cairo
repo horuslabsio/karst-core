@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pub mod karstColors {
+pub mod colonizColors {
     pub const baseGreen: felt252 = '#A0D170';
     pub const basePink: felt252 = '#FFD2DD';
     pub const basePurple: felt252 = '#EAD7FF';

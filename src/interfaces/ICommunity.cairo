@@ -1,5 +1,5 @@
 use starknet::{ContractAddress};
-use karst::base::constants::types::{
+use coloniz::base::constants::types::{
     GateKeepType, CommunityGateKeepDetails, CommunityType, CommunityDetails, CommunityMember
 };
 

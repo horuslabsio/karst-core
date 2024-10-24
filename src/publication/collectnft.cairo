@@ -9,9 +9,9 @@ pub mod CollectNFT {
     use core::traits::TryInto;
     use starknet::{ContractAddress, get_block_timestamp};
     use core::num::traits::zero::Zero;
-    use karst::interfaces::ICollectNFT::ICollectNFT;
-    use karst::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
-    use karst::base::{
+    use coloniz::interfaces::ICollectNFT::ICollectNFT;
+    use coloniz::interfaces::IHub::{IHubDispatcher, IHubDispatcherTrait};
+    use coloniz::base::{
         constants::errors::Errors::{ALREADY_MINTED, TOKEN_DOES_NOT_EXIST},
         utils::base64_extended::convert_into_byteArray
     };
@@ -60,7 +60,7 @@ pub mod CollectNFT {
         src5: SRC5Component::Storage,
         #[substorage(v0)]
         ownable: OwnableComponent::Storage,
-        karst_hub: ContractAddress,
+        coloniz_hub: ContractAddress,
         last_minted_id: u256,
         mint_timestamp: Map<u256, u64>,
         user_token_id: Map<ContractAddress, u256>,
@@ -88,11 +88,11 @@ pub mod CollectNFT {
     #[constructor]
     fn constructor(
         ref self: ContractState,
-        karst_hub: ContractAddress,
+        coloniz_hub: ContractAddress,
         profile_address: ContractAddress,
         pub_id: u256,
     ) {
-        self.karst_hub.write(karst_hub);
+        self.coloniz_hub.write(coloniz_hub);
         self.profile_address.write(profile_address);
         self.pub_id.write(pub_id);
     }
@@ -149,7 +149,7 @@ pub mod CollectNFT {
             let mut collection_name = ArrayTrait::<felt252>::new();
             let profile_address_felt252: felt252 = self.profile_address.read().into();
             let pub_id_felt252: felt252 = self.pub_id.read().try_into().unwrap();
-            collection_name.append('Karst Collect | Profile #');
+            collection_name.append('coloniz Collect | Profile #');
             collection_name.append(profile_address_felt252);
             collection_name.append('- Publication #');
             collection_name.append(pub_id_felt252);
@@ -159,7 +159,7 @@ pub mod CollectNFT {
 
         /// @notice returns the collection symbol
         fn symbol(self: @ContractState) -> ByteArray {
-            return "KARST:COLLECT";
+            return "coloniz:COLLECT";
         }
 
         /// @notice returns the token_uri for a particular token_id
@@ -167,8 +167,8 @@ pub mod CollectNFT {
             assert(self.erc721.exists(token_id), TOKEN_DOES_NOT_EXIST);
             let profile_address = self.profile_address.read();
             let pub_id = self.pub_id.read();
-            let karst_hub = self.karst_hub.read();
-            let token_uri = IHubDispatcher { contract_address: karst_hub }
+            let coloniz_hub = self.coloniz_hub.read();
+            let token_uri = IHubDispatcher { contract_address: coloniz_hub }
                 .get_publication_content_uri(profile_address, pub_id);
             token_uri
         }

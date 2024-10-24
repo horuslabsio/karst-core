@@ -1,5 +1,5 @@
 #[starknet::contract]
-pub mod KarstNFT {
+pub mod ColonizNFT {
     // *************************************************************************
     //                             IMPORTS
     // *************************************************************************
@@ -11,8 +11,8 @@ pub mod KarstNFT {
         }
     };
     use core::num::traits::zero::Zero;
-    use karst::interfaces::IKarstNFT;
-    use karst::base::{
+    use coloniz::interfaces::IColonizNFT;
+    use coloniz::base::{
         constants::errors::Errors::ALREADY_MINTED,
         token_uris::profile_token_uri::ProfileTokenUri::get_token_uri,
     };
@@ -79,17 +79,17 @@ pub mod KarstNFT {
     #[constructor]
     fn constructor(ref self: ContractState, admin: ContractAddress,) {
         self.admin.write(admin);
-        self.erc721.initializer("Karst", "KST", "");
+        self.erc721.initializer("coloniz", "KST", "");
     }
 
     #[abi(embed_v0)]
-    impl KarstImpl of IKarstNFT::IKarstNFT<ContractState> {
+    impl colonizImpl of IColonizNFT::IColonizNFT<ContractState> {
         // *************************************************************************
         //                            EXTERNAL
         // *************************************************************************
-        /// @notice mints the karst NFT
-        /// @param address address of user trying to mint the karst NFT
-        fn mint_karstnft(ref self: ContractState, address: ContractAddress) {
+        /// @notice mints the coloniz NFT
+        /// @param address address of user trying to mint the coloniz NFT
+        fn mint_coloniznft(ref self: ContractState, address: ContractAddress) {
             let balance = self.erc721.balance_of(address);
             assert(balance.is_zero(), ALREADY_MINTED);
 
@@ -125,7 +125,7 @@ pub mod KarstNFT {
         // *************************************************************************
         /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
-            return "Karst";
+            return "coloniz";
         }
 
         /// @notice returns the collection symbol

@@ -1,7 +1,7 @@
 pub mod handle {
     use core::array::ArrayTrait;
-    use karst::base::utils::base64_extended::convert_into_byteArray;
-    use karst::base::token_uris::traits::color::karstColors;
+    use coloniz::base::utils::base64_extended::convert_into_byteArray;
+    use coloniz::base::token_uris::traits::color::colonizColors;
 
     pub fn get_svg_handle(token_id: u256, local_name: felt252, namespace: felt252) -> ByteArray {
         let mut svg = ArrayTrait::<felt252>::new();
@@ -18,6 +18,6 @@ pub mod handle {
 
     fn get_random_color(local_name: felt252) -> felt252 {
         // TODO select the random color
-        karstColors::basePink
+        colonizColors::basePink
     }
 }

@@ -11,8 +11,8 @@ pub mod Follow {
         }
     };
     use core::num::traits::zero::Zero;
-    use karst::interfaces::{IFollowNFT::IFollowNFT};
-    use karst::base::{
+    use coloniz::interfaces::{IFollowNFT::IFollowNFT};
+    use coloniz::base::{
         constants::{errors::Errors, types::FollowData},
         utils::hubrestricted::HubRestricted::hub_only, token_uris::follow_token_uri::FollowTokenUri,
     };
@@ -57,7 +57,7 @@ pub mod Follow {
         follower_count: u256,
         follow_id_by_follower_profile_address: Map<ContractAddress, u256>,
         follow_data_by_follow_id: Map<u256, FollowData>,
-        karst_hub: ContractAddress,
+        coloniz_hub: ContractAddress,
     }
 
     // *************************************************************************
@@ -121,8 +121,8 @@ pub mod Follow {
         admin: ContractAddress
     ) {
         self.admin.write(admin);
-        self.erc721.initializer("KARST:FOLLOWER", "KFL", "");
-        self.karst_hub.write(hub);
+        self.erc721.initializer("coloniz:FOLLOWER", "KFL", "");
+        self.coloniz_hub.write(hub);
         self.followed_profile_address.write(profile_address);
     }
 
@@ -134,7 +134,7 @@ pub mod Follow {
         /// @notice performs the follow action
         /// @param follower_profile_address address of the user trying to perform the follow action
         fn follow(ref self: ContractState, follower_profile_address: ContractAddress) -> u256 {
-            hub_only(self.karst_hub.read());
+            hub_only(self.coloniz_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);
@@ -146,7 +146,7 @@ pub mod Follow {
         /// @param unfollower_profile_address address of the user trying to perform the unfollow
         /// action
         fn unfollow(ref self: ContractState, unfollower_profile_address: ContractAddress) {
-            hub_only(self.karst_hub.read());
+            hub_only(self.coloniz_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(unfollower_profile_address);
@@ -159,7 +159,7 @@ pub mod Follow {
         fn process_block(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
-            hub_only(self.karst_hub.read());
+            hub_only(self.coloniz_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);
@@ -193,7 +193,7 @@ pub mod Follow {
         fn process_unblock(
             ref self: ContractState, follower_profile_address: ContractAddress
         ) -> bool {
-            hub_only(self.karst_hub.read());
+            hub_only(self.coloniz_hub.read());
             let follow_id = self
                 .follow_id_by_follower_profile_address
                 .read(follower_profile_address);
@@ -277,7 +277,7 @@ pub mod Follow {
         // *************************************************************************
         /// @notice returns the collection name
         fn name(self: @ContractState) -> ByteArray {
-            return "KARST:FOLLOWER";
+            return "coloniz:FOLLOWER";
         }
 
         /// @notice returns the collection symbol

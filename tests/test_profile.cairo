@@ -10,9 +10,9 @@ use snforge_std::{
     EventSpyAssertionsTrait, ContractClassTrait, DeclareResultTrait
 };
 
-use karst::interfaces::IKarstNFT::{IKarstNFTDispatcher, IKarstNFTDispatcherTrait};
-use karst::profile::profile::ProfileComponent::{Event as ProfileEvent, CreatedProfile};
-use karst::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
+use coloniz::interfaces::IColonizNFT::{IColonizNFTDispatcher, IColonizNFTDispatcherTrait};
+use coloniz::profile::profile::ProfileComponent::{Event as ProfileEvent, CreatedProfile};
+use coloniz::interfaces::IProfile::{IProfileDispatcher, IProfileDispatcherTrait};
 
 const HUB_ADDRESS: felt252 = 'HUB';
 const USER: felt252 = 'USER1';
@@ -23,7 +23,7 @@ const USER: felt252 = 'USER1';
 
 fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractAddress) {
     // deploy NFT
-    let nft_contract = declare("KarstNFT").unwrap().contract_class();
+    let nft_contract = declare("ColonizNFT").unwrap().contract_class();
     let mut calldata: Array<felt252> = array![USER];
     let (nft_contract_address, _) = nft_contract.deploy(@calldata).unwrap_syscall();
 
@@ -38,12 +38,12 @@ fn __setup__() -> (ContractAddress, ContractAddress, felt252, felt252, ContractA
     let follow_nft_classhash = declare("Follow").unwrap().contract_class();
 
     // deploy profile
-    let profile_contract = declare("KarstProfile").unwrap().contract_class();
-    let mut karst_profile_constructor_calldata = array![
+    let profile_contract = declare("ColonizProfile").unwrap().contract_class();
+    let mut coloniz_profile_constructor_calldata = array![
         nft_contract_address.into(), HUB_ADDRESS, (*follow_nft_classhash.class_hash).into()
     ];
     let (profile_contract_address, _) = profile_contract
-        .deploy(@karst_profile_constructor_calldata)
+        .deploy(@coloniz_profile_constructor_calldata)
         .unwrap();
 
     return (
@@ -64,7 +64,7 @@ fn test_profile_creation() {
         nft_contract_address, _, registry_class_hash, account_class_hash, profile_contract_address
     ) =
         __setup__();
-    let karstNFTDispatcher = IKarstNFTDispatcher { contract_address: nft_contract_address };
+    let colonizNFTDispatcher = IColonizNFTDispatcher { contract_address: nft_contract_address };
     let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
 
     //user 1 create profile
@@ -73,9 +73,9 @@ fn test_profile_creation() {
     let profile_address = profileDispatcher
         .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
-    // test a new karst nft is minted
-    let last_minted_id = karstNFTDispatcher.get_last_minted_id();
-    let token_id = karstNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
+    // test a new coloniz nft is minted
+    let last_minted_id = colonizNFTDispatcher.get_last_minted_id();
+    let token_id = colonizNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
     assert(last_minted_id == 1.try_into().unwrap(), 'invalid ID');
     assert(token_id == 1.try_into().unwrap(), 'invalid ID');
 
@@ -128,7 +128,7 @@ fn test_profile_creation_event() {
         nft_contract_address, _, registry_class_hash, account_class_hash, profile_contract_address
     ) =
         __setup__();
-    let karstNFTDispatcher = IKarstNFTDispatcher { contract_address: nft_contract_address };
+    let colonizNFTDispatcher = IColonizNFTDispatcher { contract_address: nft_contract_address };
     let profileDispatcher = IProfileDispatcher { contract_address: profile_contract_address };
     let mut spy = spy_events();
 
@@ -139,7 +139,7 @@ fn test_profile_creation_event() {
     let profile_address = profileDispatcher
         .create_profile(nft_contract_address, registry_class_hash, account_class_hash, 2456);
 
-    let token_id = karstNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
+    let token_id = colonizNFTDispatcher.get_user_token_id(USER.try_into().unwrap());
 
     let expected_event = ProfileEvent::CreatedProfile(
         CreatedProfile {

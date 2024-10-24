@@ -1,6 +1,6 @@
-# Karst Deployment Script
+# coloniz Deployment Script
 
-This script facilitates the deployment of contracts within the Karst project. Follow the steps below to set up and run the deployment script for your desired contract.
+This script facilitates the deployment of contracts within the coloniz project. Follow the steps below to set up and run the deployment script for your desired contract.
 
 ## Prerequisites
 

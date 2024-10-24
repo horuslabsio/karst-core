@@ -1,5 +1,5 @@
 use starknet::ContractAddress;
-use karst::base::constants::types::{JoltParams, JoltData, SubscriptionData};
+use coloniz::base::constants::types::{JoltParams, JoltData, SubscriptionData};
 
 #[starknet::interface]
 pub trait IJolt<TState> {

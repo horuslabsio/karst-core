@@ -1,13 +1,13 @@
 use starknet::ContractAddress;
 // *************************************************************************
-//                              INTERFACE of KARST NFT
+//                              INTERFACE of coloniz NFT
 // *************************************************************************
 #[starknet::interface]
-pub trait IKarstNFT<TState> {
+pub trait IColonizNFT<TState> {
     // *************************************************************************
     //                            EXTERNALS
     // *************************************************************************
-    fn mint_karstnft(ref self: TState, address: ContractAddress);
+    fn mint_coloniznft(ref self: TState, address: ContractAddress);
     // *************************************************************************
     //                            GETTERS
     // *************************************************************************

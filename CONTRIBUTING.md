@@ -1,18 +1,18 @@
-# Contributing to KARST
+# Contributing to coloniz
 
-The KARST team maintains guidelines for contributing to the KARST project repository.
+The coloniz team maintains guidelines for contributing to the coloniz project repository.
 
 ### Code of Conduct
 
-Have you read the [code of conduct](https://github.com/horuslabsio/karst-core/blob/master/CODE_OF_CONDUCT.md)?
+Have you read the [code of conduct](https://github.com/horuslabsio/coloniz-core/blob/master/CODE_OF_CONDUCT.md)?
 
 ## Bugs and Feature Request
 
-Before you make your changes, check to see if an [issue](https://github.com/horuslabsio/karst-coreissues) exists already for the change you want to make.
+Before you make your changes, check to see if an [issue](https://github.com/horuslabsio/coloniz-coreissues) exists already for the change you want to make.
 
 ### Don't see your issue? Open one
 
-If you spot something new, open an issue using a [template](https://github.com/horuslabsio/karst-core/issues/new/choose). We'll use the issue to have a conversation about the problem you want to fix.
+If you spot something new, open an issue using a [template](https://github.com/horuslabsio/coloniz-core/issues/new/choose). We'll use the issue to have a conversation about the problem you want to fix.
 
 ### Open a Pull Request
 
@@ -34,7 +34,7 @@ Please do:
 
 - **DO** give priority to the current style of the project or file you're changing even if it diverges from the general guidelines.
 - **DO** include tests when adding new features. When fixing bugs, start with adding a test that highlights how the current behavior is broken.
-- **DO** especially follow our rules in the [Contributing](https://github.com/horuslabsio/karst-core/master/CODE_OF_CONDUCT.md#contributing) section of our code of conduct.
+- **DO** especially follow our rules in the [Contributing](https://github.com/horuslabsio/coloniz-core/master/CODE_OF_CONDUCT.md#contributing) section of our code of conduct.
 
 Please do not:
 

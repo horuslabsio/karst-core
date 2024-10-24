@@ -1,9 +1,9 @@
 pub mod ProfileSvg {
-    use karst::base::token_uris::traits::head::head::faceSvgStart;
-    use karst::base::token_uris::traits::glass::glass::glassSvgStart;
-    use karst::base::token_uris::traits::beard::beard::beardSvgStart;
-    use karst::base::token_uris::traits::cloth::cloth::clothSvgStart;
-    use karst::base::token_uris::traits::background::background::backgroundSvgStart;
+    use coloniz::base::token_uris::traits::head::head::faceSvgStart;
+    use coloniz::base::token_uris::traits::glass::glass::glassSvgStart;
+    use coloniz::base::token_uris::traits::beard::beard::beardSvgStart;
+    use coloniz::base::token_uris::traits::cloth::cloth::clothSvgStart;
+    use coloniz::base::token_uris::traits::background::background::backgroundSvgStart;
 
     pub fn gen_profile_svg() -> ByteArray {
         let mut profilesvg: ByteArray =

@@ -1,4 +1,4 @@
-pub mod karstnft;
+pub mod coloniznft;
 pub mod interfaces;
 pub mod profile;
 pub mod base;
